@@ -1,7 +1,5 @@
-**Key bindings**
+**More lifelike animals and a more human face**
 
-- New **Controls** screen in the settings menu (Esc, then "Controls (key bindings)"), also reachable from the title screen.
-- Every keyboard action has two slots. Click a slot, then press the key you want; Backspace clears it, Esc cancels.
-- Keys that are shared by two actions are outlined in orange so you can spot clashes.
-- "Reset to defaults" puts everything back. Your bindings are saved.
-- Mouse buttons keep their jobs: left strikes, right blocks, middle locks on.
+- Animals have natural colouring (darker backs, paler bellies, a white rump and spots on the deer, a dark-tipped tail on the wolf), heavier shoulders and haunches over slim lower legs, and moving ears.
+- They walk with a real four-beat walk (one leg at a time) and break into a trot or gallop when they run, with body sway, head nods, ear flicks and breathing when they stand.
+- Your character's face is sculpted like a real skull: brow ridge, eye sockets, cheekbones, nose, lips, jaw and chin, with natural skin shading, realistic eyes with lids, and finer eyebrows and moustache.
