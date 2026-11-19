@@ -1,4 +1,3 @@
-**Hooded Coat fits like one garment**
+**Coat tails fit the hips, not the arms**
 
-- The lower half of the coat now follows the body: it fits close over the hips and seat like the waist does, then hangs straight to above the knee instead of flaring out.
-- The separate cape behind the coat is gone; the hood, coat body and tails read as one piece of cloth.
+- The coat tails were being sized around the hanging arms and hands, which made the bottom half wide. They now fit only the hips and legs, so the arms and hands hang free at the sides.
