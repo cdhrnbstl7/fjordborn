@@ -1,5 +1,6 @@
-**Rolls and backsteps**
+**A real human body**
 
-- **Sprinting + dodge:** a full tucked forward roll in the direction you're running, about 4 metres, with invincibility through the middle of it, coming up on your feet.
-- **Standing still + dodge:** a visible backstep hop: chest leans back, feet come up, arms swing forward for balance, and you land in a crouch.
-- **Walking or locked on + dodge:** the quick directional dash, now with a deeper crouch and push-off.
+- **Sculpted character:** your wanderer is now a realistic sculpted human body (from the open MakeHuman project) instead of a built-up figure. One continuous skin with a proper face, eyes with irises, hands, and natural proportions.
+- **Randomized look:** new characters get a random face, build, height, skin, hair and beard. There's a new **Face** row under Your Viking with eight face shapes to pick from.
+- **Clothes on the body:** a wool shirt, a tunic skirt, trousers, tall leather boots and shoes, plus the hood, cloak, shield and helm as before.
+- Every walk, attack, dodge and roll animation now drives the new body.
