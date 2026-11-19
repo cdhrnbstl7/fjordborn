@@ -1,8 +1,8 @@
-First version with automatic updates. Install this one by hand; after that, new versions download in the background and install when you quit the game.
+**A new hero and Souls-like movement**
 
-- Settings from the title screen (Esc or the Settings button)
-- Paths wear into the ground where you walk; mossy forest floor; patchier meadow grass with seed heads
-- Sunset and sunrise glow, stars at night, high cirrus clouds; water reflects the sky and surf rolls onto the beaches
-- New boar, deer and wolf models with jointed legs, moving heads and tails; deer graze
-- Desktop: keyboard and mouse only (no on-screen action buttons)
-- Save and leave / Save and quit in the pause menu
+- A new character: a tall, hooded wanderer in a leather cuirass, gambeson and mail, with a layered plate pauldron, gauntlets, greaves and a long tattered cloak. Your look options still apply, and there's a new Hood (up or down) choice.
+- **Space**: tap to roll (brief invincibility), tap standing still to backstep, hold to sprint
+- **F**: jump
+- **Q** or **middle mouse**: lock on to an enemy; the camera holds it and you circle it
+- **Shift + click**: a slow, heavy blow that hits much harder
+- Movement has weight: you ease into a run and slide to a stop
