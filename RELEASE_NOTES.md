@@ -1,4 +1,3 @@
-**Photo-scanned ground**
+**Darker, more natural colours**
 
-- The ground now uses real photographed surfaces instead of painted ones: grassy turf with soil showing through, a forest floor of leaves, twigs and moss, packed dirt with pebbles, mossy rock faces, and fine beach sand.
-- Scans are CC0 (free to use) from Poly Haven. Colours stay bright.
+- A softer version of the film-style colour grade: slightly darker overall, a little less saturated, cooler shadows and warmer sunlight, with a hazier sky. Less washed-out than the first attempt in 1.7.0.
