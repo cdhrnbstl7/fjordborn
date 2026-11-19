@@ -318,6 +318,7 @@ body.kbonly #acts{display:none!important}
       <button class="btn" id="pKeys" type="button">Controls (key bindings)</button>
       <button class="btn" id="pBright" type="button">Brightness: Normal</button>
       <button class="btn" id="pHints" type="button">Hints: On</button>
+      <button class="btn" id="pAuto" type="button">Auto pick-up: On</button>
       <button class="btn" id="pMove" type="button">Move your saga to another device</button>
       <button class="btn" id="pRot" type="button" hidden>Keep sideways when the phone is upright: Off</button>
       <button class="btn" id="pLeave" type="button">Save and leave to title screen</button>
@@ -1149,7 +1150,7 @@ GEO.pineLeaf=(()=>{const cards=[];for(let t=0;t<7;t++){const y=1.9+t*.95,R=2.45*
 const LEAFM=new Map();function leafMat(tex,low){const key=low?'low':tex;if(LEAFM.has(key))return LEAFM.get(key);const m=new THREE.MeshStandardMaterial({map:tex,alphaTest:.5,side:THREE.DoubleSide,vertexColors:true,roughness:.95,metalness:0,envMapIntensity:.35});m.extensions={derivatives:true};
   if(POST_OK)m.alphaToCoverage=true;
   m.onBeforeCompile=sh=>{sh.uniforms.uTime=GU;
-    sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n{vec2 tdx=dFdx(vUv*'+[256,512,1024][GFX.tex]+'.0),tdy=dFdy(vUv*'+[256,512,1024][GFX.tex]+'.0);float lod=max(0.0,0.5*log2(max(dot(tdx,tdx),dot(tdy,tdy))));diffuseColor.a*=1.0+lod*0.35;}');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <normal_fragment_begin>',THREE.ShaderChunk.normal_fragment_begin.replace('normal = normal * faceDirection;','')).replace('#include <map_fragment>','#include <map_fragment>\n{vec2 tdx=dFdx(vUv*'+[256,512,1024][GFX.tex]+'.0),tdy=dFdy(vUv*'+[256,512,1024][GFX.tex]+'.0);float lod=max(0.0,0.5*log2(max(dot(tdx,tdx),dot(tdy,tdy))));diffuseColor.a*=1.0+lod*0.35;}');
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uTime;')
     .replace('#include <begin_vertex>','#include <begin_vertex>\n#ifdef USE_INSTANCING\n{vec3 tp=(instanceMatrix*vec4(0.0,0.0,0.0,1.0)).xyz;float k='+(low?'max(transformed.y-0.06,0.0)*0.075':'max(transformed.y-1.6,0.0)*0.028')+';float w=sin(uTime*'+(low?'1.9':'1.25')+'+tp.x*0.21+tp.z*0.17)*0.7+sin(uTime*'+(low?'4.1':'2.6')+'+transformed.x*'+(low?'5.0':'1.3')+'+transformed.z*'+(low?'4.0':'0.0')+'+tp.z)*0.3;transformed.x+=w*k*1.6;transformed.z+=w*k;}\n#endif')};
   LEAFM.set(key,m);return m}
@@ -2519,7 +2520,7 @@ function setBuild(k){buildSel=k;$('buildbar').hidden=!k;ghost.visible=false;if(k
 const tch=()=>isTouch(),TK=(k,t)=>tch()?t:k;
 const TUT=[
   {t:()=>'Look around and move. '+TK('Use W A S D to walk and move the mouse to look.','Push the left stick to walk; drag anywhere else to look.')+' Walk a little way from where you woke.',d:()=>Math.hypot(P.x-P.spawn.x,P.z-P.spawn.z)>8},
-  {t:()=>'Gather what lies in the grass: walk over branches and loose stones to pick them up. Collect 4 wood and 3 stone ('+Math.min(4,P.inv.wood||0)+'/4 wood, '+Math.min(3,P.inv.stone||0)+'/3 stone).',d:h=>h('axe')||h('emaxe')||(P.inv.wood>=4&&P.inv.stone>=3)},
+  {t:()=>'Gather what lies in the grass: '+(AUTOPICK?'walk over branches and loose stones to pick them up.':'walk up to branches and loose stones and '+TK('press E','tap Use')+' to pick them up.')+' Collect 4 wood and 3 stone ('+Math.min(4,P.inv.wood||0)+'/4 wood, '+Math.min(3,P.inv.stone||0)+'/3 stone).',d:h=>h('axe')||h('emaxe')||(P.inv.wood>=4&&P.inv.stone>=3)},
   {t:()=>'Make your first tool. Open your bag ('+TK('press Tab','tap Bag')+'), go to Craft, and craft a Stone Axe.',d:h=>h('axe')||h('emaxe')},
   {t:()=>'Wield the axe ('+TK('press 1, or Wield in the bag','Wield it in the bag')+') and fell a white birch: '+TK('click','tap Strike')+' to swing at the trunk. Gather 3 wood and 2 stone for a mallet ('+Math.min(3,P.inv.wood||0)+'/3 wood, '+Math.min(2,P.inv.stone||0)+'/2 stone).',d:h=>h('hammer')||(P.inv.wood>=3&&P.inv.stone>=2)},
   {t:()=>"Craft a Builder's Mallet in the bag. The mallet lets you build.",d:h=>h('hammer')},
@@ -2624,8 +2625,12 @@ function doHit(){const tool=(P.equip&&ITEMS[P.equip].tool)||FIST,fx=Math.sin(P.y
 
 /* ---------- interaction ---------- */
 let useTarget=null;
+/* picking things up: by walking over them (auto pick-up on), or one at a time with Use (off) */
+let AUTOPICK=true;try{AUTOPICK=localStorage.getItem('fjordborn-autopick')!=='0'}catch(e){}
+function takeDrop(d){const i=drops.indexOf(d);if(i<0)return;addItem(d.item,d.n);sfx('pick');scene.remove(d.mesh);if(d.pid>=0)deadIds.push(d.pid);drops.splice(i,1)}
 function findUse(){let t=null,best=2.4;
   if(P.boat)return{k:'leave',label:'Go ashore'};
+  if(!AUTOPICK){let bd=2.1,bdr=null;for(const d of drops){if(d.t<=.45)continue;const dd=Math.hypot(d.x-P.x,d.z-P.z);if(dd<bd){bd=dd;bdr=d}}if(bdr)return{k:'pick',d:bdr,label:'Pick up '+ITEMS[bdr.item].n+(bdr.n>1?' ×'+bdr.n:'')}}
   for(const s of structs)if(s.type==='karve'&&Math.hypot(s.x-P.x,s.z-P.z)<4.6)return{k:'board',s,label:'Board the Karve'};
   near(P.x,P.z,c=>{if(c.node&&c.node.alive&&c.node.kind==='bush'&&c.node.berries){const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<best){best=d;t={k:'bush',n:c.node,label:'Pick cloudberries'}}}});
   if(!t)for(const s of structs)if(s.type==='bed'&&Math.hypot(s.x-P.x,s.z-P.z)<2.6){t={k:'bed',s,label:(time>.6||time<.03)?'Sleep until dawn':'Rest (sets your home)'};break}
@@ -2640,6 +2645,7 @@ function findUse(){let t=null,best=2.4;
   if(!t&&Math.hypot(ALT.x-P.x,ALT.z-P.z)<5.5)t={k:'altar',label:boss===0?'Offer 3 Wight Cores':boss===1?'The altar burns':'The altar is quiet'};
   return t}
 function doUse(){if(!started||P.dead||paused)return;const t=useTarget;if(!t)return;
+  if(t.k==='pick'){takeDrop(t.d);return}
   if(t.k==='bush'){t.n.berries=false;t.n.regrow=150;setBerry(t.n,false);anim.add(t.n);addItem('berries',2);sfx('pick')}
   else if(t.k==='bed'){P.spawn={x:t.s.x+1.5,z:t.s.z};if(time>.6||time<.03){if(creatures.some(c=>c.mad&&Math.hypot(c.x-P.x,c.z-P.z)<25)){toast('You cannot sleep with enemies near.');return}
       if(time>.5)day++;time=.05;P.hp=maxHp();toast('You wake at dawn, rested.');save()}else toast('Home set. Come back at dusk to sleep.')}
@@ -2860,6 +2866,7 @@ $('pGfx').textContent='Graphics settings: '+(['Low','Medium','High','Ultra'][gfx
 /* brightness: phones run the low graphics path, which has no bloom, so it starts brighter; players can push it further */
 const BRI=[1,1.3,1.65,.8],BRN=['Normal','Bright','Brightest','Dim'];let briIdx=0;try{const v=parseInt(localStorage.getItem('fjordborn-bright'),10);if(v>=0&&v<BRI.length)briIdx=v}catch(e){}
 function applyBright(){const e=(HQ?.82:1.12)*BRI[briIdx];renderer.toneMappingExposure=e;if(POST.on)POST.final.uniforms.exposure.value=e;$('pBright').textContent='Brightness: '+BRN[briIdx]}
+const showAuto=()=>{$('pAuto').textContent='Auto pick-up: '+(AUTOPICK?'On':'Off')};showAuto();$('pAuto').addEventListener('click',()=>{AUTOPICK=!AUTOPICK;try{localStorage.setItem('fjordborn-autopick',AUTOPICK?'1':'0')}catch(e){}showAuto()});
 const showHints=()=>{$('pHints').textContent='Hints: '+(HINTS?'On':'Off')};showHints();$('pHints').addEventListener('click',()=>{HINTS=!HINTS;try{localStorage.setItem('fjordborn-hints',HINTS?'1':'0')}catch(e){}showHints();uiT=0});
 $('pBright').addEventListener('click',()=>{briIdx=(briIdx+1)%BRI.length;try{localStorage.setItem('fjordborn-bright',String(briIdx))}catch(e){}applyBright()});
 applyBright();
@@ -3081,7 +3088,7 @@ function update(dt){T+=dt;wearTick(dt);
   for(let i=drops.length-1;i>=0;i--){const d=drops[i],dx=d.x-P.x,dz=d.z-P.z,dd=dx*dx+dz*dz;
     if(d.loot){d.t+=dt;if(d.vy||d.mesh.position.y>d.rest){d.vy-=14*dt;d.mesh.position.y+=d.vy*dt;if(d.mesh.position.y<=d.rest){d.mesh.position.y=d.rest;d.vy=0}}d.yaw+=dt*1.5;d.mesh.quaternion.setFromAxisAngle(UP,d.yaw)}
     else d.mesh.visible=dd<8100;
-    if(dd<3.2&&d.t>.45&&!P.dead){addItem(d.item,d.n);sfx('pick');scene.remove(d.mesh);if(d.pid>=0)deadIds.push(d.pid);drops.splice(i,1)}}
+    if(AUTOPICK&&dd<3.2&&d.t>.45&&!P.dead)takeDrop(d)}
   // foods
   for(let i=P.foods.length-1;i>=0;i--){P.foods[i].t-=dt;if(P.foods[i].t<=0){toast('The '+ITEMS[P.foods[i].id].n.toLowerCase()+' wears off.');P.foods.splice(i,1);uiDirty=true}}
   const warm=nearStruct('fire',5),bi=biome(P.x,P.z),cold=bi===3&&!(P.armor.body||P.armor.cloak)&&!warm&&!P.dg;
