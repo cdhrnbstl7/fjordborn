@@ -1,7 +1,4 @@
-**Clothes that fit, cheaper dodges**
+**One-piece hood and cloak**
 
-- **Dodging** now costs the same stamina as a jump.
-- **Clothes drape over the body** instead of being painted on: the shirt and trousers bridge hollows rather than showing every muscle, and hems, cuffs and necklines are clean edges.
-- **New layers:** a sleeveless leather jerkin over the shirt with a belt and pouch, and leather bracers over the forearms.
-- **Tabard-style tunic:** longer, with slits at the sides, so the panels hang and swing while your legs move through.
-- Boot tops no longer show gaps when you walk.
+- The hood and shoulder mantle are now a single piece of fabric: a loose hood that peaks slightly over the brow, flowing down into a cowl that rests on the shoulders and dips toward the chest.
+- The long cape hangs from under the mantle at the back instead of floating off the shoulders.
