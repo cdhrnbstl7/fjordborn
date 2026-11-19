@@ -1,4 +1,5 @@
-**One-piece hood and cloak**
+**Hooded assassin coat**
 
-- The hood and shoulder mantle are now a single piece of fabric: a loose hood that peaks slightly over the brow, flowing down into a cowl that rests on the shoulders and dips toward the chest.
-- The long cape hangs from under the mantle at the back instead of floating off the shoulders.
+- A long fitted coat with a peaked hood in the same cloth, open down the front over a dark vest with buckles, and long tails that reach the boots, longer at the back.
+- Leather shoulder pieces and wrist cuffs in a trim colour.
+- In "Your Viking", **Coat** sets the coat and hood colour and **Trim** sets the shoulders and cuffs.
