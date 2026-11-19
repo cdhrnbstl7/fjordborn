@@ -1,5 +1,7 @@
-**Hooded assassin coat**
+**Assassin's hood, mantle and cape**
 
-- A long fitted coat with a peaked hood in the same cloth, open down the front over a dark vest with buckles, and long tails that reach the boots, longer at the back.
-- Leather shoulder pieces and wrist cuffs in a trim colour.
-- In "Your Viking", **Coat** sets the coat and hood colour and **Trim** sets the shoulders and cuffs.
+- Deeper peaked hood with a coloured lining, joined to a shoulder mantle that dips to a point at the back.
+- A leather cape hangs from the left shoulder down the back, lined in the trim colour.
+- A cloth sash at the waist with a hanging tail and tassel.
+- Dark leather gloves.
+- **Trim** now sets the lining, cape lining and sash colour (Crimson matches the reference photos).
