@@ -320,7 +320,7 @@ body.kbonly #acts{display:none!important}
         <p>This erases your island, your gear and everything you built.</p>
         <div class="row2"><button class="btn danger" id="pWipe" type="button">Erase and restart</button><button class="btn" id="pKeep" type="button">Keep playing</button></div>
       </div>
-      <p class="keys" id="keysP"><b>Keys</b> WASD move · Space dodge: quick dash the way you hold (hold to sprint, or Shift) · F jump · Q or middle mouse lock on · mouse to look · click to strike (keep clicking for a 3-hit combo) · Shift + click heavy blow · right mouse to block, just before a hit to parry · E use · C character · Tab bag · B build · R turn piece · 1–7 tools · M map · P or Esc pause (Esc first frees the mouse)<br>The game also saves on its own every 20 seconds and whenever you leave the page.</p>
+      <p class="keys" id="keysP"><b>Keys</b> WASD move · Space dodge: dash the way you hold, backstep when still, roll when sprinting (hold Space or Shift to sprint) · F jump · Q or middle mouse lock on · mouse to look · click to strike (keep clicking for a 3-hit combo) · Shift + click heavy blow · right mouse to block, just before a hit to parry · E use · C character · Tab bag · B build · R turn piece · 1–7 tools · M map · P or Esc pause (Esc first frees the mouse)<br>The game also saves on its own every 20 seconds and whenever you leave the page.</p>
     </div>
   </div>
   <div id="bindP" hidden><div class="card plaque"><h2>Controls</h2><p class="ghint" id="bindNote">Click a slot, then press the key you want. Esc cancels, Backspace clears the slot.</p><div id="bindRows"></div><div class="row2"><button class="btn" id="bindReset" type="button">Reset to defaults</button><button class="btn go" id="bindDone" type="button">Done</button></div></div></div>
@@ -349,7 +349,7 @@ body.kbonly #acts{display:none!important}
       <h1>Fjord<em>born</em></h1>
       <p id="tagline">Washed ashore on a wild northern isle with nothing but your hands. Gather, craft, raise a hall, and wake the giant that sleeps under the Gloamwood.</p>
       <dl>
-        <dt class="kb">Keys</dt><dd class="kb">WASD move · Space dodge: quick dash the way you hold (hold to sprint, or Shift) · F jump · Q or middle mouse lock on · mouse to look · click to strike (keep clicking for a 3-hit combo) · Shift + click heavy blow · right mouse to block, just before a hit to parry · E use · Tab bag · 1–7 tools · M map · P pause</dd>
+        <dt class="kb">Keys</dt><dd class="kb">WASD move · Space dodge: dash the way you hold, backstep when still, roll when sprinting (hold Space or Shift to sprint) · F jump · Q or middle mouse lock on · mouse to look · click to strike (keep clicking for a 3-hit combo) · Shift + click heavy blow · right mouse to block, just before a hit to parry · E use · Tab bag · 1–7 tools · M map · P pause</dd>
         <dt>Touch</dt><dd>Left stick moves, push it to the rim to run. Drag anywhere to look around. Hold Block to raise your shield, and tap Leap while blocking to dodge.</dd>
       </dl>
       <button class="btn go" id="tStart" type="button">Begin the saga</button><button class="btn alt" id="tNew" type="button" hidden>New saga</button><button class="btn alt" id="tFull" type="button">Full screen</button><button class="btn alt" id="tSet" type="button">Settings</button><button class="btn alt" id="tLook" type="button">Your Viking</button>
@@ -2415,7 +2415,7 @@ function tryPlace(){if(!buildSel)return;
 
 /* ---------- combat & gathering ---------- */
 function hurtPlayer(d,raw,src){if(P.dead||!started)return;
-  if(!raw&&src){if(P.rollT>0&&P.rollT>(P.rollDur||.32)-.27)return;
+  if(!raw&&src){if(P.rollT>0&&(P.dmode==='roll'?P.rollT>.12&&P.rollT<.56:P.rollT>(P.rollDur||.32)-.27))return;
     if(P.block){const ang=Math.atan2(src.x-P.x,src.z-P.z),diff=Math.abs(((ang-P.yaw+PI)%(2*PI)+2*PI)%(2*PI)-PI),bx=P.x+Math.sin(P.yaw)*.6,bz=P.z+Math.cos(P.yaw)*.6;
       if(diff<1.8){if(P.blockT<.25+.1*skF('block')){if(src.c){src.c.stun=src.c.spec.boss?1.4:2.2;src.c.wind=0;if(src.c.spec.boss)ring.visible=false}
           sfx('parry');gainSk('block',3);burst(bx,P.y+1.2,bz,22);P.st=Math.min(maxSt(),P.st+6);warn('Parried! Strike now for double damage.');return}
@@ -2560,7 +2560,7 @@ updGapBtn();
 /* ---------- input ---------- */
 const keys={},joy={x:0,y:0,id:-1};
 /* key bindings: every keyboard action has two slots, changeable under Controls in the settings; mouse buttons stay as they are */
-const BACTS=[['Movement'],['forward','Move forward'],['back','Move back'],['left','Move left'],['right','Move right'],['roll','Dodge','tap to dash the way you hold (back if none), hold to sprint'],['sprint','Sprint'],['jump','Jump'],
+const BACTS=[['Movement'],['forward','Move forward'],['back','Move back'],['left','Move left'],['right','Move right'],['roll','Dodge','tap: dash the way you hold, backstep if still, roll if sprinting. Hold to sprint'],['sprint','Sprint'],['jump','Jump'],
   ['Combat'],['strike','Strike','the left mouse button always strikes'],['heavy','Heavy blow','hold this, then strike'],['block','Block','the right mouse button always blocks'],['lock','Lock on','the middle mouse button always locks on'],
   ['Actions'],['use','Use / pick up'],['bag','Bag'],['gear','Character'],['build','Build menu'],['rotate','Turn building piece'],['place','Place building piece'],['map','Map'],['pause','Pause'],
   ['Tools'],['hot1','Tool 1'],['hot2','Tool 2'],['hot3','Tool 3'],['hot4','Tool 4'],['hot5','Tool 5'],['hot6','Tool 6'],['hot7','Tool 7']];
@@ -2962,14 +2962,14 @@ function updPlayer(dt){P.px=P.x;P.pz=P.z;
   if(P.block)P.blockT+=dt;if(P.guardBreak>0)P.guardBreak-=dt;
   const wantRoll=(P.block&&(rollQ||jumpQ))||(rollQ&&!P.block);
   if(wantRoll&&P.rollT<=0&&P.ground&&P.st>=16&&P.atkT<=0&&!swim){P.st-=16;P.stCd=.9;P.block=false;P.back=mag<=.1;
-    /* a quick dash: about 3 m in the held direction (or straight back), keeping your facing so you can sidestep around a foe */
-    P.rollDur=P.rollT=.32;const rx=mag>.1?mx:-Math.sin(P.yaw),rz=mag>.1?mz:-Math.cos(P.yaw),rl=Math.hypot(rx,rz)||1;P.rollX=rx/rl;P.rollZ=rz/rl;
+    /* standing still: a backstep hop; sprinting: a tucked forward roll the way you run; otherwise a quick dash the way you hold, keeping your facing */
+    P.dmode=P.back?'back':(P.running||(P.cs||0)>6.6)&&!jumpQ?'roll':'dash';P.rollDur=P.rollT=P.dmode==='roll'?.62:P.dmode==='back'?.4:.32;const rx=mag>.1?mx:-Math.sin(P.yaw),rz=mag>.1?mz:-Math.cos(P.yaw),rl=Math.hypot(rx,rz)||1;P.rollX=rx/rl;P.rollZ=rz/rl;if(P.dmode==='roll')P.yaw=Math.atan2(P.rollX,P.rollZ);
     P.dashF=P.rollX*Math.sin(P.yaw)+P.rollZ*Math.cos(P.yaw);P.dashS=P.rollX*Math.cos(P.yaw)-P.rollZ*Math.sin(P.yaw);sfx('roll');jumpQ=false}
   rollQ=false;
   const run=(kd('sprint')||(kd('roll')&&T-spaceAt>.3)||Math.hypot(joy.x,joy.y)>.93)&&mag>.1&&!P.winded&&P.st>1&&!swim&&!P.block;P.running=run;
   let sp=swim?2.8*(1+.5*skF('swim')):run?8.4*(1+.15*skF('run')):5.2;if(P.atkT>0)sp*=P.heavy?.15:.4;if(P.block)sp*=.45;if(P.recT>0){P.recT-=dt;sp*=.35}if(LOCK&&!run)sp*=.85;
   if(P.block)P.yaw=angLerp(P.yaw,Math.atan2(fx,fz),Math.min(1,dt*12));
-  if(P.rollT>0){P.rollT-=dt;const D=P.rollDur||.32,q=Math.min(1,(D-P.rollT)/D),rs=16*Math.pow(1-q,1.6)+1.5;P.x+=P.rollX*rs*dt;P.z+=P.rollZ*rs*dt;P.moving=0;if(P.rollT<=0)P.recT=.12}
+  if(P.rollT>0){P.rollT-=dt;const D=P.rollDur||.32,q=Math.min(1,(D-P.rollT)/D),rs=P.dmode==='roll'?7.2*(.55+.45*Math.sin(q*PI))+.8:P.dmode==='back'?11*Math.pow(1-q,1.4)+1:16*Math.pow(1-q,1.6)+1.5;P.x+=P.rollX*rs*dt;P.z+=P.rollZ*rs*dt;P.moving=0;if(P.rollT<=0)P.recT=P.dmode==='roll'?.15:.12}
   else if(mag>.06){P.cs=P.cs==null?sp:P.cs+(sp-P.cs)*Math.min(1,dt*6);sp=P.cs;P.x+=mx*sp*dt;P.z+=mz*sp*dt;P.mvx=mx/(mag||1);P.mvz=mz/(mag||1);if(P.atkT<=0&&!P.block)P.yaw=angLerp(P.yaw,LOCK&&!run?Math.atan2(LOCK.x-P.x,LOCK.z-P.z):Math.atan2(mx,mz),Math.min(1,dt*(LOCK&&!run?12:9)));P.phase+=dt*sp*1.9;P.moving=Math.min(1,P.moving+dt*8)}
   else{P.moving=Math.max(0,P.moving-dt*8);/* a little momentum: you slide to a stop rather than freezing */if(P.cs>.4&&P.mvx!=null){P.cs*=Math.max(0,1-dt*10);P.x+=P.mvx*P.cs*dt;P.z+=P.mvz*P.cs*dt}else P.cs=null;if(LOCK&&P.rollT<=0&&P.atkT<=0)P.yaw=angLerp(P.yaw,Math.atan2(LOCK.x-P.x,LOCK.z-P.z),Math.min(1,dt*8))}
   if(run){P.st-=3.5*(1-.5*skF('run'))*dt;P.stCd=.4;gainSk('run',dt*.8);if(P.st<=1.5){P.winded=true;warn('Out of breath. Walk it off.')}}
@@ -2992,10 +2992,20 @@ function updPlayer(dt){P.px=P.x;P.pz=P.z;
   PM.foreL.rotation.x=P.block?0:-.22-Math.max(0,sw)*.45;PM.foreR.rotation.x=P.atkT>0?-.12:-.22-Math.max(0,-sw)*.45;
   PM.body.scale.y=1+Math.sin(T*2.1)*.014*(1-P.moving);
   if(P.block){PM.armL.rotation.x=-1.45;PM.armL.rotation.z=-.35}else PM.armL.rotation.z=0;PM.setShield(P.block);
-  const dq=P.rollT>0?1-P.rollT/(P.rollDur||.32):0,de=dq?Math.sin(Math.min(1,dq*1.6)*PI*.5)*(1-smooth(.55,1,dq)):0,rp=0,bp=0;
-  if(de){const f=P.dashF||0,sd=P.dashS||0;PM.legL.rotation.x=-.55*f*de+.15*de;PM.legR.rotation.x=.45*f*de+.15*de;PM.legL.rotation.z=-.3*sd*de;PM.legR.rotation.z=-.3*sd*de;PM.shinL.rotation.x=.25+.5*de;PM.shinR.rotation.x=.25+.6*de;
-    PM.armL.rotation.x=.4*f*de-.2*de;PM.armR.rotation.x=-.3*f*de-.2*de;PM.armL.rotation.z=.25*de;PM.armR.rotation.z=-.25*de}else{PM.legL.rotation.z=0;PM.legR.rotation.z=0}
-  PM.g.position.set(P.x,P.y+Math.abs(Math.sin(P.phase))*.05*P.moving-de*.16,P.z);PM.g.rotation.y=P.yaw;PM.g.rotation.z=de?-(P.dashS||0)*.16*de:0;PM.g.rotation.x=de?(P.dashF||0)*.2*de+.06*de:swim?.3:run?.13*P.moving:P.heavy&&P.atkT>0?Math.sin((1-P.atkT/P.atkDur)*PI)*.18:0;
+  const dq=P.rollT>0?1-P.rollT/(P.rollDur||.32):0,dm=P.dmode,de=dq&&dm==='dash'?Math.sin(Math.min(1,dq*1.6)*PI*.5)*(1-smooth(.55,1,dq)):0,rp=dq&&dm==='roll'?dq:0,bp=dq&&dm==='back'?dq:0;
+  PM.g.rotation.order='YXZ';let rollY=0,rollX=0;
+  if(de){const f=P.dashF||0,sd=P.dashS||0;PM.legL.rotation.x=-.7*f*de+.2*de;PM.legR.rotation.x=.6*f*de+.2*de;PM.legL.rotation.z=-.45*sd*de;PM.legR.rotation.z=-.45*sd*de;PM.shinL.rotation.x=.3+.7*de;PM.shinR.rotation.x=.3+.8*de;
+    PM.armL.rotation.x=.55*f*de-.3*de;PM.armR.rotation.x=-.45*f*de-.3*de;PM.armL.rotation.z=.4*de;PM.armR.rotation.z=-.4*de}
+  else if(bp){/* backstep: a low hop backwards, chest leaning back, feet up in front, arms out for balance, landing in a crouch */const air=Math.sin(Math.min(1,bp/.75)*PI),land=smooth(.6,.8,bp)*(1-smooth(.85,1,bp));
+    rollY=air*.16-land*.12;rollX=-.32*air+.12*land;PM.legL.rotation.x=-.55*air-.3*land;PM.legR.rotation.x=-.25*air-.2*land;PM.shinL.rotation.x=.4+.8*air+.7*land;PM.shinR.rotation.x=.3+.5*air+.8*land;
+    PM.armL.rotation.x=-.75*air;PM.armR.rotation.x=-.85*air;PM.armL.rotation.z=.35*air;PM.armR.rotation.z=-.35*air}
+  else if(rp){/* forward roll: tuck, tumble once over the shoulders, and come up on your feet */const tuck=Math.sin(Math.min(1,rp/.9)*PI)*(1-smooth(.8,1,rp))+smooth(0,.12,rp)*(1-smooth(.75,.95,rp));
+    rollX=smooth(.06,.86,rp)*PI*2;PM.legL.rotation.x=-1.25*tuck;PM.legR.rotation.x=-1.05*tuck;PM.shinL.rotation.x=.05+1.9*tuck;PM.shinR.rotation.x=.05+1.7*tuck;
+    PM.armL.rotation.x=-1.0*tuck;PM.armR.rotation.x=-.9*tuck;PM.armL.rotation.z=-.25*tuck;PM.armR.rotation.z=.25*tuck;PM.foreL.rotation.x=-.9*tuck;PM.foreR.rotation.x=-.9*tuck;PM.head.rotation.x=.5*tuck}
+  else{PM.legL.rotation.z=0;PM.legR.rotation.z=0;if(PM.head.rotation.x)PM.head.rotation.x=0}
+  PM.g.position.set(P.x,P.y+Math.abs(Math.sin(P.phase))*.05*P.moving-de*.2+rollY,P.z);
+  if(rp){/* tumble around the waist, not the feet */const h=.55,c=Math.cos(rollX),sn=Math.sin(rollX);PM.g.position.x-=Math.sin(P.yaw)*h*sn;PM.g.position.z-=Math.cos(P.yaw)*h*sn;PM.g.position.y+=h-h*c-.18*Math.sin(rp*PI)}
+  PM.g.rotation.y=P.yaw;PM.g.rotation.z=de?-(P.dashS||0)*.22*de:0;PM.g.rotation.x=rp||bp?rollX:de?(P.dashF||0)*.24*de+.08*de:swim?.3:run?.13*P.moving:P.heavy&&P.atkT>0?Math.sin((1-P.atkT/P.atkDur)*PI)*.18:0;
   PM.shadow.position.set(P.x,Math.max(gh,0)+.07,P.z);PM.shadow.visible=!swim}
 let camCur=9,xrayOn=false,xrayT=0;
 function setXray(on){if(on===xrayOn)return;xrayOn=on;for(const x of PM.xr)x.visible=on}
