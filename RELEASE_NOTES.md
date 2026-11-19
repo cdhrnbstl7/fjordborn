@@ -1,3 +1,4 @@
-**Capelet fitted like real cloth**
+**Hooded Coat: one garment**
 
-- The hood's capelet is now fitted to the body with the arms held out in a T, then the arms are lowered and the cloth comes down with them. It rests over the shoulders and upper arms and moves with them when you swing or raise your arms.
+- The coat, hood and cape are now a single item, the **Hooded Coat** (6 hide and 1 resin at the Workbench). The hood rests straight on the coat's shoulders and the cape hangs from the back of the coat, so there's no extra shoulder layer bunching over the arms.
+- The separate Hood and Cape item and its slot are gone.
