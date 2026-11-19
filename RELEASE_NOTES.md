@@ -1,6 +1,6 @@
-**Tailored assassin coat**
+**Clothing you craft and wear**
 
-- The coat is cut like the reference: fitted through the chest, cut away at the front from the waist, with straight tails that fall to just above the knee at the back, pointed corners and a centre-back vent.
-- Lined tails, piping along the hem and front edges, and buttons down both front edges and at the small of the back.
-- The tails follow your legs a little as you walk so they don't cut through them.
-- **Trim** sets the lining, piping and sash; Bone White matches the reference.
+- You now start with only a loincloth. Every piece of clothing is a separate item you craft at the Workbench and can put on or take off.
+- New items: Wool Shirt, Wool Trousers, Leather Boots, Belt and Sash, Leather Vest, Gloves and Bracers, Hood and Cape (hood, mantle and cape in one piece) and Long Coat. The Hide Tunic and Ember Helm still work as before.
+- The Gear tab shows a slot for each piece: Head, Hood and cape, Coat, Vest, Shirt, Hands, Waist, Legs and Feet. Tap a slot to take that piece off.
+- Coats, the Hide Tunic and the Hood and Cape keep out the Hoarfell cold. Armour now adds up across everything you wear.
