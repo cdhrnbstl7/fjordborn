@@ -1,7 +1,5 @@
-**Assassin's hood, mantle and cape**
+**Rebuilt hood**
 
-- Deeper peaked hood with a coloured lining, joined to a shoulder mantle that dips to a point at the back.
-- A leather cape hangs from the left shoulder down the back, lined in the trim colour.
-- A cloth sash at the waist with a hanging tail and tassel.
-- Dark leather gloves.
-- **Trim** now sets the lining, cape lining and sash colour (Crimson matches the reference photos).
+- The hood is now its own loose garment instead of a cap shaped around the head: it stands off the skull, comes to a soft point over the brow, and keeps the face in shadow.
+- The face opening is heart-shaped, and the two front panels cross in a V on the chest instead of hugging the neck.
+- The back falls to a long point between the shoulders.
