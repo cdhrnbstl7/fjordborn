@@ -10,7 +10,7 @@ rm -rf dist; export WINEDEBUG=-all
 npx electron-builder --win dir --x64 --publish never 2>&1 | grep -E "icon and details|⨯" || true
 test -f dist/win-unpacked/resources/app-update.yml
 N=$(dirname $(dirname $(find /root/.cache/electron-builder/nsis-3.0.4.1 -path "*linux/makensis")))
-(cd build && NSISDIR=$N $N/linux/makensis -V2 -DVER=$V installer.nsi)
+(cd build && NSISDIR=$N $N/linux/makensis -V2 -DVER=$V manual-installer.nsi.txt)
 EXE=dist/Fjordborn-Setup-$V.exe; test -f $EXE
 SHA=$(openssl dgst -sha512 -binary $EXE | base64 -w0); SIZE=$(stat -c %s $EXE); NOW=$(date -u +%Y-%m-%dT%H:%M:%S.000Z)
 cat > dist/latest.yml <<YML

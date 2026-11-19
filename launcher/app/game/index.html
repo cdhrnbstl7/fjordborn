@@ -127,6 +127,7 @@ button:focus-visible{outline:2px solid var(--rune);outline-offset:2px}
 .slot s{position:absolute;left:4px;top:0;font-size:10px;text-decoration:none;color:var(--dim)}
 #joy{left:calc(var(--sl) + 6px);bottom:calc(var(--sb) + 6px);width:124px;height:124px;border-radius:50%;background:#0005;border:2px solid #eadcbe55;pointer-events:auto;display:none;touch-action:none}
 #joy i{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px;border-radius:50%;background:#eadcbe99;border:2px solid var(--edge)}
+body.kbonly #acts{display:none!important}
 #acts{right:var(--sr);bottom:var(--sb);display:grid;grid-template-columns:repeat(2,auto);gap:8px;pointer-events:auto;justify-items:end}
 #acts button{width:60px;height:60px;border-radius:50%;background:#1a140ed9;border:2px solid var(--edge);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;touch-action:none}
 #acts button:active{background:var(--ember);color:#1a120a}
@@ -436,6 +437,8 @@ $('pRot').addEventListener('click',()=>setRotPref(!rotPref));
 layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
 const EDITION='desktop';/* build_editions.py sets 'phone' or 'desktop' */
+/* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
+if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
 let QL=EDITION==='desktop'?2:EDITION==='phone'?1:(isTouch()?1:2);
 try{const o=localStorage.getItem('fjordborn-gfx');if(o==='hi')QL=2;else if(o==='lo')QL=1;const q=localStorage.getItem('fjordborn-gq');if(q!==null&&+q>=0&&+q<=3)QL=+q}catch(e){}
 if(/forcehq/.test(location.hash))QL=Math.max(QL,2);if(/forceultra/.test(location.hash))QL=3;if(/forcelow/.test(location.hash))QL=0;
@@ -1733,22 +1736,42 @@ function cmats(){if(CMAT)return CMAT;const M=(c,map,r,ex)=>{const m=new THREE.Me
 const cadd=(par,geo,mat,x,y,z,rx,ry,rz,sx,sy,sz)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x||0,y||0,z||0);m.rotation.set(rx||0,ry||0,rz||0);m.scale.set(sx||1,sy||sx||1,sz||sx||1);par.add(m);return m};
 const cS=(r,w,h)=>new THREE.SphereGeometry(r,w||16,h||12),cC=(a,b,h,n)=>new THREE.CylinderGeometry(a,b,h,n||12),cK=(r,h,n)=>new THREE.ConeGeometry(r,h,n||10),cI=(r,d)=>new THREE.IcosahedronGeometry(r,d==null?1:d);
 const pivot=(par,x,y,z)=>{const p=new THREE.Group();p.position.set(x,y,z);par.add(p);return p};
+/* a smooth body grown along z from cross-sections [z,y,rx,ry] (vertical=true grows downward along y for legs: [_,y,rx,rz]); closed ends, fur-friendly UVs */
+const LOFTC=new Map();function loftGeo(secs,seg,vertical){const key=JSON.stringify([secs,seg,vertical]);if(LOFTC.has(key))return LOFTC.get(key);seg=seg||16;
+  const S=[];for(let i=0;i<secs.length-1;i++){const a=secs[i],b=secs[i+1];for(let k=0;k<3;k++){const t=k/3,u=t*t*(3-2*t);S.push(a.map((v,j)=>v+(b[j]-v)*(j<2?t:u)))}}S.push(secs[secs.length-1]);
+  const pos=[],uv=[],idx=[],n=S.length;
+  for(let i=0;i<n;i++){const [z,y,rx,ry]=S[i];for(let k=0;k<=seg;k++){const a=k/seg*6.283,ca=Math.cos(a),sa=Math.sin(a);if(vertical)pos.push(sa*rx,y,ca*ry);else pos.push(sa*rx,y+ca*ry,z);uv.push(k/seg,i/(n-1)*2)}}
+  for(let i=0;i<n-1;i++)for(let k=0;k<seg;k++){const a=i*(seg+1)+k,b=a+seg+1;if(vertical)idx.push(a,a+1,b,a+1,b+1,b);else idx.push(a,b,a+1,a+1,b,b+1)}
+  for(const [i,flip] of[[0,!vertical],[n-1,!!vertical]]){const c=pos.length/3,[z,y]=S[i];if(vertical)pos.push(0,y,0);else pos.push(0,y,z);uv.push(.5,.5);for(let k=0;k<seg;k++){const a=i*(seg+1)+k;if(flip)idx.push(c,a+1,a);else idx.push(c,a,a+1)}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();LOFTC.set(key,g);return g}
 const MODELS={
   boar(){const m=cmats(),g=new THREE.Group();
-    cadd(g,cS(.5,20,14),m.boarFur,0,.78,0,0,0,0,.76,.74,1.25);cadd(g,cS(.34,16,12),m.boarFur,0,.82,.62,0,0,0,.82,.86,.9);
-    cadd(g,cS(.17,12,10),m.boarDark,0,1.1,.05,0,0,0,.9,.9,3.6);cadd(g,cC(.13,.16,.3,14),m.boarFur,0,.73,.9,PI/2);cadd(g,cC(.13,.13,.04,16),m.snout,0,.73,1.06,PI/2);
-    for(const sd of[1,-1]){cadd(g,cK(.035,.24,8),m.ivory,sd*.12,.7,1.0,-1.0,0,sd*.35);cadd(g,cS(.03,8,6),m.eye,sd*.15,.92,.86);cadd(g,cK(.07,.18,8),m.boarDark,sd*.18,1.1,.58,0,0,-sd*.55)}
-    cadd(g,cC(.03,.015,.22,6),m.boarDark,0,.88,-.64,-.9);
-    const legs=[[.2,.42],[-.2,.42],[.2,-.42],[-.2,-.42]].map(([x,z])=>{const p=pivot(g,x,.56,z);cadd(p,cC(.07,.055,.5),m.boarDark,0,-.25,0);cadd(p,cC(.055,.06,.07),m.hoof,0,-.53,0);return p});
-    return{g,legs,arms:[]}},
+    /* a wild boar: heavy forequarters with a high shoulder hump, narrow hips, wedge head, bristle crest */
+    cadd(g,loftGeo([[-.74,.84,.04,.04],[-.66,.84,.2,.24],[-.45,.86,.31,.36],[-.12,.88,.36,.43],[.2,.94,.39,.49],[.42,.94,.37,.47],[.62,.88,.3,.38],[.74,.84,.2,.25]]),m.boarFur,0,0,0);
+    cadd(g,loftGeo([[-.6,1.12,.02,.02],[-.3,1.22,.05,.07],[.1,1.33,.06,.1],[.4,1.34,.06,.1],[.66,1.18,.04,.06],[.8,1.06,.02,.02]],8),m.boarDark,0,0,0);
+    const head=pivot(g,0,.9,.66);cadd(head,loftGeo([[-.14,0,.18,.22],[.04,-.02,.2,.22],[.2,-.08,.16,.17],[.34,-.14,.11,.12],[.47,-.18,.09,.09],[.5,-.18,.085,.085]]),m.boarFur,0,0,0);
+    cadd(head,cC(.085,.09,.04,16),m.snout,0,-.18,.51,PI/2);
+    for(const sd of[1,-1]){cadd(head,cK(.026,.2,8),m.ivory,sd*.08,-.2,.36,-1.2,0,sd*.5);cadd(head,cS(.024,8,6),m.eye,sd*.12,.04,.15);cadd(head,cK(.06,.16,8),m.boarDark,sd*.13,.2,-.02,-.3,0,-sd*.5)}
+    const tail=pivot(g,0,.88,-.72);cadd(tail,cC(.018,.01,.24,6),m.boarDark,0,-.1,-.04,-.35);cadd(tail,cS(.035,8,6),m.boarDark,0,-.22,-.08,0,0,0,.7,1.4,.7);
+    const legs=[],knees=[];for(const [x,z,fr] of[[.19,.4,1],[-.19,.4,1],[.18,-.44,0],[-.18,-.44,0]]){const p=pivot(g,x,.62,z);cadd(p,loftGeo([[0,0,.1,.12],[0,-.14,.08,.09],[0,-.28,.05,.055]],10,true),m.boarDark,0,0,0);
+      const k=pivot(p,0,-.28,fr?0:-.02);cadd(k,cC(.045,.035,.26,8),m.boarDark,0,-.13,0);cadd(k,cC(.04,.05,.07,8),m.hoof,0,-.29,.01);legs.push(p);knees.push(k)}
+    return{g,legs,arms:[],knees,head,tail}},
   deer(){const m=cmats(),g=new THREE.Group();
-    cadd(g,cS(.5,20,14),m.deerFur,0,1.25,0,0,0,0,.6,.62,1.25);cadd(g,cS(.45,18,12),m.deerPale,0,1.12,0,0,0,0,.52,.42,1.1);
-    cadd(g,cC(.12,.16,.72,12),m.deerFur,0,1.66,.56,.62);cadd(g,cS(.18,16,12),m.deerFur,0,1.98,.82,0,0,0,.8,.85,1.45);cadd(g,cS(.1,12,10),m.deerPale,0,1.92,1.04,0,0,0,.8,.75,1.2);
-    cadd(g,cS(.04,8,6),m.eye,0,1.93,1.15);cadd(g,cS(.08,10,8),m.deerPale,0,1.36,-.62);
-    for(const sd of[1,-1]){cadd(g,cS(.028,8,6),m.eye,sd*.1,2.02,.94);cadd(g,cK(.05,.18,8),m.deerFur,sd*.13,2.1,.72,0,0,-sd*1.0);
-      cadd(g,cC(.022,.034,.58,6),m.antler,sd*.12,2.32,.76,0,0,-sd*.45);cadd(g,cC(.016,.024,.26,6),m.antler,sd*.24,2.5,.84,-.6,0,-sd*.2);cadd(g,cC(.014,.022,.22,6),m.antler,sd*.3,2.58,.7,.5,0,-sd*.7)}
-    const legs=[[.16,.48],[-.16,.48],[.16,-.48],[-.16,-.48]].map(([x,z])=>{const p=pivot(g,x,1.02,z);cadd(p,cC(.05,.033,.95),m.deerFur,0,-.48,0);cadd(p,cC(.035,.04,.06),m.eye,0,-.97,0);return p});
-    return{g,legs,arms:[]}},
+    /* a fallow buck: slim barrel, tucked belly, upright neck, white rump and spots, palmate antlers */
+    cadd(g,loftGeo([[-.66,1.3,.05,.05],[-.58,1.28,.2,.25],[-.32,1.26,.26,.3],[0,1.24,.26,.32],[.3,1.28,.25,.33],[.52,1.36,.2,.27],[.66,1.5,.14,.18]]),m.deerFur,0,0,0);
+    cadd(g,loftGeo([[-.6,1.15,.08,.1],[-.2,1.06,.2,.12],[.25,1.08,.2,.12],[.45,1.14,.12,.08]]),m.deerPale,0,0,0);
+    cadd(g,cS(.17,12,10),m.deerPale,0,1.3,-.62,0,0,0,1,1.1,.4);
+    cadd(g,loftGeo([[0,0,.13,.15],[.18,.3,.1,.12],[.3,.55,.08,.1]],10),m.deerFur,0,1.4,.55,-.25);
+    for(let i=0;i<14;i++){const a=i*2.4,zz=-.45+(i%7)*.13,yy=1.42+Math.sin(a)*.08;cadd(g,cS(.022,6,4),m.deerPale,(i%2?1:-1)*(.18+Math.cos(a)*.03),yy,zz,0,0,0,1,.6,1)}
+    const head=pivot(g,0,1.95,.86);cadd(head,loftGeo([[-.08,0,.09,.11],[.06,-.02,.1,.11],[.18,-.07,.075,.08],[.3,-.13,.05,.055],[.34,-.15,.045,.045]]),m.deerFur,0,0,0);
+    cadd(head,cS(.03,8,6),m.eye,0,-.15,.35);
+    for(const sd of[1,-1]){cadd(head,cS(.022,8,6),m.eye,sd*.085,.0,.08);cadd(head,cK(.045,.2,8),m.deerFur,sd*.12,.08,-.04,-.4,0,-sd*1.1);
+      const an=pivot(head,sd*.06,.1,-.02);an.rotation.set(-.35,0,-sd*.35);cadd(an,cC(.018,.026,.42,6),m.antler,0,.21,0);cadd(an,cC(.012,.016,.16,6),m.antler,0,.16,.07,1.0);
+      cadd(an,cS(.12,10,6),m.antler,sd*.04,.5,-.05,0,0,-sd*.3,.95,.85,.18);for(let k=0;k<4;k++)cadd(an,cK(.014,.12,5),m.antler,sd*(.02+k*.04),.6+k*.02,-.08-k*.03,-.4,0,-sd*(.2+k*.25))}
+    const tail=pivot(g,0,1.32,-.66);cadd(tail,cC(.035,.02,.2,6),m.deerFur,0,-.08,-.03,-.4);cadd(tail,cC(.03,.02,.18,6),m.deerPale,0,-.09,-.01,-.4);
+    const legs=[],knees=[];for(const [x,z,fr] of[[.13,.42,1],[-.13,.42,1],[.13,-.46,0],[-.13,-.46,0]]){const p=pivot(g,x,1.12,z);cadd(p,loftGeo([[0,.08,.08,.12],[0,-.18,.055,.07],[0,-.44,.035,.04]],10,true),m.deerFur,0,0,fr?0:-.04,fr?0:.25);
+      const k=pivot(p,0,-.44,fr?0:-.1);k.userData.rest=fr?0:-.25;k.rotation.x=k.userData.rest;cadd(k,cC(.03,.022,.55,6),m.deerFur,0,-.27,0);cadd(k,cC(.026,.03,.05,6),m.eye,0,-.56,.01);legs.push(p);knees.push(k)}
+    return{g,legs,arms:[],knees,head,tail}},
   wight(){const m=cmats(),g=new THREE.Group();
     const tg=new THREE.LatheGeometry([[.28,.6],[.4,.9],[.36,1.3],[.31,1.6],[.36,1.85],[.2,2.0],[0,2.05]].map(([r,y])=>new THREE.Vector2(r,y)),10);
     {const pa=tg.attributes.position;for(let i=0;i<pa.count;i++){const x=pa.getX(i),z=pa.getZ(i),y=pa.getY(i),a=y*.9,c=Math.cos(a),s=Math.sin(a);pa.setX(i,x*c-z*s);pa.setZ(i,x*s+z*c)}tg.computeVertexNormals()}
@@ -1759,12 +1782,17 @@ const MODELS={
     const legs=[1,-1].map(sd=>{const p=pivot(g,sd*.17,.64,0);cadd(p,cC(.11,.08,.62,7),m.bark,0,-.31,0);cadd(p,cI(.11),m.bark,0,-.62,.06,0,0,0,1,.5,1.4);return p});
     return{g,legs,arms}},
   wolf(){const m=cmats(),g=new THREE.Group();
-    cadd(g,cS(.5,20,14),m.wolfFur,0,.9,0,0,0,0,.52,.55,1.3);cadd(g,cS(.36,16,12),m.wolfFur,0,.98,.45,0,0,0,1,1.05,.9);cadd(g,cS(.3,14,10),m.wolfDark,0,1.12,-.05,0,0,0,.62,.38,2.2);
-    cadd(g,cS(.24,16,12),m.wolfFur,0,1.12,.92,0,0,0,.85,.85,1.1);cadd(g,cC(.07,.11,.34,12),m.wolfFur,0,1.04,1.18,PI/2);cadd(g,cS(.04,8,6),m.eye,0,1.06,1.35);
-    for(const sd of[1,-1]){cadd(g,cK(.065,.2,8),m.wolfDark,sd*.1,1.33,.86);cadd(g,cS(.03,8,6),m.glowB,sd*.09,1.17,1.11)}
-    cadd(g,cC(.1,.04,.72,10),m.wolfFur,0,.95,-.86,-1.0);
-    const legs=[[.17,.5],[-.17,.5],[.17,-.5],[-.17,-.5]].map(([x,z])=>{const p=pivot(g,x,.64,z);cadd(p,cC(.06,.045,.62),m.wolfFur,0,-.31,0);cadd(p,cS(.06,10,8),m.wolfDark,0,-.63,.03,0,0,0,1,.6,1.3);return p});
-    return{g,legs,arms:[]}},
+    /* a grey wolf: deep chest, tucked waist, thick ruff, long muzzle, pointed ears, low bushy tail */
+    cadd(g,loftGeo([[-.62,.98,.05,.05],[-.55,.98,.17,.2],[-.3,1.0,.2,.22],[-.02,1.0,.21,.25],[.22,.98,.25,.33],[.42,1.0,.26,.36],[.58,1.06,.22,.3],[.68,1.12,.15,.18]]),m.wolfFur,0,0,0);
+    cadd(g,loftGeo([[-.5,1.08,.14,.1],[-.1,1.1,.19,.14],[.3,1.12,.23,.2],[.55,1.17,.2,.17]],12),m.wolfDark,0,.012,0,0,0,0,1,1,1);
+    cadd(g,cS(.26,14,10),m.wolfFur,0,1.08,.56,0,0,0,1.15,1.2,.8);
+    const head=pivot(g,0,1.2,.74);cadd(head,loftGeo([[-.1,0,.13,.14],[.04,.0,.14,.13],[.15,-.04,.1,.09],[.28,-.07,.065,.06],[.4,-.09,.045,.045],[.43,-.09,.035,.035]]),m.wolfFur,0,0,0);
+    cadd(head,cS(.03,8,6),m.eye,0,-.08,.43);cadd(head,loftGeo([[.02,-.08,.08,.04],[.3,-.12,.05,.025]],8),m.wolfDark,0,0,0);
+    for(const sd of[1,-1]){cadd(head,cK(.055,.16,6),m.wolfDark,sd*.08,.15,-.02,-.15,0,-sd*.25);cadd(head,cS(.024,8,6),m.glowB,sd*.075,.04,.13)}
+    const tail=pivot(g,0,1.02,-.6);cadd(tail,loftGeo([[0,0,.05,.05],[-.18,-.12,.09,.1],[-.38,-.3,.08,.09],[-.52,-.44,.04,.05],[-.56,-.48,.02,.02]],10),m.wolfFur,0,0,0);
+    const legs=[],knees=[];for(const [x,z,fr] of[[.15,.46,1],[-.15,.46,1],[.15,-.48,0],[-.15,-.48,0]]){const p=pivot(g,x,.84,z);cadd(p,loftGeo([[0,.08,.1,.13],[0,-.14,.075,.09],[0,-.32,.05,.055]],10,true),m.wolfFur,0,0,0);
+      const k=pivot(p,0,-.32,fr?0:-.06);k.userData.rest=fr?0:-.2;k.rotation.x=k.userData.rest;cadd(k,cC(.046,.036,.4,8),m.wolfFur,0,-.2,0);cadd(k,cS(.055,10,8),m.wolfDark,0,-.42,.03,0,0,0,1,.55,1.4);legs.push(p);knees.push(k)}
+    return{g,legs,arms:[],knees,head,tail}},
   giant(){const m=cmats(),g=new THREE.Group();
     cadd(g,cI(.62),m.stone,0,2.05,0,0,0,0,1,.95,.68);cadd(g,cI(.48),m.stoneDark,0,1.35,0,0,0,0,1,.8,.75);cadd(g,cI(.42),m.stone,.78,2.52,0);cadd(g,cI(.42),m.stone,-.78,2.52,0,.6);
     cadd(g,cI(.32),m.stoneDark,0,2.96,.1,0,0,0,.95,.9,.9);cadd(g,cI(.28),m.moss,-.72,2.88,-.05);cadd(g,cI(.22),m.moss,.48,2.66,-.32);
@@ -1802,7 +1830,7 @@ function spawnCreature(type,x,z){const s=CREAT[type],m=MODELS[type](),sc=s.scale
   const sh=new THREE.Mesh(SHADOWG,SHADOWM);sh.rotation.x=-PI/2;sh.position.y=.06;sh.scale.setScalar(s.r*1.3/sc);m.g.add(sh);
   const bar=new THREE.Sprite(new THREE.SpriteMaterial({color:0xd0483c}));bar.scale.set(1.2/sc,.13/sc,1);bar.position.y=s.barY/sc;bar.visible=false;m.g.add(bar);
   const y=getH(x,z);m.g.position.set(x,y,z);scene.add(m.g);
-  const tier=s.boss?1:1+.45*(boss===2)+.45*(boss2===2);const c={type,spec:s,tier,mhp:s.hp*tier,g:m.g,legs:m.legs,arms:m.arms,meshes,bar,x,z,y,yaw:Math.random()*6.28,hp:s.hp*tier,cd:1,wind:0,tT:0,wx:0,wz:0,phase:0,flash:0,kx:0,kz:0,sx:0,sz:0,mad:false};
+  const tier=s.boss?1:1+.45*(boss===2)+.45*(boss2===2);const c={type,spec:s,tier,mhp:s.hp*tier,g:m.g,legs:m.legs,arms:m.arms,knees:m.knees||[],head:m.head||null,tail:m.tail||null,meshes,bar,x,z,y,yaw:Math.random()*6.28,hp:s.hp*tier,cd:1,wind:0,tT:0,wx:0,wz:0,phase:0,flash:0,kx:0,kz:0,sx:0,sz:0,mad:false};
   creatures.push(c);return c}
 function setFlash(c,on){for(const p of c.meshes)p[0].material=on?FLASHM:p[1]}
 function removeCreature(c){scene.remove(c.g);c.bar.material.dispose();const i=creatures.indexOf(c);if(i>=0)creatures.splice(i,1)}
@@ -2388,6 +2416,11 @@ function updCreature(c,dt){const s=c.spec,dx=P.x-c.x,dz=P.z-c.z,dp=Math.hypot(dx
   const sw=moving?Math.sin(c.phase)*.7:0;
   for(let i=0;i<c.legs.length;i++)c.legs[i].rotation.x=(i===0||i===3||(c.legs.length===2&&i===0))?sw:-sw;
   if(c.legs.length===2){c.legs[0].rotation.x=sw;c.legs[1].rotation.x=-sw}
+  /* jointed stride: the lower leg folds back as each foot swings forward; heads nod with the gait, look about or graze when idle; tails swish */
+  for(let i=0;i<c.knees.length;i++){const k=c.knees[i],ph=c.phase+((i===0||i===3)?0:PI),rest=k.userData.rest||0;k.rotation.x=rest+(moving?Math.max(0,-Math.cos(ph))*(i<2?1.1:.7):0)}
+  if(c.head){const idle=!moving&&c.wind<=0,graze=idle&&c.type==='deer'&&!c.mad&&Math.sin(T*.25+c.x*.7)>.15;c.head.rotation.x=lerp(c.head.rotation.x,moving?Math.sin(c.phase*2)*.06+(c.wind>0?.25:0):graze?.95:Math.sin(T*.6+c.z)*.08,Math.min(1,dt*3));
+    c.head.rotation.y=lerp(c.head.rotation.y,idle&&!graze?Math.sin(T*.45+c.x)*.35:0,Math.min(1,dt*2))}
+  if(c.tail)c.tail.rotation.y=Math.sin(T*(moving?7:2.2)+c.x)*(moving?.3:.18);
   for(let i=0;i<c.arms.length;i++)c.arms[i].rotation.x=c.wind>0&&c.atk==='throw'?(i?-.4:lerp(-1,-3.1,Math.min(1,wp*1.4))):c.wind>0?(s.boss?lerp(-3,-.2,Math.pow(wp,6)):-1.9+Math.sin(wp*PI)*.5):(i?sw:-sw)*.6;
   if(c.flash>0){c.flash-=dt;if(c.flash<=0)setFlash(c,false)}
   if(s.boss)$('bossF').style.width=Math.max(0,c.hp/s.hp*100)+'%'}
@@ -2882,7 +2915,8 @@ function triBreak(){const by={};const fr=new THREE.Frustum().setFromProjectionMa
 /* hidden model preview for development (#preview in the link): one model in a small lit scene with the game's own materials */
 let PREV=null;window.FJ_PREVIEW=(list,camPos,look,sky)=>{const sc=new THREE.Scene();sc.background=new THREE.Color(sky||0x9fc3e0);sc.add(new THREE.HemisphereLight(0xdfeeff,0x4a5a2a,.9));const sl=new THREE.DirectionalLight(0xfff2dc,2.2);sl.position.set(5,9,4);sc.add(sl);
   const gr=new THREE.Mesh(new THREE.CircleGeometry(30,48).rotateX(-PI/2),new THREE.MeshStandardMaterial({color:0x4d5f2a,roughness:1}));sc.add(gr);
-  for(const it of list){const geo=GEO[it.g],mat=it.m==='leaf'?leafMat(it.t==='P'?TEX.leafP:it.t==='C'?TEX.leafC:TEX.leafB,false):it.m==='flower'?flowerMat:it.m==='trunk'?ITEMMAT:it.m==='rock'?ROCKMAT:MAT;
+  for(const it of list){if(it.c){const mm=MODELS[it.c]();mm.g.position.set(it.x||0,it.y||0,it.z||0);mm.g.rotation.y=it.r||0;const ph=it.ph||0,sw=Math.sin(ph)*.7;(mm.legs||[]).forEach((l,i)=>l.rotation.x=(i===0||i===3)?sw:-sw);(mm.knees||[]).forEach((k,i)=>{const q=ph+((i===0||i===3)?0:PI);k.rotation.x=(k.userData.rest||0)+Math.max(0,-Math.cos(q))*(i<2?1.1:.7)});if(mm.head&&it.hx)mm.head.rotation.x=it.hx;sc.add(mm.g);continue}
+    const geo=GEO[it.g],mat=it.m==='leaf'?leafMat(it.t==='P'?TEX.leafP:it.t==='C'?TEX.leafC:TEX.leafB,false):it.m==='flower'?flowerMat:it.m==='trunk'?ITEMMAT:it.m==='rock'?ROCKMAT:MAT;
     const m=new THREE.InstancedMesh(geo,mat,1);D.position.set(it.x||0,it.y||0,it.z||0);D.quaternion.setFromAxisAngle(UP,it.r||0);D.scale.setScalar(it.s||1);D.updateMatrix();m.setMatrixAt(0,D.matrix);const tt=it.tint||[1,1,1];m.setColorAt(0,_c.setRGB(tt[0],tt[1],tt[2]));m.instanceColor.needsUpdate=true;m.frustumCulled=false;sc.add(m)}
   const cam=new THREE.PerspectiveCamera(40,innerWidth/innerHeight,.02,200);cam.position.set(...camPos);cam.lookAt(...look);PREV={sc,cam};$('title').style.visibility='hidden';return'preview '+list.length};
 function frame(t){requestAnimationFrame(frame);if(PREV){GU.value=t/1000;renderer.setRenderTarget(null);renderer.render(PREV.sc,PREV.cam);return}if(GFX.fps){fpsN++;if(t-fpsT>500){fpsEl.textContent=Math.round(fpsN*1000/(t-fpsT))+' fps';fpsN=0;fpsT=t}}const raw=t-last,dt=Math.min(.05,(t-last)/1000||0);last=t;
