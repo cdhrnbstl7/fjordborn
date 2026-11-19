@@ -1,3 +1,4 @@
-**Vibrant colours are back**
+**Photo-scanned ground**
 
-- The muted colour grade and grey sky from 1.7.0 are undone; the game is back to its bright, saturated look.
+- The ground now uses real photographed surfaces instead of painted ones: grassy turf with soil showing through, a forest floor of leaves, twigs and moss, packed dirt with pebbles, mossy rock faces, and fine beach sand.
+- Scans are CC0 (free to use) from Poly Haven. Colours stay bright.
