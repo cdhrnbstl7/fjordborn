@@ -47,6 +47,16 @@ body{position:fixed;inset:0}
 #gfxP .lt{padding:6px 11px;font-size:13.5px}
 #gfxP .lt.on{background:var(--ember);color:#1c1108}
 #gfxP .ghint{margin:0;font-size:12.5px;color:var(--dim)}
+#bindP{right:var(--sr);top:var(--st);bottom:var(--sb);width:min(420px,calc(100% - 32px));pointer-events:auto;display:flex;align-items:center;z-index:6}
+#bindP .card{width:100%;max-height:100%;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;touch-action:pan-y}
+#bindP h2{font-family:var(--display);font-weight:700;font-size:34px;line-height:.95;margin:0}
+#bindP h3{margin:8px 0 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember)}
+#bindP .brow{display:grid;grid-template-columns:1fr 92px 92px;gap:6px;align-items:center}
+#bindP .brow>span{font-size:14px}
+#bindP .brow small{display:block;color:var(--dim);font-size:11.5px}
+#bindP .bk{padding:6px 4px;font-size:13px;min-height:32px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bindP .bk.empty{opacity:.5}#bindP .bk.wait{background:var(--ember);color:#1c1108}#bindP .bk.dup{box-shadow:inset 0 0 0 2px #e0a040}
+#bindP .ghint{margin:0;font-size:12.5px;color:var(--dim)}#bindP .row2{display:flex;gap:8px}
 #moveP{right:var(--sr);top:var(--st);bottom:var(--sb);width:min(380px,calc(100% - 32px));pointer-events:auto;display:flex;align-items:center;z-index:6}
 #moveP .card{width:100%;max-height:100%;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;touch-action:pan-y}
 #moveP h2{font-family:var(--display);font-weight:700;font-size:34px;line-height:.95;margin:0}
@@ -299,6 +309,7 @@ body.kbonly #acts{display:none!important}
       <button class="btn" id="pGap" type="button">Enemies appear: Every 4 minutes</button>
       <button class="btn" id="pLook" type="button" hidden>Mouse look: On</button>
       <button class="btn" id="pGfx" type="button">Graphics: High</button>
+      <button class="btn" id="pKeys" type="button">Controls (key bindings)</button>
       <button class="btn" id="pBright" type="button">Brightness: Normal</button>
       <button class="btn" id="pMove" type="button">Move your saga to another device</button>
       <button class="btn" id="pRot" type="button" hidden>Keep sideways when the phone is upright: Off</button>
@@ -312,6 +323,7 @@ body.kbonly #acts{display:none!important}
       <p class="keys" id="keysP"><b>Keys</b> WASD move · Space roll (hold to sprint, or Shift) · F jump · Q or middle mouse lock on · mouse to look · click to strike (keep clicking for a 3-hit combo) · Shift + click heavy blow · right mouse to block, just before a hit to parry · E use · C character · Tab bag · B build · R turn piece · 1–7 tools · M map · P or Esc pause (Esc first frees the mouse)<br>The game also saves on its own every 20 seconds and whenever you leave the page.</p>
     </div>
   </div>
+  <div id="bindP" hidden><div class="card plaque"><h2>Controls</h2><p class="ghint" id="bindNote">Click a slot, then press the key you want. Esc cancels, Backspace clears the slot.</p><div id="bindRows"></div><div class="row2"><button class="btn" id="bindReset" type="button">Reset to defaults</button><button class="btn go" id="bindDone" type="button">Done</button></div></div></div>
   <div id="gfxP" hidden><div class="card plaque"><h2>Graphics</h2><div id="gfxRows"></div><p class="ghint" id="gfxNote"></p><button class="btn go" id="gfxApply" type="button" hidden>Apply and reload</button><button class="btn" id="gfxDone" type="button">Done</button></div></div>
   <div id="fpsC" hidden>-- fps</div>
   <div id="moveP" hidden><div class="card plaque"><h2>Move your saga</h2>
@@ -1674,7 +1686,7 @@ const boatOf=s=>s.b||(s.b={yaw:s.rot*PI/2,spd:0,wf:1});
 function updBoats(dt){windYaw+=dt*.006*Math.sin(T*.017);
   for(const s of structs){if(s.type!=='karve')continue;const b=boatOf(s),mine=P.boat===s&&!paused&&!panelOpen&&!P.dead;let ix=0,iy=0;
     b.wf=.4+.6*Math.max(0,Math.cos(b.yaw-windYaw));
-    if(mine){ix=joy.x;iy=-joy.y;if(keys.KeyW||keys.ArrowUp)iy+=1;if(keys.KeyS||keys.ArrowDown)iy-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyA||keys.ArrowLeft)ix-=1;ix=clamp(ix,-1,1);iy=clamp(iy,-1,1);
+    if(mine){ix=joy.x;iy=-joy.y;if(kd('forward'))iy+=1;if(kd('back'))iy-=1;if(kd('right'))ix+=1;if(kd('left'))ix-=1;ix=clamp(ix,-1,1);iy=clamp(iy,-1,1);
       if(iy>.1)b.spd+=(9*b.wf*(1+.25*skF('sail'))-b.spd)*Math.min(1,dt*.35);else if(iy<-.1)b.spd+=(-1.8-b.spd)*Math.min(1,dt*.8);else b.spd*=1-Math.min(1,dt*.2);
       if(Math.abs(b.spd)>2)gainSk('sail',dt*.6);b.yaw-=ix*dt*(.28+.08*Math.abs(b.spd))}
     else b.spd*=1-Math.min(1,dt*.6);
@@ -2356,7 +2368,7 @@ function updLock(dt){if(LOCK&&!lockValid(LOCK))LOCK=null;lockMark.visible=!!LOCK
 function startAttack(){if(!started||P.dead||panelOpen||paused||P.boat)return;if(buildSel){tryPlace();return}if(P.atkT>0||P.block||P.rollT>0)return;
   const tool=(P.equip&&ITEMS[P.equip].tool)||FIST,chain=T-P.lastAtkEnd<.6&&P.combo<2,combo=chain?P.combo+1:0,fin=combo===2,cost=tool.stam*.65*(fin?1.3:1)*(1-.35*skF(wk()));
   if(P.st<cost){warn('Too winded to swing.');return}
-  const heavy=!!(keys.ShiftLeft||keys.ShiftRight)&&!P.tAtk;if(heavy&&P.st<cost*1.8){warn('Too winded for a heavy blow.');return}
+  const heavy=kd('heavy')&&!P.tAtk;if(heavy&&P.st<cost*1.8){warn('Too winded for a heavy blow.');return}
   if(heavy){P.combo=2;P.comboMul=2.1;P.st-=cost*1.8;P.stCd=.9;P.atkT=P.atkDur=tool.cd*1.75;P.hitDone=false;P.heavy=true;aimAssist();sfx('swing');return}P.heavy=false;
   P.combo=combo;P.comboMul=[1,1.15,1.7][combo];P.st-=cost;P.stCd=.6;P.atkT=P.atkDur=tool.cd*(fin?1.25:combo===1?.9:1);P.hitDone=false;aimAssist();sfx('swing')}
 function doHit(){const tool=(P.equip&&ITEMS[P.equip].tool)||FIST,fx=Math.sin(P.yaw),fz=Math.cos(P.yaw);let any=false;
@@ -2453,23 +2465,49 @@ updGapBtn();
 
 /* ---------- input ---------- */
 const keys={},joy={x:0,y:0,id:-1};
-window.addEventListener('keydown',e=>{if(!started){if(e.code==='Escape'&&!e.repeat){e.preventDefault();if(!$('gfxP').hidden)closeGfx();else if(!$('moveP').hidden)closeMove();else if(!$('lookP')||$('lookP').hidden)titleMenu(!TITLEMENU)}return}
-  if(e.code==='Space'||e.code==='Tab')e.preventDefault();
+/* key bindings: every keyboard action has two slots, changeable under Controls in the settings; mouse buttons stay as they are */
+const BACTS=[['Movement'],['forward','Move forward'],['back','Move back'],['left','Move left'],['right','Move right'],['roll','Roll / backstep','tap to roll, hold to sprint'],['sprint','Sprint'],['jump','Jump'],
+  ['Combat'],['strike','Strike','the left mouse button always strikes'],['heavy','Heavy blow','hold this, then strike'],['block','Block','the right mouse button always blocks'],['lock','Lock on','the middle mouse button always locks on'],
+  ['Actions'],['use','Use / pick up'],['bag','Bag'],['gear','Character'],['build','Build menu'],['rotate','Turn building piece'],['place','Place building piece'],['map','Map'],['pause','Pause'],
+  ['Tools'],['hot1','Tool 1'],['hot2','Tool 2'],['hot3','Tool 3'],['hot4','Tool 4'],['hot5','Tool 5'],['hot6','Tool 6'],['hot7','Tool 7']];
+const BDEF={forward:['KeyW','ArrowUp'],back:['KeyS','ArrowDown'],left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],roll:['Space',''],sprint:['ShiftLeft','ShiftRight'],jump:['KeyF',''],
+  strike:['Enter',''],heavy:['ShiftLeft','ShiftRight'],block:['',''],lock:['KeyQ',''],use:['KeyE',''],bag:['Tab','KeyI'],gear:['KeyC',''],build:['KeyB',''],rotate:['KeyR',''],place:['KeyF','Enter'],map:['KeyM',''],pause:['KeyP',''],
+  hot1:['Digit1',''],hot2:['Digit2',''],hot3:['Digit3',''],hot4:['Digit4',''],hot5:['Digit5',''],hot6:['Digit6',''],hot7:['Digit7','']};
+/* pairs that may share a key on purpose: sprint and heavy blow (hold while striking); building keys only work while building */
+const BSHARE=[['sprint','heavy'],['jump','place'],['strike','place'],['rotate','*'],['place','*']];
+let BIND=JSON.parse(JSON.stringify(BDEF));try{const b=JSON.parse(localStorage.getItem('fjordborn-keys')||'null');if(b)for(const a in BDEF)if(Array.isArray(b[a]))BIND[a]=[0,1].map(i=>typeof b[a][i]==='string'?b[a][i]:BDEF[a][i])}catch(e){}
+const kd=a=>BIND[a].some(k=>k&&keys[k]),ka=(e,a)=>!!e.code&&BIND[a].includes(e.code);
+function keyName(c){if(!c)return'—';const m={Space:'Space',Enter:'Enter',Tab:'Tab',ShiftLeft:'Left Shift',ShiftRight:'Right Shift',ControlLeft:'Left Ctrl',ControlRight:'Right Ctrl',AltLeft:'Left Alt',AltRight:'Right Alt',
+  ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→',Backquote:'`',Minus:'-',Equal:'=',BracketLeft:'[',BracketRight:']',Backslash:'\\',Semicolon:';',Quote:"'",Comma:',',Period:'.',Slash:'/',CapsLock:'Caps Lock',Backspace:'Backspace'};
+  if(m[c])return m[c];if(/^Key[A-Z]$/.test(c))return c.slice(3);if(/^Digit\d$/.test(c))return c.slice(5);if(/^Numpad/.test(c))return'Num '+c.slice(6);return c}
+let bindWait=null,bindAutoPaused=false;
+function bindDup(a,c){if(!c)return'';for(const [b] of BACTS){if(!BDEF[b]||b===a||!BIND[b].includes(c))continue;if(BSHARE.some(([x,y])=>(x===a&&(y===b||y==='*'))||(x===b&&(y===a||y==='*'))))continue;return BACTS.find(r=>r[0]===b)[1]}return''}
+function renderBind(){let h='';for(const r of BACTS){if(r.length===1){h+='<h3>'+r[0]+'</h3>';continue}const [a,lab,note]=r;h+='<div class="brow"><span>'+lab+(note?'<small>'+note+'</small>':'')+'</span>';
+    for(const i of[0,1]){const c=BIND[a][i],w=bindWait&&bindWait.a===a&&bindWait.i===i,d=bindDup(a,c);h+='<button type="button" class="btn bk'+(w?' wait':!c?' empty':'')+(d&&!w?' dup':'')+'" data-a="'+a+'" data-i="'+i+'"'+(d?' title="Also used for '+d+'"':'')+'>'+(w?'Press a key…':keyName(c))+'</button>'}h+='</div>'}
+  $('bindRows').innerHTML=h;const dups=BACTS.filter(r=>r.length>1&&BIND[r[0]].some(c=>bindDup(r[0],c)));$('bindNote').textContent=dups.length?'Orange slots share a key with another action, so one press does both. Click one to change it.':'Click a slot, then press the key you want. Esc cancels, Backspace clears the slot.'}
+function saveBind(){try{localStorage.setItem('fjordborn-keys',JSON.stringify(BIND))}catch(e){}}
+function openBind(){if(started&&!paused){setPause(true);bindAutoPaused=true}if(panelOpen)closePanel();if(typeof unlockMouse==='function')unlockMouse();bindWait=null;$('bindP').hidden=false;$('title').hidden=true;$('pause').hidden=true;renderBind()}
+function closeBind(){bindWait=null;$('bindP').hidden=true;if(bindAutoPaused){bindAutoPaused=false;setPause(false);return}if(!started&&!TITLEMENU)$('title').hidden=false;else if(paused)$('pause').hidden=false}
+window.addEventListener('keydown',e=>{if(!bindWait)return;e.preventDefault();e.stopImmediatePropagation();if(e.repeat)return;const {a,i}=bindWait;bindWait=null;
+  if(e.code==='Escape'){renderBind();return}if(e.code==='Backspace'||e.code==='Delete')BIND[a][i]='';else{BIND[a][i]=e.code;if(BIND[a][1-i]===e.code)BIND[a][1-i]=''}saveBind();renderBind()},true);
+window.addEventListener('keydown',e=>{if(!started){if(e.code==='Escape'&&!e.repeat){e.preventDefault();if(!$('bindP').hidden)closeBind();else if(!$('gfxP').hidden)closeGfx();else if(!$('moveP').hidden)closeMove();else if(!$('lookP')||$('lookP').hidden)titleMenu(!TITLEMENU)}return}
+  if(ka(e,'roll')||ka(e,'bag')||e.code==='Tab'||e.code==='Space')e.preventDefault();
   if(e.repeat)return;
-  if(paused){if(e.code==='Escape'||e.code==='KeyP')setPause(false);return}
-  keys[e.code]=true;if(e.code==='Space'){spaceAt=T;if(P.block)rollQ=true}if(e.code==='KeyF'&&!buildSel)jumpQ=true;if(e.code==='KeyQ')toggleLock();
-  if(mapOpen&&(e.code==='Escape'||e.code==='KeyM')){closeMap();return}
-  if(e.code==='KeyM'){openMap();return}
-  if(e.code==='KeyP')setPause(true);
-  else if(e.code==='Tab'||e.code==='KeyI'){if(panelOpen){closePanel();lockMouse()}else openPanel()}
-  else if(e.code==='Escape'){if(panelOpen){closePanel();lockMouse()}else if(buildSel)setBuild(null);else setPause(true)}
-  else if(e.code==='KeyE')doUse();
-  else if(e.code==='KeyC'){if(panelOpen&&tab==='gear'){closePanel();lockMouse()}else openPanel('gear')}
-  else if(e.code==='KeyB'){if(P.inv.hammer>0)openPanel('build');else toast("Craft a Builder's Mallet first.")}
-  else if(e.code==='KeyR'){if(buildSel)buildRot=(buildRot+1)%4}
-  else if(e.code==='KeyF'||e.code==='Enter'){if(buildSel)tryPlace();else if(e.code==='Enter')startAttack()}
-  else if(/^Digit[1-7]$/.test(e.code)){const own=TOOLBAR.filter(k=>P.inv[k]>0),k=own[+e.code.slice(5)-1];if(k)equip(k)}});
-window.addEventListener('keyup',e=>{if(e.code==='Space'&&keys.Space&&started&&!paused&&T-spaceAt<.3&&!P.block)rollQ=true;keys[e.code]=false});
+  if(paused){if(!$('bindP').hidden){if(e.code==='Escape')closeBind();return}if(e.code==='Escape'||ka(e,'pause'))setPause(false);return}
+  keys[e.code]=true;if(ka(e,'roll')){spaceAt=T;if(P.block)rollQ=true}if(ka(e,'jump')&&!buildSel)jumpQ=true;if(ka(e,'lock'))toggleLock();
+  if(mapOpen&&(e.code==='Escape'||ka(e,'map'))){closeMap();return}
+  if(ka(e,'map')){openMap();return}
+  if(ka(e,'pause')){setPause(true);return}
+  if(e.code==='Escape'){if(panelOpen){closePanel();lockMouse()}else if(buildSel)setBuild(null);else setPause(true);return}
+  if(ka(e,'bag')){if(panelOpen){closePanel();lockMouse()}else openPanel();return}
+  if(ka(e,'gear')){if(panelOpen&&tab==='gear'){closePanel();lockMouse()}else openPanel('gear');return}
+  if(ka(e,'build')){if(P.inv.hammer>0)openPanel('build');else toast("Craft a Builder's Mallet first.");return}
+  if(buildSel&&ka(e,'rotate')){buildRot=(buildRot+1)%4;return}
+  if(buildSel&&ka(e,'place')){tryPlace();return}
+  if(ka(e,'use'))doUse();
+  if(!buildSel&&ka(e,'strike'))startAttack();
+  for(let h=1;h<=7;h++)if(ka(e,'hot'+h)){const own=TOOLBAR.filter(k=>P.inv[k]>0),k=own[h-1];if(k)equip(k)}});
+window.addEventListener('keyup',e=>{if(ka(e,'roll')&&keys[e.code]&&started&&!paused&&T-spaceAt<.3&&!P.block)rollQ=true;keys[e.code]=false});
 window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
 let drag=null;
 canvas.addEventListener('pointerdown',e=>{if(mouseLookDown(e))return;if(drag)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now(),mouse:e.pointerType==='mouse'};try{canvas.setPointerCapture(e.pointerId)}catch(_){}});
@@ -2602,7 +2640,9 @@ $('gfxRows').addEventListener('click',e=>{const b=e.target.closest('[data-k]');i
   if(k==='preset'){const f=GFX.fps;Object.assign(GFX,GPRE[v]);GFX.fps=f}else GFX[k]=v;gfxSave();gfxLive();renderGfx()});
 $('gfxApply').addEventListener('click',()=>{gfxSave();save();wiping=true;try{location.reload()}catch(e){}});
 $('gfxDone').addEventListener('click',closeGfx);
-$('pGfx').addEventListener('click',openGfx);
+$('pGfx').addEventListener('click',openGfx);$('pKeys').addEventListener('click',openBind);if(isTouch()&&EDITION!=='desktop')$('pKeys').hidden=true;$('bindDone').addEventListener('click',closeBind);
+$('bindReset').addEventListener('click',()=>{BIND=JSON.parse(JSON.stringify(BDEF));bindWait=null;saveBind();renderBind()});
+$('bindRows').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;bindWait={a:b.dataset.a,i:+b.dataset.i};renderBind()});
 /* moving a saga between devices: every fjordborn setting and save except this device's own graphics and screen fit */
 const MV_SKIP=['fjordborn-gfx2','fjordborn-fit','fjordborn-rot','fjordborn-gq','fjordborn-gfx'];
 function sagaCode(){const o={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('fjordborn-')&&!MV_SKIP.includes(k))o[k]=localStorage.getItem(k)}}catch(e){}
@@ -2820,17 +2860,17 @@ function update(dt){T+=dt;wearTick(dt);
   saveT+=dt;if(saveT>20){saveT=0;save()}}
 function updPlayer(dt){P.px=P.x;P.pz=P.z;
   if(P.dead){P.deadT-=dt;if(P.deadT<=0)respawn();PM.g.position.set(P.x,P.y+.3,P.z);return}
-  let ix=joy.x,iy=-joy.y;if(keys.KeyW||keys.ArrowUp)iy+=1;if(keys.KeyS||keys.ArrowDown)iy-=1;if(keys.KeyD||keys.ArrowRight)ix+=1;if(keys.KeyA||keys.ArrowLeft)ix-=1;
+  let ix=joy.x,iy=-joy.y;if(kd('forward'))iy+=1;if(kd('back'))iy-=1;if(kd('right'))ix+=1;if(kd('left'))ix-=1;
   let mag=Math.hypot(ix,iy);if(mag>1){ix/=mag;iy/=mag;mag=1}
   const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),mx=fx*iy-fz*ix,mz=fz*iy+fx*ix,swim=getH(P.x,P.z)<-1;
-  const wantBlock=(P.rmb||P.tBlock)&&!swim&&!panelOpen&&!(P.guardBreak>0);
+  const wantBlock=(P.rmb||P.tBlock||kd('block'))&&!swim&&!panelOpen&&!(P.guardBreak>0);
   if(wantBlock&&!P.block&&P.rollT<=0&&P.atkT<=0){P.block=true;P.blockT=0}else if(!wantBlock)P.block=false;
   if(P.block)P.blockT+=dt;if(P.guardBreak>0)P.guardBreak-=dt;
   const wantRoll=(P.block&&(rollQ||jumpQ))||(rollQ&&!P.block);
   if(wantRoll&&P.rollT<=0&&P.ground&&P.st>=16&&P.atkT<=0&&!swim){P.st-=16;P.stCd=.9;P.block=false;P.back=mag<=.1&&!jumpQ;
     if(P.back){P.rollDur=P.rollT=.38;P.rollX=-Math.sin(P.yaw);P.rollZ=-Math.cos(P.yaw)}else{P.rollDur=P.rollT=.55;const rx=mag>.1?mx:Math.sin(P.yaw),rz=mag>.1?mz:Math.cos(P.yaw),rl=Math.hypot(rx,rz)||1;P.rollX=rx/rl;P.rollZ=rz/rl;P.yaw=Math.atan2(P.rollX,P.rollZ)}sfx('roll');jumpQ=false}
   rollQ=false;
-  const run=(keys.ShiftLeft||keys.ShiftRight||(keys.Space&&T-spaceAt>.3)||Math.hypot(joy.x,joy.y)>.93)&&mag>.1&&!P.winded&&P.st>1&&!swim&&!P.block;P.running=run;
+  const run=(kd('sprint')||(kd('roll')&&T-spaceAt>.3)||Math.hypot(joy.x,joy.y)>.93)&&mag>.1&&!P.winded&&P.st>1&&!swim&&!P.block;P.running=run;
   let sp=swim?2.8*(1+.5*skF('swim')):run?8.4*(1+.15*skF('run')):5.2;if(P.atkT>0)sp*=P.heavy?.15:.4;if(P.block)sp*=.45;if(P.recT>0){P.recT-=dt;sp*=.35}if(LOCK&&!run)sp*=.85;
   if(P.block)P.yaw=angLerp(P.yaw,Math.atan2(fx,fz),Math.min(1,dt*12));
   if(P.rollT>0){P.rollT-=dt;const D=P.rollDur||.55,rs=(P.back?7:9.5)*(.45+.55*Math.sin(Math.min(1,(D-P.rollT)/D)*PI));P.x+=P.rollX*rs*dt;P.z+=P.rollZ*rs*dt;P.moving=0;if(P.rollT<=0)P.recT=P.back?.1:.16}

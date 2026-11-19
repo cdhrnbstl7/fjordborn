@@ -1,8 +1,7 @@
-**A new hero and Souls-like movement**
+**Key bindings**
 
-- A new character: a tall, hooded wanderer in a leather cuirass, gambeson and mail, with a layered plate pauldron, gauntlets, greaves and a long tattered cloak. Your look options still apply, and there's a new Hood (up or down) choice.
-- **Space**: tap to roll (brief invincibility), tap standing still to backstep, hold to sprint
-- **F**: jump
-- **Q** or **middle mouse**: lock on to an enemy; the camera holds it and you circle it
-- **Shift + click**: a slow, heavy blow that hits much harder
-- Movement has weight: you ease into a run and slide to a stop
+- New **Controls** screen in the settings menu (Esc, then "Controls (key bindings)"), also reachable from the title screen.
+- Every keyboard action has two slots. Click a slot, then press the key you want; Backspace clears it, Esc cancels.
+- Keys that are shared by two actions are outlined in orange so you can spot clashes.
+- "Reset to defaults" puts everything back. Your bindings are saved.
+- Mouse buttons keep their jobs: left strikes, right blocks, middle locks on.
