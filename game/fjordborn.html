@@ -718,14 +718,15 @@ const WAMP={value:1},WT={value:0};
 function waveH(x,z){const att=smooth(.3,4,-getH(x,z))*WAMP.value;let h=0;for(const w of WAVES)h+=w[3]*Math.sin(w[2]*(w[0]*x+w[1]*z)-Math.sqrt(9.8*w[2])*WT.value+w[4]);return h*att}
 const waterMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.08,metalness:.1,transparent:true,opacity:1,depthWrite:false,normalMap:TEX.water,normalScale:new THREE.Vector2(.35,.35)});
 waterMat.onBeforeCompile=sh=>{sh.uniforms.uT=WT;sh.uniforms.uAmp=WAMP;sh.uniforms.tDepth={value:DEPTH_TEX};sh.uniforms.tMac={value:TEX.macro};
-  sh.uniforms.cShal={value:LC(0x3aa39c)};sh.uniforms.cDeep={value:LC(0x0e3b58)};
+  sh.uniforms.cShal={value:LC(0x3aa39c)};sh.uniforms.uHor=skyMat.uniforms.hor;sh.uniforms.cDeep={value:LC(0x0e3b58)};
   const W=WAVES.map(w=>'{float a='+w[2].toFixed(5)+'*dot(vec2('+w[0]+','+w[1]+'),p)-'+Math.sqrt(9.8*w[2]).toFixed(5)+'*uT+'+w[4].toFixed(2)+';wh+='+w[3]+'*sin(a);wg+='+(w[3]*w[2]).toFixed(5)+'*cos(a)*vec2('+w[0]+','+w[1]+');}').join('');
   sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uT,uAmp;uniform sampler2D tDepth;varying float vDepth;varying vec3 vWP;')
     .replace('#include <beginnormal_vertex>','vec2 p=(modelMatrix*vec4(position,1.0)).xz;float dep=-(texture2D(tDepth,(p+'+HALF.toFixed(1)+')/'+(HALF*2).toFixed(1)+').r*16.0-8.0);vDepth=dep;float wh=0.0;vec2 wg=vec2(0.0);'+W+'float att=smoothstep(0.3,4.0,dep)*uAmp;wh*=att;wg*=att;vec3 objectNormal=normalize(vec3(-wg.x,1.0,-wg.y));')
     .replace('#include <begin_vertex>','vec3 transformed=vec3(position.x,position.y+wh,position.z);vWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
-  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uT;uniform sampler2D tMac;uniform vec3 cShal,cDeep;varying float vDepth;varying vec3 vWP;')
-    .replace('#include <color_fragment>','#include <color_fragment>\nfloat sdep=smoothstep(0.0,4.5,vDepth);diffuseColor.rgb=mix(cShal,cDeep,sdep);diffuseColor.a=mix(0.38,0.9,smoothstep(0.0,5.0,vDepth));float fn=texture2D(tMac,vWP.xz*0.09+vec2(uT*0.015,uT*0.006)).r;float foam=(1.0-smoothstep(0.0,0.7+fn*0.7,vDepth))*smoothstep(0.32,0.62,fn+0.22*sin(uT*1.6+vDepth*7.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.92),foam*0.85);diffuseColor.a=max(diffuseColor.a,foam*0.9);')
-    .replace('#include <roughnessmap_fragment>','float roughnessFactor=mix(roughness,0.85,foam);')};
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uT;uniform sampler2D tMac;uniform vec3 cShal,cDeep,uHor;varying float vDepth;varying vec3 vWP;')
+    .replace('#include <color_fragment>','#include <color_fragment>\nfloat sdep=smoothstep(0.0,4.5,vDepth);diffuseColor.rgb=mix(cShal,cDeep,sdep);diffuseColor.a=mix(0.38,0.9,smoothstep(0.0,5.0,vDepth));float fn=texture2D(tMac,vWP.xz*0.09+vec2(uT*0.015,uT*0.006)).r;float foam=(1.0-smoothstep(0.0,0.7+fn*0.7,vDepth))*smoothstep(0.32,0.62,fn+0.22*sin(uT*1.6+vDepth*7.0));float surf=smoothstep(0.82,0.98,sin(vDepth*3.2+uT*1.4+fn*2.5))*(1.0-smoothstep(0.3,2.6,vDepth))*smoothstep(0.05,0.35,vDepth)*smoothstep(0.35,0.6,fn+0.3);foam=max(foam,surf*0.8);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.92),foam*0.85);diffuseColor.a=max(diffuseColor.a,foam*0.9);')
+    .replace('#include <roughnessmap_fragment>','float roughnessFactor=mix(roughness,0.85,foam);')
+    .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{float fr=pow(1.0-clamp(dot(normal,normalize(vViewPosition)),0.0,1.0),4.0);totalEmissiveRadiance+=pow(uHor,vec3(2.2))*fr*0.4*(1.0-foam);diffuseColor.a=mix(diffuseColor.a,1.0,fr*0.8);}')};
 TEX.water.repeat.set(36,36);
 const WSTEP=700/220,water=new THREE.Mesh(new THREE.PlaneGeometry(700,700,220,220).rotateX(-PI/2),waterMat);
 water.frustumCulled=false;water.receiveShadow=SHD;scene.add(water);
@@ -742,10 +743,20 @@ const skyMat=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:
     'float cf(vec2 p){float a=0.0,w=0.5;for(int i=0;i<5;i++){a+=sn(p)*w;p=p*2.03+vec2(1.7,9.2);w*=0.5;}return a;}',
     'void main(){vec3 d=normalize(vD);float h=d.y;vec3 sd=normalize(sunDir);vec3 c=mix(hor,top,pow(clamp(h,0.0,1.0),0.5));c=mix(c,hor*0.8,clamp(-h*4.0,0.0,1.0));',
     'float s=max(dot(d,sd),0.0);c+=sunCol*(pow(s,6.0)*0.28+pow(s,48.0)*0.45);',
+    /* sunrise and sunset: a warm band along the horizon, strongest toward the sun */
+    'float lowSun=(1.0-smoothstep(0.02,0.38,sd.y))*smoothstep(-0.12,0.02,sd.y);vec2 dh=normalize(d.xz+1e-4),sh=normalize(sd.xz+1e-4);float tow=max(dot(dh,sh),0.0);',
+    'c+=sunCol*vec3(1.0,0.5,0.24)*(0.25+0.75*pow(tow,3.0))*exp(-max(h,0.0)*7.0)*lowSun*0.75;',
+    /* stars on clear nights */
+    'vec3 sg=floor(d*300.0);float st=step(0.9972,h21(sg.xy+sg.z*7.13))*(0.5+0.5*h21(sg.zy+3.1));float stars=st*smoothstep(0.55,0.95,night)*smoothstep(0.0,0.25,h);',
     'float m=max(dot(d,normalize(moonDir)),0.0);c+=vec3(0.82,0.88,1.0)*(pow(m,40.0)*0.08)*night;',
     'float ca=0.0;if(h>0.0){vec2 cp=d.xz/(h+0.12)*0.8+vec2(uTime*0.010,uTime*0.004);float n=cf(cp);float dens=smoothstep(1.0-cov,1.0-cov+0.3,n);',
     '  float sl=cf(cp+sd.xz*0.09);vec3 cc=mix(cDark,cLit,clamp(0.6+(n-sl)*3.5+s*0.2,0.0,1.0));cc+=sunCol*pow(s,8.0)*0.5*(1.0-dens);',
-    '  ca=dens*smoothstep(0.0,0.14,h);c=mix(c,cc,ca*0.96);}',
+    '  cc=mix(cc,cc*vec3(1.3,0.72,0.5)+sunCol*vec3(0.35,0.12,0.05),lowSun*(0.45+0.55*tow)*(1.0-night));',
+    '  ca=dens*smoothstep(0.0,0.14,h);c=mix(c,cc,ca*0.96);',
+    /* high thin cirrus streaks, drifting faster than the heaped clouds below */
+    '  vec2 ci=d.xz/(h+0.05)*0.35+vec2(uTime*0.02,uTime*0.007);float cr=smoothstep(0.55,0.85,cf(vec2(ci.x*0.6,ci.y*2.6)))*smoothstep(0.05,0.3,h)*(1.0-ca)*0.35*(1.0-night*0.8);',
+    '  c=mix(c,mix(cLit,cLit*vec3(1.2,0.7,0.5),lowSun),cr);}',
+    'c+=vec3(0.9,0.93,1.0)*stars*(1.0-ca)*1.3;',
     'c+=sunCol*smoothstep(0.9992,0.9995,s)*1.6*(1.0-ca);',
     'c+=vec3(0.82,0.88,1.0)*smoothstep(0.9991,0.9994,m)*0.9*night*(1.0-ca);',
     '#ifdef LINEAR_OUT','c=pow(max(c,0.0),vec3(2.2));','#endif',
@@ -2581,7 +2592,7 @@ function applySave(s){P.inv=s.inv||{};P.equip=s.eq&&P.inv[s.eq]>0?s.eq:null;P.ar
 const saved=readSave();
 if(saved){$('tStart').textContent='Continue the saga';$('tNew').hidden=false}
 /* inspection views: opening the game link with #peek-bush, #peek-items, #peek-dungeon or #peek-<place> puts the Viking right there */
-function peek(){let h=(location.hash||'').replace('#peek-','');if(!h||h===location.hash)return;if(/noon/.test(h)){time=.36;h=h.replace(/-?noon/,'')}h=h.replace(/-?(safe|forcelow|peekfirst)/g,'');if(!h.startsWith('perf'))setTimeout(()=>{try{const gl=renderer.getContext(),out=[];out.push('gl'+(renderer.capabilities.isWebGL2?2:1)+' err='+gl.getError()+' calls='+renderer.info.render.calls+' tris='+renderer.info.render.triangles+' progs='+renderer.info.programs.length);
+function peek(){let h=(location.hash||'').replace('#peek-','');if(!h||h===location.hash)return;if(/noon/.test(h)){time=.36;h=h.replace(/-?noon/,'')}if(/dusk/.test(h)){time=.652;h=h.replace(/-?dusk/,'')}if(/night/.test(h)){time=.86;WX.ov=.1;h=h.replace(/-?night/,'')}h=h.replace(/-?(safe|forcelow|peekfirst)/g,'');if(!h.startsWith('perf'))setTimeout(()=>{try{const gl=renderer.getContext(),out=[];out.push('gl'+(renderer.capabilities.isWebGL2?2:1)+' err='+gl.getError()+' calls='+renderer.info.render.calls+' tris='+renderer.info.render.triangles+' progs='+renderer.info.programs.length);
   for(const pr of renderer.info.programs){const ok=gl.getProgramParameter(pr.program,gl.LINK_STATUS);out.push((ok?'ok ':'FAIL ')+pr.name+' #'+pr.id+' u'+pr.usedTimes+(ok?'':' '+gl.getProgramInfoLog(pr.program)))}
   let vis=0,tot=0;for(const c of CULL){tot++;if(c.m.visible)vis++}out.push('cull '+vis+'/'+tot);
   const near=[];scene.traverse(o=>{if(o.isMesh&&o.visible&&o.material&&o.material.type)near.push(o.material.type+(o.material===ROCKMAT?'*R':''))});const cnt={};for(const k of near)cnt[k]=(cnt[k]||0)+1;out.push(JSON.stringify(cnt));
@@ -2600,6 +2611,7 @@ function peek(){let h=(location.hash||'').replace('#peek-','');if(!h||h===locati
   else if(h==='beach'){for(let i=0;i<4000;i++){const a=i*.37,r=60+i*.12,x=Math.cos(a)*r,z=Math.sin(a)*r,hh=getH(x,z);if(hh>1&&hh<1.4){P.x=x;P.z=z;P.y=hh;face(x*.9,z*.9);camYaw+=.6;camPitch=.3;camDist=5;break}}}
   else if(h==='meadow'){for(let i=0;i<4000;i++){const a=i*.41,r=30+i*.1,x=Math.cos(a)*r,z=Math.sin(a)*r;if(biome(x,z)===1&&dirtAt(x,z)<.1&&slope(x,z)<.6&&getH(x,z)>3){P.x=x;P.z=z;P.y=getH(x,z);camPitch=.28;camDist=5;break}}}
   else if(h==='stick'||h==='stone'){const it=h==='stick'?'wood':'stone';let best=null,bd=1e9;for(const d of drops){if(d.item!==it||d.loot)continue;const dd=Math.hypot(d.x-P.x,d.z-P.z)+(slope(d.x,d.z)<.25?60:0);if(dd<bd){bd=dd;best=d}}if(best){P.x=best.x+1.3;P.z=best.z+.5;P.y=getH(P.x,P.z);face(best.x,best.z);camYaw+=1.1;camPitch=.32;camDist=2.2}}
+  else if(h==='sea'){for(let i=0;i<4000;i++){const a=i*.37+2,r=80+i*.12,x=Math.cos(a)*r,z=Math.sin(a)*r,hh=getH(x,z);if(hh>.9&&hh<1.3&&getH(x*1.06,z*1.06)<-1){P.x=x;P.z=z;P.y=hh;face(x*1.3,z*1.3);camPitch=.12;camDist=5;break}}}
   else if(h==='forest'){for(let i=0;i<6000;i++){const a=i*.41,rr=60+i*.08,x=Math.cos(a)*rr,z=Math.sin(a)*rr;if(biome(x,z)===2&&slope(x,z)<.5&&clearOf(x,z)&&getH(x,z)>3){P.x=x;P.z=z;P.y=getH(x,z);camPitch=.5;camDist=6;break}}}
   else if(h==='path'){const x0=P.x,z0=P.z;for(let t=-14;t<=14;t+=.5){const x=x0+t,z=z0+Math.sin(t*.25)*2.5,i=Math.round((x+HALF)/CELL),j=Math.round((z+HALF)/CELL),k=j*NV+i;WEAR[k]=Math.max(WEAR[k],Math.abs(t)>11?110:230);wearApply(k)}for(let c=0;c<GQ*4;c+=4)GCA[c]=1e9;gpx=1e9;camYaw=PI/2+.3;camPitch=.45;camDist=7}
   else if(h==='dungeon'){if(DGS[0])enterDungeon(DGS[0])}

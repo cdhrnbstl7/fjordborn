@@ -29,8 +29,7 @@
           ]
         }
       ],
-      "icon": "build/icon.ico",
-      "signAndEditExecutable": false
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -43,7 +42,7 @@
       "uninstallerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico",
       "uninstallDisplayName": "Fjordborn",
-      "artifactName": "Fjordborn-Setup-${version}.exe",
+      "artifactName": "Fjordborn-Setup-${version}.${ext}",
       "deleteAppDataOnUninstall": false,
       "runAfterFinish": true
     },
@@ -55,7 +54,8 @@
       {
         "provider": "github",
         "owner": "cdhrnbstl7",
-        "repo": "fjordborn"
+        "repo": "fjordborn",
+        "releaseType": "release"
       }
     ]
   },
