@@ -1,4 +1,6 @@
-**Auto pick-up toggle and tree lighting**
+**Great tombs, the Drowned Colossus and the Homeward Stone**
 
-- **Auto pick-up: On/Off** in Settings. With it off you only pick things up when you choose to: walk up to an item and press E (or tap Use).
-- **Tree lighting fixed:** the sunlit side of each tree is now the side facing the sun. Before, leaves seen from behind were lit as if the sun were on the other side.
+- **Great tombs:** the three barrow tombs are now huge: around 30 chambers and 6 pillared halls joined by winding corridors with loops. Draugr wake as you approach each room; the treasure hall is the farthest in. Undiscovered barrows show as a faded ? on the map.
+- **The Drowned Colossus:** sail south past the islets to a half-sunk ship the size of a town, with three stepped tower blocks rising up to 70 m. Climb the ramps from terrace to terrace, and enter two iron holds below decks. Drowned Ghosts and Hull Wraiths haunt it.
+- **Wreck Iron:** break scrap heaps, railings and gates on the wreck with a pick.
+- **Homeward Stone:** craft at the Workbench from Grave Shards (tomb draugr), Heartwood (Gloamwood pines) and Sun Amber (Sunmeads Bristlebacks). Use it to return home from anywhere.

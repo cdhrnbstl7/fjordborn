@@ -656,7 +656,8 @@ function limb(w,h,d,col,x,y,z,mat,extra){const m=new THREE.Mesh(G('l'+w+'|'+h+'|
 /* the isle is 1.5 km across; computers get a 2 m terrain grid, phones a 3 m one; only the tiles near you are drawn */
 const HALF=768,N=[512,768,1024][GFX.terrain],CELL=HALF*2/N,NV=N+1,H=new Float32Array(NV*NV),WLIM=HALF-12,AF=7;
 /* tombs are built out past the eastern sea, 60 m up, and reached only through their barrow doors */
-const DZX=1000,DY=60,DT=4,DW=28,DGS=[];
+let WRECK=null;
+const DZX=1000,DY=60,DT=4,DW=64,DGAP=DW*DT+60,DGS=[];
 function mountMask(x,z){return smooth(.5,.7,vnoise(x*.0045+9,z*.0045+31))*smooth(95,140,Math.hypot(x,z))}
 const ISLETS=[25,70,115,160,205,250,295,340].map(a=>{const r=a*PI/180;return[Math.cos(r)*HALF*.93,Math.sin(r)*HALF*.93,14]});
 function rawH0(x,z){const d=Math.hypot(x,z),fall=1-smooth(HALF*.6,HALF*.87,d),e=fbm(x*.011+40,z*.011+40);
@@ -670,7 +671,7 @@ const TOWN=(()=>{let best=null;for(let a=0;a<72;a++){const ang=a/72*6.283;for(co
 function rawH(x,z){const h=rawH0(x,z),d=Math.hypot(x-TOWN.x,z-TOWN.z);return d<52?lerp(TOWN.h,h,smooth(30,52,d)):h}
 const meadowOut=(x,z)=>Math.min(1,smooth(.56,.66,vnoise(x*.012+71,z*.012+19))*smooth(170,195,Math.hypot(x,z))+smooth(56,38,Math.hypot(x-TOWN.x,z-TOWN.z)));
 for(let iz=0;iz<NV;iz++)for(let ix=0;ix<NV;ix++)H[iz*NV+ix]=rawH(ix*CELL-HALF,iz*CELL-HALF);
-function getH(x,z){if(x>DZX)return dgWalk(x,z)?DY:-7;const gx=(x+HALF)/CELL,gz=(z+HALF)/CELL;if(!(gx>=0&&gz>=0&&gx<N&&gz<N))return -7;
+function getH(x,z){if(x>DZX)return dgWalk(x,z)?DY:-7;const gx=(x+HALF)/CELL,gz=(z+HALF)/CELL;if(!(gx>=0&&gz>=0&&gx<N&&gz<N)){if(WRECK){const w=wreckH(x,z);if(w!=null)return w}return -7}
   const ix=gx|0,iz=gz|0,fx=gx-ix,fz=gz-iz,i=iz*NV+ix,a=H[i],b=H[i+1],c=H[i+NV],d=H[i+NV+1];
   return fx+fz<=1?a+(b-a)*fx+(c-a)*fz:d+(c-d)*(1-fx)+(b-d)*(1-fz)}
 function biome(x,z){const h=getH(x,z);if(h<1)return 0;if(h>19&&mountMask(x,z)>.3)return 3;
@@ -1242,7 +1243,7 @@ for(let i=0;i<PQ;i++){D.rotation.set((hash(i,21)-.5)*.6,POFF[i*4+2],(hash(i,23)-
 function updPebbles(){const half=PS/2;
   for(let i=0;i<PQ;i++){const ox=POFF[i*4],oz=POFF[i*4+1],x=ox+PS*Math.round((P.x-ox)/PS),z=oz+PS*Math.round((P.z-oz)/PS),c=i*4;
     if(PCA[c]!==x||PCA[c+1]!==z){const h=getH(x,z);let b=0;
-      if(GFX.pebbles&&h>-.5){const d=dirtAt(x,z),sd=smooth(1.7,.9,h),gr=smooth(.3,.75,vnoise(x*.09+1,z*.09+4)),k=Math.max(d*(.35+.75*gr),sd*.55,dugAt(x,z)>.3?.6:0);if(k>.15&&hash(i,17)<k*1.05)b=.2*POFF[i*4+3]}
+      if(GFX.pebbles&&h>-.5&&!inWZ(x,z)){const d=dirtAt(x,z),sd=smooth(1.7,.9,h),gr=smooth(.3,.75,vnoise(x*.09+1,z*.09+4)),k=Math.max(d*(.35+.75*gr),sd*.55,dugAt(x,z)>.3?.6:0);if(k>.15&&hash(i,17)<k*1.05)b=.2*POFF[i*4+3]}
       PCA[c]=x;PCA[c+1]=z;PCA[c+2]=h-POFF[i*4+3]*.26;PCA[c+3]=b}
     const sc=PCA[c+3]?PCA[c+3]*smooth(half,half-6,Math.hypot(x-P.x,z-P.z)):0,te=PEB[i%PV].instanceMatrix.array,o=Math.floor(i/PV)*16,r=i*9;
     te[o]=PROT[r]*sc;te[o+1]=PROT[r+1]*sc;te[o+2]=PROT[r+2]*sc;te[o+3]=0;te[o+4]=PROT[r+3]*sc;te[o+5]=PROT[r+4]*sc;te[o+6]=PROT[r+5]*sc;te[o+7]=0;
@@ -1253,7 +1254,7 @@ const GCA=new Float32Array(GQ*4).fill(1e9);
 function updGrass(){if(P.dg)return;if(Math.hypot(P.x-gpx,P.z-gpz)<2.5)return;gpx=P.x;gpz=P.z;const half=GS/2;updPebbles();let col=false;const te=grassMesh.instanceMatrix.array;
   for(let i=0;i<GQ;i++){const ox=GOFF[i*4],oz=GOFF[i*4+1],x=ox+GS*Math.round((P.x-ox)/GS),z=oz+GS*Math.round((P.z-oz)/GS),c=i*4;
     if(GCA[c]!==x||GCA[c+1]!==z){const h=getH(x,z);let b=0;
-      if(GFX.grass&&h>1.15&&dugAt(x,z)<.12){const bi=biome(x,z);const dd=dirtAt(x,z),clump=smooth(.22,.62,vnoise(x*.17+3,z*.17+7))*.75+.25;if((bi===1||(bi===2&&hash(i,7)<.45))&&slope(x,z)<1.5&&dd<.62&&hash(i,9)<smooth(.62,.3,dd)*(.45+.55*clump)){b=GOFF[i*4+3]*(.55+.45*clump)*(1-.4*smooth(.25,.6,dd))*(1-.55*smooth(.45,.72,vnoise(x*.02+5,z*.02+9)));
+      if(GFX.grass&&h>1.15&&!inWZ(x,z)&&dugAt(x,z)<.12){const bi=biome(x,z);const dd=dirtAt(x,z),clump=smooth(.22,.62,vnoise(x*.17+3,z*.17+7))*.75+.25;if((bi===1||(bi===2&&hash(i,7)<.45))&&slope(x,z)<1.5&&dd<.62&&hash(i,9)<smooth(.62,.3,dd)*(.45+.55*clump)){b=GOFF[i*4+3]*(.55+.45*clump)*(1-.4*smooth(.25,.6,dd))*(1-.55*smooth(.45,.72,vnoise(x*.02+5,z*.02+9)));
         const wr=wearAt(x,z);if(wr>.2)b*=smooth(.8,.2,wr)*(hash(i,11)<smooth(.9,.3,wr)?1:0);
         if(bi===2)_c.setRGB(.4,.48,.36);else{const v=.62+hash(i,3)*.3,dp=smooth(.5,.78,vnoise(x*.035+2,z*.035+6)),lu=smooth(.55,.8,vnoise(x*.05+9,z*.05+1));_c.setRGB(v*(1+.14*dp-.06*lu),v*1.02*(1-.04*dp+.05*lu),v*.88*(1-.38*dp-.08*lu))}grassMesh.setColorAt(i,_c);col=true}}
       GCA[c]=x;GCA[c+1]=z;GCA[c+2]=h-.03;GCA[c+3]=b}
@@ -1294,6 +1295,11 @@ const ITEMS={
   hide:{n:'Hide',d:'Thick pelt for bedding and tunics.'},
   tusk:{n:'Boar Tusk',d:'Curved ivory, harder than antler.'},
   core:{n:'Wight Core',d:'It still hums. The Rune Altar wants three.'},
+  iron:{n:'Wreck Iron',d:'Rusted iron torn from the Drowned Colossus: scrap heaps, railings and gates. A pick breaks it loose.'},
+  ecto:{n:'Ghostlight',d:'A wisp of cold light left when a ghost of the Colossus fades.'},
+  shard:{n:'Grave Shard',d:'A splinter of pale crystal from the barrow tombs. Draugr carry them.'},
+  sunamber:{n:'Sun Amber',d:'Warm golden resin grown in a Bristleback\'s hide. Only the boars of the Sunmeads carry it.'},
+  waystone:{n:'Homeward Stone',d:'Use: carries you home to your bed or campfire in a flash of light. Rests a minute between uses.',use:'home'},
   ore:{n:'Ember Ore',d:'Dark stone threaded with glowing metal.'},
   ingot:{n:'Ember Ingot',d:'Warm to the touch, even days after the forge.'},
   heart:{n:"Giant's Heart",d:'Proof that Grimrok fell by your hand.'},
@@ -1346,7 +1352,7 @@ const TOOLBAR=['axe','emaxe','pick','hoe','club','sword','rsword','torch'];
 const RECIPES=[
   {id:'axe',cost:{wood:4,stone:3}},{id:'hammer',cost:{wood:3,stone:2}},{id:'hoe',cost:{wood:4,stone:4}},{id:'club',cost:{wood:6}},{id:'torch',cost:{wood:1,resin:1}},
   {id:'cooked',cost:{meat:1},st:'fire'},
-  {id:'pick',cost:{wood:8,flint:4,tusk:1},st:'bench'},{id:'tunic',cost:{hide:5},st:'bench'},{id:'shirt',cost:{hide:1},st:'bench'},{id:'trousers',cost:{hide:2},st:'bench'},{id:'boots',cost:{hide:2},st:'bench'},{id:'vest',cost:{hide:2},st:'bench'},{id:'belt',cost:{hide:1},st:'bench'},{id:'gloves',cost:{hide:1},st:'bench'},{id:'coat',cost:{hide:6,resin:1},st:'bench'},
+  {id:'pick',cost:{wood:8,flint:4,tusk:1},st:'bench'},{id:'tunic',cost:{hide:5},st:'bench'},{id:'shirt',cost:{hide:1},st:'bench'},{id:'trousers',cost:{hide:2},st:'bench'},{id:'boots',cost:{hide:2},st:'bench'},{id:'vest',cost:{hide:2},st:'bench'},{id:'belt',cost:{hide:1},st:'bench'},{id:'gloves',cost:{hide:1},st:'bench'},{id:'coat',cost:{hide:6,resin:1},st:'bench'},{id:'waystone',cost:{shard:3,corewood:3,sunamber:2},st:'bench'},
   {id:'ingot',cost:{ore:1,wood:2},st:'forge'},{id:'emaxe',cost:{wood:4,ingot:3},st:'forge'},{id:'sword',cost:{wood:2,ingot:5,hide:1},st:'forge'},{id:'helm',cost:{ingot:4,hide:1},st:'forge'},{id:'rsword',cost:{wood:2,rimeiron:5,ingot:2},st:'forge'}
 ];
 const STN={fire:['Campfire',5],bench:['Workbench',10],forge:['Forge',10]};
@@ -1385,6 +1391,11 @@ const DRAW={
   resin:x=>{pg(x,[32,8,46,34,42,50,32,56,22,50,18,34],'#e0962a');ci(x,27,38,4.5,'#f8dc8a',0)},
   hide:x=>{pg(x,[14,12,26,17,38,17,50,12,46,28,53,44,44,54,32,48,20,54,11,44,18,28],'#9a6e44');pg(x,[24,24,40,24,42,40,32,42,22,40],'#bb9060',0)},
   tusk:x=>{pg(x,[14,54,16,32,32,14,52,8,42,22,32,36,28,54],'#f1e8d4');ln(x,[22,48,24,34,36,20],'#cbbf9f',2.5)},
+  iron:x=>{pg(x,[8,40,22,24,46,22,56,34,50,48,24,52],'#6a6c72');pg(x,[22,24,46,22,40,34,16,36],'#8a8d94',0);ln(x,[14,44,48,40],'#7a4628',4);ci(x,40,44,4,'#7a4628',0)},
+  ecto:x=>{ci(x,32,32,20,'#9fe8ff');ci(x,32,32,13,'#e6fbff',0);pg(x,[20,40,32,58,44,40],'#9fe8ff',0)},
+  shard:x=>{pg(x,[30,6,40,30,34,58,22,34],'#cfe6ef');pg(x,[30,6,34,58,22,34],'#9cc4d6',0);pg(x,[44,22,54,38,46,54,40,40],'#b8dbe8');ln(x,[30,6,34,58],'#ffffff',2)},
+  sunamber:x=>{ci(x,32,34,20,'#c9781e');ci(x,30,31,15,'#f0a43a',0);ci(x,25,25,6,'#ffe0a0',0);pg(x,[34,40,42,36,40,46],'#8a4a14',0)},
+  waystone:x=>{pg(x,[18,58,14,24,24,8,40,8,50,24,46,58],'#7c8590');pg(x,[24,22,32,14,40,22,40,44,32,52,24,44],'#4a525c',0);ln(x,[32,18,32,46],'#7fe0ff',4);ln(x,[25,28,39,38],'#7fe0ff',3);ln(x,[39,28,25,38],'#7fe0ff',3)},
   core:x=>{ci(x,32,32,23,'#4a3a2a');ci(x,32,32,17,'#2c2118',0);pg(x,[32,11,47,32,32,53,17,32],'#3fd0c0');pg(x,[32,11,47,32,32,32],'#9ff5ea',0)},
   ore:x=>{pg(x,[12,42,18,22,34,14,50,24,54,44,36,54,16,50],'#4c4640');ln(x,[20,40,28,30,36,36,46,26],'#f08a2a',4);ln(x,[26,46,34,44],'#ffb040',3)},
   ingot:x=>{pg(x,[14,26,42,18,54,28,26,38],'#f3aa58');pg(x,[26,38,54,28,54,42,26,52],'#c86a28');pg(x,[14,26,26,38,26,52,14,40],'#a2501e')},
@@ -1721,7 +1732,7 @@ function updBoats(dt){windYaw+=dt*.006*Math.sin(T*.017);
     else b.spd*=1-Math.min(1,dt*.6);
     const sx=Math.sin(b.yaw),sz=Math.cos(b.yaw),nx=s.x+sx*b.spd*dt,nz=s.z+sz*b.spd*dt,fr=b.spd>=0?3.8:-3.8;
     if(Math.abs(b.spd)>.01){if(getH(nx+sx*fr,nz+sz*fr)>-.5||getH(nx,nz)>-.35){if(mine&&Math.abs(b.spd)>1.5)warn('The keel scrapes the shore.');b.spd*=-.15}else{s.x=nx;s.z=nz}}
-    const rr=Math.hypot(s.x,s.z);if(rr>WLIM){s.x*=WLIM/rr;s.z*=WLIM/rr;b.spd*=.5;if(mine)warn('Wild open sea turns you back toward the isle.')}
+    const rr=Math.hypot(s.x,s.z);if(rr>WLIM&&!inWZ(s.x,s.z)){s.x*=WLIM/rr;s.z*=WLIM/rr;b.spd*=.5;if(mine)warn('Wild open sea turns you back toward the isle.')}
     const y=waveH(s.x,s.z),rx=Math.cos(b.yaw),rz=-Math.sin(b.yaw),hB=waveH(s.x+sx*3.4,s.z+sz*3.4),hS=waveH(s.x-sx*3.4,s.z-sz*3.4),hR=waveH(s.x+rx*1.1,s.z+rz*1.1),hL=waveH(s.x-rx*1.1,s.z-rz*1.1);
     s.g.position.set(s.x,y+.05,s.z);s.g.rotation.order='YXZ';s.g.rotation.set(-Math.atan2(hB-hS,6.8),b.yaw,Math.atan2(hR-hL,2.2)+(mine?ix*.05*Math.min(1,b.spd/4):0));
     s.base=y;s.rot=b.yaw/(PI/2)}}
@@ -1739,12 +1750,14 @@ const nearStruct=(t,d)=>structs.some(s=>s.type===t&&(s.x-P.x)**2+(s.z-P.z)**2<d*
 
 /* ---------- creatures ---------- */
 const CREAT={
-  boar:{name:'Bristleback',hp:22,spd:4.4,dmg:7,aggro:9,reach:1.7,cd:1.5,wind:.4,r:.7,barY:1.5,drops:[['meat',1,1],['hide',1,.6],['tusk',1,.55]]},
+  boar:{name:'Bristleback',hp:22,spd:4.4,dmg:7,aggro:9,reach:1.7,cd:1.5,wind:.4,r:.7,barY:1.5,drops:[['meat',1,1],['hide',1,.6],['tusk',1,.55],['sunamber',1,.4]]},
   deer:{name:'Fallow Hart',hp:14,spd:8,dmg:0,aggro:0,flee:15,reach:0,cd:1,wind:.4,r:.6,barY:2.6,drops:[['meat',2,1],['hide',1,1]]},
   wight:{name:'Mosswight',hp:46,spd:3.9,dmg:13,aggro:17,reach:1.9,cd:1.6,wind:.5,r:.6,barY:2.6,drops:[['resin',2,1],['core',1,1],['wood',1,.5]]},
   wolf:{name:'Rimewolf',hp:60,spd:7.4,dmg:17,aggro:24,reach:1.9,cd:1.3,wind:.35,r:.7,barY:1.8,drops:[['hide',2,1],['meat',1,1],['fang',1,1]]},
   giant:{name:'Grimrok',hp:440,spd:2.9,dmg:36,aggro:90,reach:5,cd:2.6,wind:1.25,r:2,scale:2.4,barY:8.6,boss:1,drops:[['heart',1,1],['ingot',6,1],['core',2,1]]},
-  draugr:{name:'Draugr',hp:70,spd:4.2,dmg:16,aggro:16,reach:1.9,cd:1.5,wind:.45,r:.6,barY:2.5,drops:[['silver',2,.75],['ingot',1,.25],['core',1,.12]]},
+  draugr:{name:'Draugr',hp:70,spd:4.2,dmg:16,aggro:16,reach:1.9,cd:1.5,wind:.45,r:.6,barY:2.5,drops:[['silver',2,.75],['shard',1,.6],['ingot',1,.25],['core',1,.12]]},
+  ghost:{name:'Drowned Ghost',hp:34,spd:5.6,dmg:10,aggro:22,reach:1.7,cd:1.2,wind:.35,r:.5,barY:2.4,drops:[['ecto',1,.7],['silver',1,.4]]},
+  wraith:{name:'Hull Wraith',hp:95,spd:4.7,dmg:21,aggro:24,reach:2.2,cd:1.5,wind:.5,r:.7,barY:3,drops:[['iron',2,.8],['silver',3,.7],['ecto',1,.5],['shard',1,.25]]},
   troll:{name:'Hrimgrim',hp:720,spd:3.3,dmg:40,aggro:90,reach:4.4,cd:2.3,wind:1.1,r:1.8,scale:2.2,barY:7.4,boss:1,drops:[['frostheart',1,1],['rimeiron',8,1],['fang',2,1]]}
 };
 /* creature models: rounded, textured, with glowing eyes; legs and arms are pivot groups the AI swings */
@@ -1800,6 +1813,16 @@ function quadBody(sp){const g=new THREE.Group(),bones=[],B=(par,x,y,z)=>{const b
   const m=cmats();if(!m.furS){m.furS=m.furV.clone();m.furS.skinning=true}
   const mesh=new THREE.SkinnedMesh(geo,m.furS);mesh.add(root);g.add(mesh);mesh.updateMatrixWorld(true);mesh.bind(new THREE.Skeleton(bones));mesh.frustumCulled=false;
   return{g,legs,knees,head,tail,body:new THREE.Object3D(),mesh}}
+/* the dead of the Colossus: hooded, legless shapes of cold light that float above the deck */
+function spectre(big){const g=new THREE.Group(),body=new THREE.Group();g.add(body);body.position.y=big?.5:.35;
+  const col=big?'#5a6a78':'#a8d8e6',gl=big?'#9ff0ff':'#e6fbff',M=new THREE.MeshStandardMaterial({color:LC(col),roughness:.6,metalness:0,transparent:true,opacity:big?.82:.55,emissive:LC(big?'#20343e':'#4a8a9a'),emissiveIntensity:big?.6:1,side:THREE.DoubleSide,depthWrite:!!big});
+  const E=new THREE.MeshBasicMaterial({color:new THREE.Color(gl).convertSRGBToLinear().multiplyScalar(POST_OK?5:1)}),s=big?1.25:1;
+  // a robe flaring and fraying toward the bottom
+  const rg=new THREE.CylinderGeometry(.22*s,.55*s,1.5*s,18,6,true),pa=rg.attributes.position;for(let i=0;i<pa.count;i++){const y=pa.getY(i),a=Math.atan2(pa.getX(i),pa.getZ(i));if(y<-.5*s)pa.setY(i,y-(Math.sin(a*7)*.5+.5)*.25*s);pa.setX(i,pa.getX(i)*(1+.06*Math.sin(y*9+a*3)))}rg.computeVertexNormals();
+  cadd(body,rg,M,0,1.0*s,0);cadd(body,cS(.3*s,16,12),M,0,1.78*s,.02,0,0,0,1,1.1,1);cadd(body,new THREE.SphereGeometry(.34*s,16,12,0,PI*2,0,PI*.62),M,0,1.84*s,-.02);
+  for(const sd of[1,-1])cadd(body,cS(.045*s,8,6),E,sd*.09*s,1.8*s,.24*s);
+  const arms=[1,-1].map(sd=>{const p=pivot(body,sd*.3*s,1.55*s,0);cadd(p,cC(.07*s,.04*s,.75*s,8),M,0,-.37*s,0);for(let k=-1;k<=1;k++)cadd(p,cK(.02*s,.22*s,5),M,k*.04*s,-.82*s,.03,PI);return p});
+  return{g,legs:[],arms,body}}
 const MODELS={
   boar(){const m=cmats(),R=quadBody({bodyY:.86,neckZ:.42,shade:['#241911','#3e2c20','#5e4634'],legShade:['#3e2c20','#1d140e'],
       torso:[[-.76,.84,.04,.04],[-.7,.85,.2,.25],[-.52,.87,.31,.37],[-.3,.86,.33,.4],[-.05,.88,.35,.43],[.2,.95,.39,.5],[.42,.95,.38,.48],[.58,.9,.32,.4],[.68,.86,.25,.31]],
@@ -1870,6 +1893,8 @@ const MODELS={
     const arms=[1,-1].map(sd=>{const p=pivot(g,sd*.33,1.56,0);cadd(p,cC(.068,.048,.6,8),m.dSkin,0,-.3,0);cadd(p,cS(.05,8,6),m.dSkin,0,-.64,0);
       if(sd>0){cadd(p,new THREE.BoxGeometry(.035,.8,.085),m.dMail,0,-1.08,.02);cadd(p,new THREE.BoxGeometry(.06,.04,.24),m.dRust,0,-.7,.02)}else cadd(p,cC(.32,.32,.05,14),m.dRust,-.06,-.5,.05,0,0,PI/2);return p});
     return{g,legs,arms}},
+  ghost(){return spectre(false)},
+  wraith(){return spectre(true)},
   troll(){const m=cmats(),g=new THREE.Group();
     cadd(g,cS(.7,20,14),m.troll,0,2.0,.1,.35,0,0,1.1,1,.9);cadd(g,cS(.55,18,12),m.trollDark,0,1.4,0,0,0,0,1,.85,.85);
     cadd(g,cS(.36,16,12),m.troll,0,2.6,.62,0,0,0,1,.9,1);cadd(g,cS(.2,12,10),m.trollDark,0,2.5,.9,0,0,0,1.1,.7,.8);
@@ -1955,7 +1980,7 @@ function mkVillager(o){const M=(c,map,r)=>{const m=new THREE.MeshStandardMateria
   const sh=new THREE.Mesh(SHADOWG,SHADOWM);sh.rotation.x=-PI/2;sh.position.y=.05;sh.scale.setScalar(.45);g.add(sh);
   g.traverse(o=>{if(o.isMesh)o.castShadow=SHD});scene.add(g);return{g,legs,arms}}
 const VPTS=[[0,10],[-5,8.5],[5,9.5],[-3,0],[3,-.5],[0,18],[-5,16.5],[-7,4],[7,4],[0,1.5],[-2,13],[3,12.5]];
-const VLINES=['Wights wake at dusk. Keep a fire lit and they keep their distance.','My grandfather swore Grimrok was only a story. Then the barrow split.',
+const VLINES=['Fishermen won\'t sail south any more. They say a ship as big as a town broke the surface out there, all towers and rust, and the dead walk its decks.','Iron? Not on this isle. But that drowned giant of a ship to the south is made of nothing else. Take a pick, and a Homeward Stone to get back.','Wights wake at dusk. Keep a fire lit and they keep their distance.','My grandfather swore Grimrok was only a story. Then the barrow split.',
   'Rimewolves hunt the high snow. Their fangs fetch a fair price from Hallvard.','If you sail, sail with the wind at your back. Fighting it gets you nowhere.',
   'A full belly is worth more than a sharp blade. Eat before you fight.','The old hoards lie out on the islets. Bring a Karve and a strong arm.',
   'Hrimgrim throws ice the size of a cow. Watch for the blue mark, then move.','Mead, cake and silver. What more does a Viking need?','The more you swing an axe, the truer it bites. Practice makes the warrior.',
@@ -2032,45 +2057,170 @@ for(const t of SITES){const r=lcg(Math.floor(t.x*31+t.z*17)+999),ps=[];
     siteMesh(t,ps);const rs=new THREE.Mesh(G('barrowRune',()=>merge([part(B(.08,.9,.04),'#fff',0,0,0),part(B(.4,.08,.04),'#fff',0,.2,0,0,0,.5),part(B(.3,.08,.04),'#fff',0,-.2,0,0,0,-.5)])),runeMat);
     const [rx,rz]=sw(t,4.2,6.95);rs.position.set(rx,t.y+1.7,rz);rs.rotation.y=t.rot+.4;SITEG.add(rs);
     siteCol(t,0,-1,5.6);siteCol(t,-3.5,1.5,2.5);siteCol(t,3.5,1.5,2.5);siteCol(t,-1.5,5.6,.8);siteCol(t,1.5,5.6,.8);siteCol(t,4.2,6.6,.5);
-    const [ux,uz]=sw(t,0,7.3);t.ux=ux;t.uz=uz;DGS.push(Object.assign(genDungeon(7001+i*97),{site:t,i,ox:DZX+20+i*130,oz:-56,name:t.name,g:null,chest:null,torches:[],flames:[]}))}}
+    const [ux,uz]=sw(t,0,7.3);t.ux=ux;t.uz=uz;DGS.push(Object.assign(genDungeon(7001+i*97),{site:t,i,ox:DZX+20+i*DGAP,oz:-56,name:t.name,g:null,chest:null,torches:[],flames:[]}))}}
 /* tomb layouts: a chain of rooms joined by corridors on a grid of 4 m flagstones, ending in a treasure chamber */
-function genDungeon(seed){const r=lcg(seed),W=DW,M=new Uint8Array(W*W),rooms=[];let cx=2,cz=Math.floor(W/2);
+/* great tombs: dozens of chambers and pillared halls on a grid of 4 m flagstones, joined by winding corridors and loops; the treasure chamber is the farthest hall */
+function genDungeon(seed){const r=lcg(seed),W=DW,M=new Uint8Array(W*W),rooms=[];
   const carve=(x0,z0,x1,z1)=>{for(let z=Math.max(1,Math.min(z0,z1));z<=Math.min(W-2,Math.max(z0,z1));z++)for(let x=Math.max(1,Math.min(x0,x1));x<=Math.min(W-2,Math.max(x0,x1));x++)M[z*W+x]=1};
-  const NR=6;for(let k=0;k<NR;k++){const big=k===NR-1,w=big?4:2+Math.floor(r()*2),h=big?4:2+Math.floor(r()*2),x0=clamp(cx-(k?Math.floor(w/2):0),1,W-1-w),z0=clamp(cz-Math.floor(h/2),1,W-1-h);
-    carve(x0,z0,x0+w-1,z0+h-1);rooms.push({x0,z0,w,h,big});if(k<NR-1){const nx=clamp(cx+4+Math.floor(r()*2),2,W-3),nz=clamp(cz+Math.round((r()-.5)*8),2,W-3);carve(cx,cz,nx,cz);carve(nx,cz,nx,nz);cx=nx;cz=nz}}
-  return{M,rooms,start:[rooms[0].x0,Math.floor(rooms[0].z0+rooms[0].h/2)]}}
+  const free=(x0,z0,w,h)=>rooms.every(o=>x0>o.x0+o.w+1||x0+w+1<o.x0||z0>o.z0+o.h+1||z0+h+1<o.z0);
+  // entry room on the west edge, then halls (big open fights) and chambers scattered across the grid
+  rooms.push({x0:2,z0:W/2-2,w:3,h:4,kind:'entry'});
+  for(let tries=0;tries<900&&rooms.length<30;tries++){const hall=rooms.length<7,w=hall?7+Math.floor(r()*4):3+Math.floor(r()*3),h=hall?6+Math.floor(r()*4):3+Math.floor(r()*3),
+      x0=2+Math.floor(r()*(W-4-w)),z0=2+Math.floor(r()*(W-4-h));if(x0<8&&Math.abs(z0-W/2)<8)continue;if(free(x0,z0,w,h))rooms.push({x0,z0,w,h,kind:hall?'hall':'room'})}
+  for(const o of rooms)carve(o.x0,o.z0,o.x0+o.w-1,o.z0+o.h-1);
+  const ctr=o=>[o.x0+Math.floor(o.w/2),o.z0+Math.floor(o.h/2)];
+  const tunnel=(a,b,wide)=>{const [ax,az]=ctr(a),[bx,bz]=ctr(b),bend=r()<.5;
+    // corridors wander: two or three legs instead of one straight line
+    const mx=bend?bx:ax,mz=bend?az:bz,jx=clamp(mx+Math.round((r()-.5)*6),2,W-3),jz=clamp(mz+Math.round((r()-.5)*6),2,W-3);
+    const seg=(x0,z0,x1,z1)=>{carve(x0,z0,x1,z1);if(wide)carve(x0+(z0===z1?0:1),z0+(z0===z1?1:0),x1+(z0===z1?0:1),z1+(z0===z1?1:0))};
+    seg(ax,az,jx,az);seg(jx,az,jx,jz);seg(jx,jz,bx,jz);seg(bx,jz,bx,bz)};
+  // a spanning tree by distance so every room is reachable, plus extra loops so you can circle around enemies
+  const n=rooms.length,inT=[true],dist=(a,b)=>{const [ax,az]=ctr(a),[bx,bz]=ctr(b);return Math.abs(ax-bx)+Math.abs(az-bz)};
+  for(let k=1;k<n;k++)inT.push(false);
+  for(let e=1;e<n;e++){let best=null,bd=1e9;for(let a=0;a<n;a++)if(inT[a])for(let b=0;b<n;b++)if(!inT[b]){const d=dist(rooms[a],rooms[b]);if(d<bd){bd=d;best=[a,b]}}
+    inT[best[1]]=true;tunnel(rooms[best[0]],rooms[best[1]],rooms[best[0]].kind==='hall'&&rooms[best[1]].kind==='hall')}
+  for(let k=0;k<7;k++){const a=rooms[1+Math.floor(r()*(n-1))],b=rooms[1+Math.floor(r()*(n-1))];if(a!==b&&dist(a,b)<26)tunnel(a,b,false)}
+  // the treasure hall is the hall farthest from the entrance by walking distance
+  const sx=rooms[0].x0+1,sz=rooms[0].z0+2,D=new Int32Array(W*W).fill(-1),q=[sx+sz*W];D[q[0]]=0;
+  for(let h=0;h<q.length;h++){const c=q[h],x=c%W,z=(c-x)/W;for(const [dx,dz] of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,nz=z+dz,ni=nz*W+nx;if(M[ni]&&D[ni]<0){D[ni]=D[c]+1;q.push(ni)}}}
+  let far=null,fd=-1;for(const o of rooms)if(o.kind==='hall'){const [cx,cz]=ctr(o),d=D[cz*W+cx];if(d>fd){fd=d;far=o}}
+  far.big=true;rooms.splice(rooms.indexOf(far),1);rooms.push(far);
+  return{M,rooms,start:[sx,sz]}}
 const dgTile=(d,i,j)=>i>=0&&j>=0&&i<DW&&j<DW&&d.M[j*DW+i]===1;
 const tileW=(d,i,j)=>[d.ox+i*DT+DT/2,d.oz+j*DT+DT/2];
-function dgOf(x){const i=Math.floor((x-DZX-20)/130);return DGS[i]&&x>=DGS[i].ox&&x<DGS[i].ox+DW*DT?DGS[i]:null}
+function dgOf(x){const i=Math.floor((x-DZX-20)/DGAP);return DGS[i]&&x>=DGS[i].ox&&x<DGS[i].ox+DW*DT?DGS[i]:null}
 function dgWalk(x,z){const d=dgOf(x);if(!d)return false;return dgTile(d,Math.floor((x-d.ox)/DT),Math.floor((z-d.oz)/DT))}
 const dgWalkR=(x,z,r)=>dgWalk(x-r,z-r)&&dgWalk(x+r,z-r)&&dgWalk(x-r,z+r)&&dgWalk(x+r,z+r);
-function buildDungeon(d){if(d.g)return;const ps=[],W=DW,r=lcg(d.i*131+7),wall='#5f6166',wall2='#55575c';
+function buildDungeon(d){if(d.g)return;const ps=[],W=DW,r=lcg(d.i*131+7),wall=d.ship?'#5a3e30':'#5f6166',wall2=d.ship?'#4a4a4e':'#55575c';
   for(let j=0;j<W;j++)for(let i=0;i<W;i++)if(dgTile(d,i,j)){const x=i*DT+DT/2,z=j*DT+DT/2;ps.push(part(B(DT-.08,.3,DT-.08),stoneC(Math.floor(r()*4)),x,-.15,z));
     for(const [dx,dz] of[[1,0],[-1,0],[0,1],[0,-1]])if(!dgTile(d,i+dx,j+dz)){const wx=x+dx*(DT/2+.35),wz=z+dz*(DT/2+.35),sx=dx?.7:DT+.7,sz=dz?.7:DT+.7;
       ps.push(part(B(sx,4.6,sz),r()<.5?wall:wall2,wx,2.3,wz),part(B(sx+.08,.18,sz+.08),'#4a4c50',wx,1.1,wz),part(B(sx+.08,.18,sz+.08),'#4a4c50',wx,3.3,wz));
-      if(r()<.2&&!(i===d.start[0]&&j===d.start[1])){const tx=x+dx*(DT/2-.12),tz=z+dz*(DT/2-.12);ps.push(part(B(.12,.5,.12),'#3a3a40',tx,2.2,tz),part(Cy(.1,.06,.16,8),'#3a3a40',tx,2.5,tz));d.torches.push([d.ox+tx,DY+2.85,d.oz+tz])}}}
-  ps.push(part(B(W*DT+2,.6,W*DT+2),'#2e2c2a',W*DT/2,4.9,W*DT/2));
+      if(r()<.075&&!(i===d.start[0]&&j===d.start[1])){const tx=x+dx*(DT/2-.12),tz=z+dz*(DT/2-.12);ps.push(part(B(.12,.5,.12),'#3a3a40',tx,2.2,tz),part(Cy(.1,.06,.16,8),'#3a3a40',tx,2.5,tz));d.torches.push([d.ox+tx,DY+2.85,d.oz+tz])}}}
+  ps.push(part(B(W*DT+2,.6,W*DT+2),'#2e2c2a',W*DT/2,4.9,W*DT/2),part(B(W*DT+2,.3,W*DT+2),'#2a2826',W*DT/2,-.33,W*DT/2));
   d.rooms.forEach((rm,k)=>{const x0=rm.x0*DT,z0=rm.z0*DT,w=rm.w*DT,h=rm.h*DT;for(let q=1;q<rm.w;q++)ps.push(part(B(.35,.35,h),'#3e2a1a',x0+q*DT,4.35,z0+h/2));
-    if(rm.w>=3&&rm.h>=3)for(const [px,pz] of[[x0+DT,z0+DT],[x0+w-DT,z0+DT],[x0+DT,z0+h-DT],[x0+w-DT,z0+h-DT]]){ps.push(part(Cy(.38,.44,4.6,10),'#6f7378',px,2.3,pz));addCol({x:d.ox+px,z:d.oz+pz,r:.5})}
-    if(k>0&&!rm.big&&r()<.7){const sx=x0+w/2+(r()-.5)*2,sz=z0+h/2+(r()-.5)*2;ps.push(part(B(1.1,.8,2.3),'#77787c',sx,.4,sz),part(B(1.2,.16,2.4),'#85868a',sx,.88,sz),part(Ico(.22),'#6f7378',sx,1.05,sz-.7,0,0,0,1,.6,1));addCol({x:d.ox+sx,z:d.oz+sz-.6,r:.7});addCol({x:d.ox+sx,z:d.oz+sz+.6,r:.7})}
+    const PIL=rm.kind==='hall'?(()=>{const o=[];for(let a=2;a<rm.w-1;a+=3)for(let b=2;b<rm.h-1;b+=3)o.push([x0+a*DT,z0+b*DT]);return o})():rm.w>=3&&rm.h>=3?[[x0+DT,z0+DT],[x0+w-DT,z0+DT],[x0+DT,z0+h-DT],[x0+w-DT,z0+h-DT]]:[];
+    for(const [px,pz] of PIL){ps.push(part(Cy(.38,.44,4.6,10),'#6f7378',px,2.3,pz));addCol({x:d.ox+px,z:d.oz+pz,r:.5})}
+    if(k>0&&!rm.big&&rm.kind!=='hall'&&r()<.7){const sx=x0+w/2+(r()-.5)*2,sz=z0+h/2+(r()-.5)*2;ps.push(part(B(1.1,.8,2.3),'#77787c',sx,.4,sz),part(B(1.2,.16,2.4),'#85868a',sx,.88,sz),part(Ico(.22),'#6f7378',sx,1.05,sz-.7,0,0,0,1,.6,1));addCol({x:d.ox+sx,z:d.oz+sz-.6,r:.7});addCol({x:d.ox+sx,z:d.oz+sz+.6,r:.7})}
     for(let q=0;q<3;q++){const ux=x0+.8+r()*(w-1.6),uz=z0+.8+r()*(h-1.6);if(r()<.5)ps.push(part(Cy(.24,.18,.62,10),'#7a5234',ux,.31,uz),part(Cy(.12,.2,.14,10),'#6b4a2c',ux,.68,uz));else ps.push(part(Cy(.04,.04,.55,5),'#e6dccb',ux,.06,uz,PI/2,r()*3,0),part(Ico(.13),'#e6dccb',ux+.3,.12,uz+.1))}});
   {const [si,sj]=d.start,x=si*DT,z=sj*DT+DT/2;for(let k=0;k<7;k++)ps.push(part(B(.32,.31*(k+1),DT-.6),'#7a7d82',x+1.9-k*.27,.155*(k+1),z));ps.push(part(B(.2,.2,.2),'#e8c45a',x+.4,.1,z-1.4))}
   const m=new THREE.Mesh(merge(ps),MAT);m.position.set(d.ox,DY,d.oz);m.receiveShadow=SHD;scene.add(m);d.g=m;
   {const [si,sj]=d.start,[bx,bz]=tileW(d,si,sj),beam=new THREE.Mesh(Cy(.9,1.6,5,8),new THREE.MeshBasicMaterial({color:0xfff2cf,transparent:true,opacity:.13,depthWrite:false,fog:false}));beam.position.set(bx-1.2,DY+2.4,bz);scene.add(beam)}
   for(const [x,y,z] of d.torches){const f=new THREE.Group();f.add(new THREE.Mesh(flameGeo,flameMat),new THREE.Mesh(flameGeo2,flameMat2));f.add(new THREE.Mesh(TORCHHALO,TORCHHALOM));f.position.set(x,y-.1,z);f.scale.setScalar(.3);scene.add(f);d.flames.push(f)}
-  const end=d.rooms[d.rooms.length-1],[ex,ez]=tileW(d,end.x0+1,end.z0+1);d.chest=LOOT.find(c=>c.key===d.name)||lootChest(d.name,ex+DT/2,ez+DT/2,0,DY,()=>{addItem('silver',20+d.i*8);addItem('ingot',2);addItem('core',1);addItem(['rimeiron','fang','cake'][d.i%3],2);toast('The grave goods of '+d.name+' are yours.','big')});
+  const end=d.rooms[d.rooms.length-1],[ex,ez]=tileW(d,end.x0+1,end.z0+1);d.chest=LOOT.find(c=>c.key===d.name)||lootChest(d.name,ex+DT/2,ez+DT/2,0,DY,()=>{if(d.ship){addItem('iron',10);addItem('ecto',3);addItem('silver',30);toast('The hold\'s strongroom: iron, silver and ghostlight.','big');return}addItem('silver',20+d.i*8);addItem('shard',4);addItem('ingot',2);addItem('core',1);addItem(['rimeiron','fang','cake'][d.i%3],2);toast('The grave goods of '+d.name+' are yours.','big')});
   if(LOOTOPEN.has(d.name)&&!d.chest.open)openLoot(d.chest,true)}
 /* torchlight underground */
 const TORCHHALO=new THREE.SphereGeometry(.9,12,8),TORCHHALOM=new THREE.MeshBasicMaterial({color:0xff8a30,transparent:true,opacity:.28,blending:THREE.AdditiveBlending,depthWrite:false,fog:false});
 const DLIGHTS=[0,1,2].map(()=>{const l=new THREE.PointLight(0xffa860,0,16,2);l.visible=false;scene.add(l);return l});
 const LOOTOPEN=new Set();
+/* ---------- the Drowned Colossus: a ship the size of a town, tower decks rising like a city, half sunk in the southern sea ---------- */
+const WR={x:0,z:HALF+340,L:260,W:54};
+WRECK=WR;
+const wdeck=(u,v)=>-4+13*(u+WR.L)/(2*WR.L)+v*.03;
+const whw=u=>u<140?WR.W:WR.W*Math.max(0,1-Math.pow((u-140)/125,1.6));
+/* towers: tiers of [length along the ship, width across, height]; each tier's roof is a walkable terrace, joined to the one below by a ramp on the starboard ledge */
+const WTW=[{u:-150,t:[[70,80,14],[52,60,12],[36,44,12]]},{u:-20,t:[[80,84,12],[64,70,12],[50,56,12],[38,44,12],[28,32,12],[18,20,10]]},{u:120,t:[[60,70,12],[44,52,12],[30,36,10]]}];
+for(const T of WTW){T.L=[wdeck(T.u,0)];let h=T.L[0];for(const t of T.t){h+=t[2];T.L.push(h)}}
+const inWZ=(x,z)=>Math.abs(x-WR.x)<430&&z>WR.z-430&&z<WR.z+220;
+function wreckH(x,z){const u=x-WR.x,v=z-WR.z;if(u<-WR.L||u>WR.L+5)return null;const hw=whw(u);if(Math.abs(v)>hw)return null;
+  let h=wdeck(u,v);
+  for(const T of WTW){const du=u-T.u;
+    for(let k=T.t.length-1;k>=0;k--){const [w,d]=T.t[k];if(Math.abs(du)<=w/2&&Math.abs(v)<=d/2)return Math.max(h,T.L[k+1])}
+    // ramps: on the starboard ledge beside each tier, climbing from the level below toward the bow
+    for(let k=0;k<T.t.length;k++){const [w,d]=T.t[k],v0=d/2,v1=d/2+4.5;if(v>=v0&&v<=v1&&Math.abs(du)<=w/2){const lo=k?T.L[k]:wdeck(u,v),f=(du+w/2)/w;return lo+(T.L[k+1]-lo)*Math.min(1,f*1.04)}}}
+  return h}
+/* textures: rust-streaked hull plating with rows of dead windows, and riveted deck plate */
+const WTEXW=(()=>{const mk=(f)=>{const cv=document.createElement('canvas');cv.width=cv.height=256;const x=cv.getContext('2d');f(x);const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=ANISO;t.encoding=THREE.sRGBEncoding;return t};
+  const rnd2=lcg(4242);
+  const wall=mk(x=>{x.fillStyle='#5b5650';x.fillRect(0,0,256,256);for(let i=0;i<1400;i++){const c=rnd2();x.fillStyle=c<.5?'rgba(120,64,34,.18)':c<.8?'rgba(40,36,34,.16)':'rgba(170,150,130,.12)';x.fillRect(rnd2()*256,rnd2()*256,2+rnd2()*10,2+rnd2()*24)}
+    for(let i=0;i<40;i++){const sx=rnd2()*256,w=2+rnd2()*5;const g=x.createLinearGradient(0,0,0,256);g.addColorStop(0,'rgba(140,70,30,.0)');g.addColorStop(.3,'rgba(140,70,30,.45)');g.addColorStop(1,'rgba(90,45,20,.0)');x.fillStyle=g;x.fillRect(sx,rnd2()*80,w,120+rnd2()*120)}
+    x.strokeStyle='rgba(20,18,16,.6)';x.lineWidth=2;x.strokeRect(1,1,254,254);x.beginPath();x.moveTo(128,0);x.lineTo(128,256);x.stroke();
+    for(const [wx,wy] of [[32,70],[160,70]]){x.fillStyle='#14171a';x.fillRect(wx,wy,64,80);x.fillStyle='rgba(120,150,160,.18)';x.fillRect(wx+4,wy+4,26,72);x.strokeStyle='#2c2a28';x.lineWidth=5;x.strokeRect(wx,wy,64,80);x.beginPath();x.moveTo(wx+32,wy);x.lineTo(wx+32,wy+80);x.stroke()}
+    x.fillStyle='rgba(30,26,24,.7)';for(let i=0;i<16;i++)x.fillRect(4+i*16,4,3,3)});
+  const deck=mk(x=>{x.fillStyle='#4e4b47';x.fillRect(0,0,256,256);for(let i=0;i<1800;i++){const c=rnd2();x.fillStyle=c<.55?'rgba(125,66,32,.2)':c<.85?'rgba(30,28,26,.18)':'rgba(160,150,135,.12)';const s=2+rnd2()*14;x.fillRect(rnd2()*256,rnd2()*256,s,s*.6)}
+    x.strokeStyle='rgba(18,16,14,.65)';x.lineWidth=3;for(let i=0;i<=256;i+=64){x.beginPath();x.moveTo(i,0);x.lineTo(i,256);x.stroke()}for(let i=0;i<=256;i+=128){x.beginPath();x.moveTo(0,i);x.lineTo(256,i);x.stroke()}
+    x.fillStyle='rgba(20,18,16,.7)';for(let i=4;i<256;i+=12)for(const j of[4,124,132,252])x.fillRect(i,j,2.5,2.5)});
+  return{wall,deck}})();
+const WMATW={wall:new THREE.MeshStandardMaterial({map:WTEXW.wall,roughness:.82,metalness:.25}),deck:new THREE.MeshStandardMaterial({map:WTEXW.deck,roughness:.85,metalness:.2}),
+  rust:new THREE.MeshStandardMaterial({color:LC('#6e3f24'),map:TEX.metal,roughness:.7,metalness:.45}),iron:new THREE.MeshStandardMaterial({color:LC('#4a4a4e'),map:TEX.metal,roughness:.55,metalness:.6})};
+/* geometry helpers: boxes and quads with UVs in metres so the plating tiles at a steady size */
+function wBuild(){const P_=[],UV=[],NR=[];
+  const quad=(a,b,c,d,s)=>{const n=new THREE.Vector3().subVectors(b,a).cross(new THREE.Vector3().subVectors(d,a)).normalize(),eU=new THREE.Vector3().subVectors(b,a),eV=new THREE.Vector3().subVectors(d,a),lu=eU.length()/s,lv=eV.length()/s;
+    for(const [p,uu,vv] of[[a,0,0],[b,lu,0],[c,lu,lv],[a,0,0],[c,lu,lv],[d,0,lv]]){P_.push(p.x,p.y,p.z);UV.push(uu,vv);NR.push(n.x,n.y,n.z)}};
+  const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const box=(cx,cy,cz,w,h,d,s,top)=>{const x0=cx-w/2,x1=cx+w/2,y0=cy,y1=cy+h,z0=cz-d/2,z1=cz+d/2;
+    quad(V(x0,y0,z1),V(x1,y0,z1),V(x1,y1,z1),V(x0,y1,z1),s);quad(V(x1,y0,z0),V(x0,y0,z0),V(x0,y1,z0),V(x1,y1,z0),s);
+    quad(V(x1,y0,z1),V(x1,y0,z0),V(x1,y1,z0),V(x1,y1,z1),s);quad(V(x0,y0,z0),V(x0,y0,z1),V(x0,y1,z1),V(x0,y1,z0),s);if(top!==false)quad(V(x0,y1,z1),V(x1,y1,z1),V(x1,y1,z0),V(x0,y1,z0),s)};
+  const geo=()=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P_,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(UV,2));g.setAttribute('normal',new THREE.Float32BufferAttribute(NR,3));g.computeBoundingSphere();return g};
+  return{quad,box,V,geo}}
+(function buildWreck(){const G0=new THREE.Group();G0.position.set(WR.x,0,WR.z);scene.add(G0);
+  // hull sides and deck, sampled along the length
+  const H=wBuild(),D=wBuild(),S=40,us=[];for(let i=0;i<=S;i++)us.push(-WR.L+2*WR.L*i/S);us.push(WR.L+4);
+  for(let i=0;i<us.length-1;i++){const a=us[i],b=us[i+1],wa=Math.max(.5,whw(a)),wb=Math.max(.5,whw(b));
+    for(const sd of[1,-1]){const ya=wdeck(a,sd*wa),yb=wdeck(b,sd*wb);H.quad(H.V(a,-16,sd*wa*1.02),H.V(b,-16,sd*wb*1.02),H.V(b,yb+1.4,sd*wb),H.V(a,ya+1.4,sd*wa),6);if(sd<0){}}
+    // deck surface in strips across
+    const n=8;for(let k=0;k<n;k++){const v0=-1+2*k/n,v1=-1+2*(k+1)/n,p=(u,f)=>D.V(u,wdeck(u,f*whw(u))+.02,f*whw(u));D.quad(p(a,v1),p(b,v1),p(b,v0),p(a,v0),8)}}
+  // stern wall
+  {const a=-WR.L;H.quad(H.V(a,-16,-WR.W),H.V(a,-16,WR.W),H.V(a,wdeck(a,WR.W)+1.4,WR.W),H.V(a,wdeck(a,-WR.W)+1.4,-WR.W),6)}
+  // towers: stacked tiers with window plating, terraces on top, ramps on the starboard ledges
+  const TW=wBuild(),TR=wBuild();
+  for(const T of WTW){T.t.forEach(([w,d,h],k)=>{const y0=T.L[k]-(k?0:4);TW.box(T.u,y0,0,w,T.L[k+1]-y0,d,8,false);TR.quad(TR.V(T.u-w/2,T.L[k+1]+.02,d/2),TR.V(T.u+w/2,T.L[k+1]+.02,d/2),TR.V(T.u+w/2,T.L[k+1]+.02,-d/2),TR.V(T.u-w/2,T.L[k+1]+.02,-d/2),8);
+      // parapet ledge
+      TW.box(T.u,T.L[k+1],-d/2+.3,w,1.1,.6,4);TW.box(T.u-w/2+.3,T.L[k+1],0,.6,1.1,d,4);TW.box(T.u+w/2-.3,T.L[k+1],0,.6,1.1,d,4);
+      // ramp: a sloped walkway with a side rail
+      const v0=d/2,v1=d/2+4.5,lo=k?T.L[k]:wdeck(T.u-w/2,v0),hi=T.L[k+1],ua=T.u-w/2,ub=T.u+w/2*1.0;
+      TR.quad(TR.V(ua,lo+.05,v1),TR.V(ub,hi+.05,v1),TR.V(ub,hi+.05,v0),TR.V(ua,lo+.05,v0),6);
+      TW.quad(TW.V(ua,lo-1.5,v1),TW.V(ub,hi-1.5,v1),TW.V(ub,hi+.05,v1),TW.V(ua,lo+.05,v1),6)});
+    // the funnel and mast on top
+    const top=T.L[T.L.length-1],tw=T.t[T.t.length-1];TW.box(T.u-tw[0]*.2,top,0,6,14,6,4);TW.box(T.u+tw[0]*.25,top,0,1.2,24,1.2,4);TW.box(T.u+tw[0]*.25,top+18,0,1,1,14,4)}
+  // containers and cargo heaped on the deck
+  const CT=wBuild(),rr=lcg(99);
+  for(let i=0;i<70;i++){const u=-WR.L+20+rr()*(2*WR.L-60),v=(rr()*2-1)*(whw(u)-8);if(WTW.some(T=>Math.abs(u-T.u)<T.t[0][0]/2+3&&Math.abs(v)<T.t[0][1]/2+7))continue;
+    const y=wdeck(u,v),n=1+Math.floor(rr()*3);for(let k=0;k<n;k++){CT.box(u,y+k*2.6,v,12,2.6,2.5,4);}WR.cols=WR.cols||[];WR.cols.push([u-4.5,v,1.4],[u,v,1.4],[u+4.5,v,1.4])}
+  const add=(g,m)=>{const me=new THREE.Mesh(g,m);me.receiveShadow=SHD;me.castShadow=SHD;G0.add(me);return me};
+  add(H.geo(),WMATW.wall);add(D.geo(),WMATW.deck);add(TW.geo(),WMATW.wall);add(TR.geo(),WMATW.deck);add(CT.geo(),WMATW.rust);
+  WR.g=G0;
+  // container collisions
+  for(const [u,v,r] of WR.cols||[])addCol({x:WR.x+u,z:WR.z+v,r});
+  // hull doors into the holds: one at the foot of each of the two bigger towers (port side)
+  WR.doors=[WTW[1],WTW[2]].map((T,i)=>{const d=T.t[0][1],x=WR.x+T.u,z=WR.z-d/2-1.6,y=wdeck(T.u,-d/2);
+    const door=new THREE.Mesh(new THREE.BoxGeometry(5,6,.6),new THREE.MeshBasicMaterial({color:0x07090b}));door.position.set(T.u,y+3,-d/2-.05);G0.add(door);
+    const fr=new THREE.Mesh(new THREE.BoxGeometry(6.2,7,.4),WMATW.iron);fr.position.set(T.u,y+3.2,-d/2+.1);G0.add(fr);
+    return{x,z,name:i?'Forward Hold':'Engine Hold'}})})();
+/* iron to be had: scrap heaps, broken railings and fallen gates; a pick breaks them apart */
+const WGEOW={
+  scrap:merge([part(B(1.6,.5,1.2),'#6e3f24',0,.25,0,0,.3,0),part(B(1.2,.3,1.6),'#4a4a4e',.3,.6,.1,.3,.8,.1),part(Cy(.12,.12,1.8,6),'#5a3a26',-.2,.8,0,0,0,1.1),part(B(.8,.6,.1),'#6e4a30',-.5,.5,.4,.2,.4,.3),part(Cy(.3,.3,.6,8),'#3c3c40',.6,.3,-.5,PI/2,.4,0),part(B(.5,.2,.9),'#7a4628',.1,.95,-.3,.4,.2,0)]),
+  rail:merge([part(Cy(.07,.07,1.3,6),'#4a4a4e',-1.4,.65,0),part(Cy(.07,.07,1.3,6),'#4a4a4e',0,.65,0),part(Cy(.07,.07,1.3,6),'#4a4a4e',1.4,.65,0),part(Cy(.05,.05,3,6),'#6e3f24',0,1.25,0,0,0,PI/2),part(Cy(.05,.05,3,6),'#5a3a26',0,.7,0,0,0,PI/2)]),
+  gate:merge([part(B(.2,3,.2),'#3c3c40',-1.6,1.5,0),part(B(.2,3,.2),'#3c3c40',1.6,1.5,0),part(B(3.4,.2,.2),'#3c3c40',0,2.9,0),part(B(3.4,.15,.15),'#5a3a26',0,1.5,0),part(B(3.4,.15,.15),'#5a3a26',0,.3,0),...[-1.2,-.6,0,.6,1.2].map(x=>part(Cy(.05,.05,2.8,5),'#4a4a4e',x,1.5,0))])};
+{const rr=lcg(311),L={scrap:[],rail:[],gate:[]};
+  const put=(k,u,v,s,hp,rot)=>{const x=WR.x+u,z=WR.z+v,h=wreckH(x,z);if(h==null)return;const r_=k==='rail'?.9:k==='gate'?1.2:1.1,n={id:nodes.length,kind:k,x,y:h,z,rot:rot!=null?rot:rr()*6.283,s,r:r_,hp,alive:true,shake:0,fall:-1,ax:0,az:0,tint:null,berries:false,regrow:0,mesh:null,idx:0};n.col=addCol({x,z,r:r_,node:n});nodes.push(n);L[k].push(n)};
+  for(let i=0;i<70;i++){const u=-WR.L+15+rr()*(2*WR.L-40),v=(rr()*2-1)*(whw(u)-4);put('scrap',u,v,.9+rr()*.6,45)}
+  for(const T of WTW)T.t.forEach(([w,d],k)=>{for(let q=0;q<3;q++)put('scrap',T.u+(rr()-.5)*w*.7,(rr()-.5)*d*.7,1+rr()*.4,45)});
+  for(let i=0;i<46;i++){const u=-WR.L+10+i*(2*WR.L-30)/46,sd=i%2?1:-1;put('rail',u,sd*(whw(u)-1.2),1,30,0)}
+  for(const T of WTW)T.t.forEach(([w,d],k)=>{put('gate',T.u-w/2-1,d/2+2.25,1,60,PI/2)});
+  for(const k of['scrap','rail','gate'])if(L[k].length)instSet(G(k+'W',()=>WGEOW[k]),L[k],true)}
+/* entering the holds: two iron dungeons below decks, crawling with wraiths */
+for(const [i,dr] of WR.doors.entries()){const n=DGS.length;DGS.push(Object.assign(genDungeon(9101+i*53),{site:{ux:dr.x,uz:dr.z-1.5,rot:PI,name:dr.name},i:n,ox:DZX+20+n*DGAP,oz:-56,name:dr.name,g:null,chest:null,torches:[],flames:[],ship:1}))}
+function leaveWreck(){}
+/* the dead of the Colossus: ghosts drift the decks, wraiths stalk the terraces */
+let wreckT=4,wreckSeen=false;
+function wreckTick(dt){const on=inWZ(P.x,P.z);if(!on||P.dg)return;
+  if(!wreckSeen&&Math.hypot(P.x-WR.x,P.z-WR.z)<420){wreckSeen=true;toast('The Drowned Colossus: a ship the size of a town, risen from the southern deep.','big');sfx('horn')}
+  if(!GAPS[gapIdx])return;wreckT-=dt;if(wreckT>0)return;wreckT=9;
+  if(wreckH(P.x,P.z)==null&&!P.boat)return;
+  const n=creatures.filter(c=>c.type==='ghost'||c.type==='wraith').length;if(n>=6)return;
+  for(let i=0;i<8;i++){const a=Math.random()*6.283,d=22+Math.random()*24,x=P.x+Math.sin(a)*d,z=P.z+Math.cos(a)*d,h=wreckH(x,z);if(h!=null&&h>-.5&&Math.abs(h-(P.y||0))<14){spawnCreature(Math.random()<.4?'wraith':'ghost',x,z);break}}}
+
 function enterDungeon(d){buildDungeon(d);P.dg=d;const [sx,sz]=tileW(d,d.start[0],d.start[1]);P.x=sx+.6;P.z=sz;P.y=DY;P.vy=0;camYaw=-PI/2;for(const l of DLIGHTS)l.visible=true;
   for(const c of creatures.slice())if(!c.spec.boss)removeCreature(c);
-  if(!d.chest.open)d.rooms.forEach((rm,k)=>{if(!k)return;const n=rm.big?3:1+(Math.random()<.5?1:0);for(let q=0;q<n;q++){const [x,z]=tileW(d,rm.x0+Math.floor(Math.random()*rm.w),rm.z0+Math.floor(Math.random()*rm.h));const c=spawnCreature('draugr',x,z);c.dg=d}});
+  d.woke=new Set();if(d.chest.open)d.rooms.forEach((rm,k)=>{if(Math.random()<.6)d.woke.add(k)});
   toast(d.name+(d.chest.open?'. The dead lie still here now.':'. Something stirs in the dark.'),'big');sfx('horn')}
 function leaveDungeon(){const d=P.dg;if(!d)return;P.dg=null;grassMesh.visible=pebMesh.visible=true;for(const c of creatures.slice())if(c.dg)removeCreature(c);for(const l of DLIGHTS)l.visible=false;
   P.x=d.site.ux;P.z=d.site.uz;P.y=getH(P.x,P.z);P.vy=0;camYaw=d.site.rot;toast('You climb back into the daylight.')}
-function updDungeon(dt){const d=P.dg;if(!d)return;for(const f of d.flames){const s=.28+Math.sin(T*13+f.position.x)*.035;f.scale.set(s,s+.05*Math.sin(T*19+f.position.z),s)}
+function updDungeon(dt){const d=P.dg;if(!d)return;
+  // rooms wake as you come near: a few draugr in chambers, a war band in the halls
+  d.rooms.forEach((rm,k)=>{if(!k||d.woke.has(k))return;const [cx,cz]=tileW(d,rm.x0+rm.w/2,rm.z0+rm.h/2);if(Math.hypot(cx-P.x,cz-P.z)>34)return;d.woke.add(k);
+    const n=rm.big?6:rm.kind==='hall'?3+Math.floor(Math.random()*3):Math.random()<.35?0:1+Math.floor(Math.random()*2);
+    for(let q=0;q<n;q++){const [x,z]=tileW(d,rm.x0+Math.floor(Math.random()*rm.w),rm.z0+Math.floor(Math.random()*rm.h));const c=spawnCreature(d.ship?(Math.random()<.5?'wraith':'ghost'):'draugr',x,z);c.dg=d}});for(const f of d.flames){const s=.28+Math.sin(T*13+f.position.x)*.035;f.scale.set(s,s+.05*Math.sin(T*19+f.position.z),s)}
   const ts=d.torches.map(t=>[t,Math.hypot(t[0]-P.x,t[2]-P.z)]).sort((a,b)=>a[1]-b[1]);
   DLIGHTS.forEach((l,i)=>{const t=ts[i];if(!t){l.intensity=0;return}l.position.set(t[0][0],t[0][1]-.2,t[0][2]);l.intensity=(HQ?1.6:1.25)*(.85+.15*Math.sin(T*9+i*2))});
   sun.intensity=0;hemi.intensity=.07;hemi.color.setRGB(.55,.6,.75);hemi.groundColor.setRGB(.2,.16,.12);scene.fog.color.setRGB(.035,.03,.028);scene.fog.near=3;scene.fog.far=38;rainMesh.visible=false;grassMesh.visible=pebMesh.visible=false}
@@ -2465,9 +2615,13 @@ function addItem(id,n,quiet){P.inv[id]=(P.inv[id]||0)+n;uiDirty=true;if(!quiet)t
 const hasCost=c=>Object.keys(c).every(k=>(P.inv[k]||0)>=c[k]);
 const payCost=c=>{for(const k in c){P.inv[k]-=c[k]}uiDirty=true};
 function equip(id){P.equip=P.equip===id?null:id;refreshLook();uiDirty=true}
+/* the Homeward Stone: leave any tomb, ship or wreck and arrive at your bed (or where you woke) */
+function goHome(){if(panelOpen)closePanel();if(P.dg){const d=P.dg;P.dg=null;grassMesh.visible=pebMesh.visible=true;for(const c of creatures.slice())if(c.dg)removeCreature(c);for(const l of DLIGHTS)l.visible=false}
+  if(P.boat)leaveBoat();if(typeof leaveWreck==='function')leaveWreck();P.x=P.spawn.x;P.z=P.spawn.z;P.y=getH(P.x,P.z)+.2;P.vy=0;sfx('horn');toast('The Homeward Stone flares, and you are home.','big')}
 function useItem(id){const it=ITEMS[id];detailId=id;
   if(it.food){const f=P.foods.find(f=>f.id===id);if(f&&f.t>it.food.t*.5){toast('You are still full of '+it.n.toLowerCase()+'.')}else if(!f&&P.foods.length>=3){toast('You cannot eat another kind of food yet.')}
     else{if(f)f.t=it.food.t;else P.foods.push({id,t:it.food.t});P.inv[id]--;P.hp=Math.min(maxHp(),P.hp+it.food.hp*.6);sfx('eat');toast('You eat '+it.n.toLowerCase()+'.')}}
+  else if(it.use==='home'){const now=performance.now()/1000;if(P.homeCd&&now<P.homeCd){toast('The stone is still cold. '+Math.ceil(P.homeCd-now)+' s more.')}else if(P.dead){}else{P.homeCd=now+60;goHome()}}
   else if(it.tool)equip(id);
   else if(it.slot){P.armor[it.slot]=P.armor[it.slot]===id?false:id;refreshLook();toast((P.armor[it.slot]===id?'You put on the ':'You take off the ')+it.n+'.')}
   uiDirty=true}
@@ -2490,10 +2644,10 @@ function renderPanel(){
       return'<div class="irow sk"><div><b>'+SKILLS[k][0]+'</b><p>'+(v.l>1?SKFX[k](f):SKILLS[k][1])+'</p><div class="skbar"><i style="width:'+Math.round(v.p*100)+'%"></i></div></div><span class="ct">Lv '+v.l+'</span></div>'}).join('')}
   else if(tab==='bag'){const ids=Object.keys(ITEMS).filter(k=>P.inv[k]>0);
     if(!ids.length)h='<p class="note">Your bag is empty. Walk over branches and stones in the grass to pick them up.</p>';
-    else{const grp=[['Tools and gear',k=>ITEMS[k].tool||ITEMS[k].slot||k==='hammer'],['Food',k=>ITEMS[k].food||k==='meat'],['Materials',()=>true]],used={};
+    else{const grp=[['Tools and gear',k=>ITEMS[k].tool||ITEMS[k].slot||ITEMS[k].use||k==='hammer'],['Food',k=>ITEMS[k].food||k==='meat'],['Materials',()=>true]],used={};
       for(const [name,test] of grp){const list=ids.filter(k=>!used[k]&&test(k));if(!list.length)continue;list.forEach(k=>used[k]=1);
         h+='<h5>'+name+'</h5>'+list.map(k=>{const it=ITEMS[k];let act='',on=false;
-          if(it.food)act='Eat';else if(it.tool){on=P.equip===k;act=on?'Put away':'Wield'}else if(it.slot){on=P.armor[it.slot]===k;act=on?'Take off':'Wear'}
+          if(it.food)act='Eat';else if(it.tool){on=P.equip===k;act=on?'Put away':'Wield'}else if(it.slot){on=P.armor[it.slot]===k;act=on?'Take off':'Wear'}else if(it.use)act='Use'
           return'<div class="irow'+(on?' on':'')+'"><span class="slot"><img src="'+icon(k)+'" alt=""></span><div><b>'+it.n+(on?'<i>equipped</i>':'')+'</b><p>'+it.d+'</p></div><span class="ct">×'+P.inv[k]+'</span>'+(act?'<button type="button" class="btn'+(it.food?' go':'')+'" data-act="use" data-id="'+k+'">'+act+'</button>':'')+'</div>'}).join('')}}}
   else if(tab==='store'&&storeRef){const S=storeRef.inv,sk=Object.keys(S).filter(k=>S[k]>0),mine=Object.keys(ITEMS).filter(k=>P.inv[k]>0&&k!=='hammer');
     const row=(k,n,act,lbl)=>'<div class="irow"><span class="slot"><img src="'+icon(k)+'" alt=""></span><div><b>'+ITEMS[k].n+'</b></div><span class="ct">×'+n+'</span><button type="button" class="btn" data-act="'+act+'" data-id="'+k+'">'+lbl+'</button></div>';
@@ -2590,6 +2744,9 @@ function nodeLoot(n){const sc=(i,c,x,z)=>{for(let k=0;k<c;k++)spawnDrop(i,1,x+(M
   if(n.kind==='birch'){const fx=n.x-n.az*2.5,fz=n.z+n.ax*2.5;sc('wood',3,fx,fz);if(Math.random()<.45)sc('resin',1,fx,fz)}
   else if(n.kind==='pine'){const fx=n.x-n.az*3,fz=n.z+n.ax*3;sc('wood',2,fx,fz);sc('corewood',2,fx,fz)}
   else if(n.kind==='rock'){sc('stone',4,n.x,n.z);if(Math.random()<.4)sc('flint',1,n.x,n.z)}
+  else if(n.kind==='scrap'){sc('iron',2+(Math.random()<.5?1:0),n.x,n.z)}
+  else if(n.kind==='rail'){sc('iron',1+(Math.random()<.5?1:0),n.x,n.z)}
+  else if(n.kind==='gate'){sc('iron',4,n.x,n.z)}
   else if(n.kind==='ore'){sc('ore',2+(Math.random()<.5?1:0),n.x,n.z);sc('stone',1,n.x,n.z)}}
 function hitNode(n,tool){const tree=n.kind==='birch'||n.kind==='pine',pw=tree?tool.chop:tool.mine;
   if(!pw){warn(tree?'You need an axe to fell trees.':'You need a pick to break stone.');sfx('dull');n.shake=.12;anim.add(n);return}
@@ -2702,14 +2859,14 @@ function updCreature(c,dt){const s=c.spec,dx=P.x-c.x,dz=P.z-c.z,dp=Math.hypot(dx
   if(c.flash>0){c.flash-=dt;if(c.flash<=0)setFlash(c,false)}
   if(s.boss)$('bossF').style.width=Math.max(0,c.hp/s.hp*100)+'%'}
 /* enemies arrive one at a time on a timer the player can change; harmless deer wander freely */
-const GAPS=[240,480,0,120],GAPN=['Every 4 minutes','Every 8 minutes','Never (peaceful)','Every 2 minutes'],HOSTILE={boar:1,wight:1,wolf:1};
+const GAPS=[240,480,0,120],GAPN=['Every 4 minutes','Every 8 minutes','Never (peaceful)','Every 2 minutes'],HOSTILE={boar:1,wight:1,wolf:1,ghost:1,wraith:1};
 let gapIdx=0;try{const v=parseInt(localStorage.getItem('fjordborn-gap'),10);if(v>=0&&v<GAPS.length)gapIdx=v}catch(e){}
 let spawnT=0,enemyT=GAPS[gapIdx]||240;
 function spawnPoint(minD,maxD){for(let i=0;i<6;i++){const a=Math.random()*6.283,d=minD+Math.random()*(maxD-minD),x=P.x+Math.sin(a)*d,z=P.z+Math.cos(a)*d;
   if(getH(x,z)>1.2&&Math.hypot(x-P.spawn.x,z-P.spawn.z)>24&&Math.hypot(x-TOWN.x,z-TOWN.z)>60&&Math.hypot(x-ALT.x,z-ALT.z)>10)return[x,z]}return null}
-function spawnTick(){for(const c of creatures.slice())if(!c.spec.boss&&Math.hypot(c.x-P.x,c.z-P.z)>130)removeCreature(c);if(P.dg)return;
+function spawnTick(){for(const c of creatures.slice())if(!c.spec.boss&&Math.hypot(c.x-P.x,c.z-P.z)>130)removeCreature(c);if(P.dg||inWZ(P.x,P.z))return;
   if(creatures.filter(c=>c.type==='deer').length<4&&Math.random()<.35){const p=spawnPoint(40,80);if(p){const b=biome(p[0],p[1]);if(b===1||b===2)spawnCreature('deer',p[0],p[1])}}}
-function enemyTick(dt){if(P.dg)return;const gap=GAPS[gapIdx];if(!gap)return;enemyT-=dt;if(enemyT>0)return;
+function enemyTick(dt){wreckTick(dt);if(P.dg||inWZ(P.x,P.z))return;const gap=GAPS[gapIdx];if(!gap)return;enemyT-=dt;if(enemyT>0)return;
   if(creatures.filter(c=>HOSTILE[c.type]).length>=3){enemyT=20;return}
   const p=spawnPoint(30,55);if(!p){enemyT=3;return}
   const b=biome(p[0],p[1]),t=b===3?'wolf':b===2?'wight':sunE<0?'wight':'boar';spawnCreature(t,p[0],p[1]);if(b===3&&boss===2&&Math.random()<.5){const q=spawnPoint(30,55);if(q)spawnCreature('wolf',q[0],q[1])}enemyT=gap*(boss2===2?.75:boss===2?.85:1)}
@@ -3006,6 +3163,7 @@ function drawBig(){const cv=$('bmC'),m=cv.getContext('2d'),r=cv.getBoundingClien
   for(const c of CHESTS){const x=tb(c.x),y=tb(c.z);m.fillStyle=c.open?'#7a7468':'#ffd45a';m.strokeStyle='#000';m.lineWidth=2;m.beginPath();m.arc(x,y,6,0,7);m.fill();m.stroke();if(!c.open&&!sm)lab('Hoard',x,y-11)}
   for(const s of structs)if(s.type==='karve'){const x=tb(s.x),y=tb(s.z);m.fillStyle='#8a6640';m.strokeStyle='#000';m.beginPath();m.rect(x-7,y-4,14,8);m.fill();m.stroke();lab('Karve',x,y-9)}
   if(bossRef){m.fillStyle='#d23a2e';m.beginPath();m.arc(tb(bossRef.x),tb(bossRef.z),7,0,7);m.fill();m.stroke();lab(bossRef.spec.name,tb(bossRef.x),tb(bossRef.z)-12,'#ffb0a8')}
+  for(const t of SITES)if(!t.disc&&t.kind==='barrow'){const x=tb(t.x),y=tb(t.z);m.globalAlpha=.55;m.fillStyle='#e0765f';m.strokeStyle='#000';m.lineWidth=2;m.beginPath();m.arc(x,y+3,6,PI,0);m.closePath();m.fill();m.stroke();m.globalAlpha=1;lab('?',x-3,y-9,'#e0765f',12)}
   for(const t of SITES)if(t.disc){const x=tb(t.x),y=tb(t.z),col=t.kind==='barrow'?'#e0765f':t.kind==='ruin'?'#d2be98':'#f7ecd0';m.fillStyle=col;m.strokeStyle='#000';m.lineWidth=2;m.beginPath();
     if(t.kind==='barrow'){m.arc(x,y+3,7,PI,0);m.closePath()}else if(t.kind==='ruin')m.rect(x-5,y-5,10,10);else{m.moveTo(x,y-8);for(let k=1;k<10;k++){const a=k*PI/5,rr=k%2?3.5:8;m.lineTo(x+Math.sin(a)*rr,y-Math.cos(a)*rr)}m.closePath()}
     m.fill();m.stroke();if(!sm||t.kind!=='ruin')lab(sm?t.name.replace(/^(Ruins of |Wreck of the |Tomb of |Hollow of the |Barrow of )/,''):t.name,x,y-11,col,sm?10.5:12.5)}
@@ -3107,7 +3265,7 @@ function update(dt){T+=dt;wearTick(dt);
   // hud
   if(hurtT>0){hurtT-=dt;$('hurt').style.opacity=clamp(hurtT*2,0,1)}
   $('hpF').style.width=P.hp/maxHp()*100+'%';$('stF').style.width=clamp(P.st/maxSt(),0,1)*100+'%';
-  uiT-=dt;if(uiT<=0){uiT=.25;$('hpT').textContent=Math.ceil(P.hp)+' / '+maxHp();{const inT=Math.hypot(P.x-TOWN.x,P.z-TOWN.z)<26;$('biome').textContent=P.dg?P.dg.name:inT?TOWN.name:BIOME[bi];if(inT&&!townSeen){townSeen=true;toast('Welcome to Hvalvik. Talk to the villagers, and trade with Hallvard at his stall by the gate.','big')}}$('clock').textContent='Day '+day+' · '+phase();
+  uiT-=dt;if(uiT<=0){uiT=.25;$('hpT').textContent=Math.ceil(P.hp)+' / '+maxHp();{const inT=Math.hypot(P.x-TOWN.x,P.z-TOWN.z)<26;$('biome').textContent=P.dg?P.dg.name:inT?TOWN.name:inWZ(P.x,P.z)?'The Drowned Colossus':BIOME[bi];if(inT&&!townSeen){townSeen=true;toast('Welcome to Hvalvik. Talk to the villagers, and trade with Hallvard at his stall by the gate.','big')}}$('clock').textContent='Day '+day+' · '+phase();
     tutTick();$('quest').hidden=!HINTS;if(HINTS)$('quest').innerHTML="<small>Raven's counsel</small>"+questText();
     const st=[];if(cold)st.push('<span class="bad">Freezing</span>');if(warm)st.push('<span class="good">Warm</span>');if(getH(P.x,P.z)<-1)st.push('<span>Swimming</span>');if(armorVal())st.push('<span>Armor '+armorVal()+'</span>');$('status').innerHTML=st.join('');
     const pr=$('prompt');if(useTarget&&!panelOpen&&!buildSel){pr.hidden=false;pr.innerHTML='<kbd>E / Use</kbd>'+useTarget.label}else pr.hidden=true;
@@ -3187,7 +3345,8 @@ function updPlayer(dt){P.px=P.x;P.pz=P.z;
   if(P.winded&&P.st>=Math.min(20,maxSt()*.3))P.winded=false;
   near(P.x,P.z,c=>{const dx=P.x-c.x,dz=P.z-c.z,d=Math.hypot(dx,dz),m=c.r+.35;if(d<m&&d>.0001){P.x=c.x+dx/d*m;P.z=c.z+dz/d*m}});
   if(P.dg&&!dgWalkR(P.x,P.z,.35)){if(dgWalkR(P.px,P.z,.35))P.x=P.px;else if(dgWalkR(P.x,P.pz,.35))P.z=P.pz;else{P.x=P.px;P.z=P.pz}}
-  const rr=Math.hypot(P.x,P.z);if(rr>WLIM&&!P.dg){P.x*=WLIM/rr;P.z*=WLIM/rr}
+  const rr=Math.hypot(P.x,P.z);if(rr>WLIM&&!P.dg&&!inWZ(P.x,P.z)){P.x*=WLIM/rr;P.z*=WLIM/rr}
+  if(!P.dg&&P.ground&&inWZ(P.x,P.z)&&getH(P.x,P.z)-P.y>1.1){P.x=P.px;P.z=P.pz}
   const gh=getH(P.x,P.z);
   if(gh<-1){P.y=lerp(P.y,waveH(P.x,P.z)-.8,Math.min(1,dt*6));P.vy=0;P.ground=false;P.st-=5*(1-.5*skF('swim'))*dt;P.stCd=1;if(mag>.1)gainSk('swim',dt*.8);if(P.st<=0)hurtPlayer(7*dt,true)}
   else{if(jumpQ&&P.ground&&P.st>=8&&!P.block&&P.rollT<=0){P.vy=8.2*(1+.2*skF('jump'));P.ground=false;P.st-=8*(1-.4*skF('jump'));gainSk('jump',1);P.stCd=.8}
@@ -3287,7 +3446,7 @@ function frame(t){requestAnimationFrame(frame);if(PREV){GU.value=t/1000;renderer
     PERF.box.textContent=('PERF '+JSON.stringify(GRUN)+' frames='+f.length+' fps='+(1000*f.length/(t-PERF.t0)).toFixed(0)+' p50='+q(.5)+' p95='+q(.95)+' max='+q(1)+' | update avg '+av(PERF.u)+' max '+mx(PERF.u)+' | render cpu avg '+av(PERF.r)+' max '+mx(PERF.r)+' | calls '+renderer.info.render.calls+' tris '+(renderer.info.render.triangles/1e6).toFixed(2)+'M px '+renderer.getPixelRatio())+'\n'+triBreak()+'\nGL per frame: '+Object.entries(PERF.gc).map(([k,v])=>k+' '+(v/Math.max(1,PERF.f.length)).toFixed(1)).join(' ')+'\n'+(()=>{try{const gl=renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)}catch(e){return '?'}})();PERF=null}}
   if(dbgEl){if(renderErr)dbgEl.textContent='build 11\n'+renderErr;else dbgTick(dt)}}
 refreshLook();renderHotbar();
-window.__fjordborn={scene,renderer,tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
+window.__fjordborn={scene,renderer,WR:()=>WRECK,wreckH:(x,z)=>wreckH(x,z),spawnCreature:(t,x,z)=>spawnCreature(t,x,z),DGS,enterDungeon:d=>enterDungeon(d),tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,setCamYaw:v=>{camYaw=v},GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
 if(/peekfirst/.test(location.hash)){try{peek()}catch(e){console.error('peek '+e)}}
 {const pm=location.hash.match(/preview:(.*)$/);if(pm){try{const a=JSON.parse(decodeURIComponent(pm[1]));FJ_PREVIEW(...a)}catch(e){console.error('preview '+e)}}}
 requestAnimationFrame(frame);
