@@ -1333,6 +1333,9 @@ const ITEMS={
   club:{n:'Oak Club',d:'Simple, heavy, convincing.',tool:{dmg:15,chop:0,mine:0,cd:.6,stam:9}},
   sword:{n:'Ember Sword',d:'Forged bright. Made for wights and worse.',tool:{dmg:36,chop:0,mine:0,cd:.48,stam:10}},
   rsword:{n:'Rime Sword',d:"Cold-forged from Hrimgrim's iron. The finest blade on the isle.",tool:{dmg:54,chop:0,mine:0,cd:.46,stam:10}},
+  imace:{n:'Iron Mace',d:'Wreck iron on an oak haft. Heavy blow: Ground Slam, stunning and hurling back everything around you.',tool:{dmg:40,chop:0,mine:0,cd:.62,stam:11}},
+  ispear:{n:'Iron Spear',d:'Long reach. Heavy blow: Lunge, driving forward through every foe in your path.',tool:{dmg:34,chop:0,mine:0,cd:.5,stam:9}},
+  iaxe:{n:'Iron Battleaxe',d:'A bearded war axe that also fells trees. Heavy blow: Whirlwind, a full circle of steel.',tool:{dmg:44,chop:34,mine:0,cd:.58,stam:11}},
   torch:{n:'Torch',d:'Lights the night around you.',tool:{dmg:6,chop:0,mine:0,cd:.5,stam:5,light:1}},
   hammer:{n:"Builder's Mallet",d:'Carry it to unlock the Build tab.'},
   hoe:{n:'Ground Hoe',d:'Strike the ground ahead to level it to where you stand: shaves humps, fills hollows. Lay floors on the flat.',tool:{dmg:5,chop:0,mine:0,cd:.5,stam:5}},
@@ -1362,12 +1365,12 @@ const SKFX={run:f=>'Run drain −'+pct(.5*f)+', speed +'+pct(.15*f),jump:f=>'Hei
   wood:f=>'Chopping +'+pct(f),mine:f=>'Mining +'+pct(f),swords:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),axes:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),
   clubs:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),unarmed:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),block:f=>'Block cost −'+pct(.5*f)+', parry window +'+Math.round(f*100)+' ms',
   sail:f=>'Sailing speed +'+pct(.25*f),cook:f=>'Extra roast '+pct(.5*f)+' of the time'};
-const TOOLBAR=['axe','emaxe','pick','hoe','club','sword','rsword','torch'];
+const TOOLBAR=['axe','emaxe','iaxe','pick','hoe','club','imace','ispear','sword','rsword','torch'];
 const RECIPES=[
   {id:'axe',cost:{wood:4,stone:3}},{id:'hammer',cost:{wood:3,stone:2}},{id:'hoe',cost:{wood:4,stone:4}},{id:'club',cost:{wood:6}},{id:'torch',cost:{wood:1,resin:1}},
   {id:'cooked',cost:{meat:1},st:'fire'},
   {id:'pick',cost:{wood:8,flint:4,tusk:1},st:'bench'},{id:'tunic',cost:{hide:5},st:'bench'},{id:'shirt',cost:{hide:1},st:'bench'},{id:'trousers',cost:{hide:2},st:'bench'},{id:'boots',cost:{hide:2},st:'bench'},{id:'vest',cost:{hide:2},st:'bench'},{id:'belt',cost:{hide:1},st:'bench'},{id:'gloves',cost:{hide:1},st:'bench'},{id:'coat',cost:{hide:6,resin:1},st:'bench'},{id:'waystone',cost:{shard:3,corewood:3,sunamber:2},st:'bench'},
-  {id:'ingot',cost:{ore:1,wood:2},st:'forge'},{id:'emaxe',cost:{wood:4,ingot:3},st:'forge'},{id:'sword',cost:{wood:2,ingot:5,hide:1},st:'forge'},{id:'helm',cost:{ingot:4,hide:1},st:'forge'},{id:'rsword',cost:{wood:2,rimeiron:5,ingot:2},st:'forge'}
+  {id:'ingot',cost:{ore:1,wood:2},st:'forge'},{id:'emaxe',cost:{wood:4,ingot:3},st:'forge'},{id:'sword',cost:{wood:2,ingot:5,hide:1},st:'forge'},{id:'helm',cost:{ingot:4,hide:1},st:'forge'},{id:'imace',cost:{iron:6,wood:2},st:'forge'},{id:'ispear',cost:{iron:4,wood:4},st:'forge'},{id:'iaxe',cost:{iron:8,wood:3,hide:1},st:'forge'},{id:'rsword',cost:{wood:2,rimeiron:5,ingot:2},st:'forge'}
 ];
 const STN={fire:['Campfire',5],bench:['Workbench',10],forge:['Forge',10]};
 const BUILD={
@@ -1379,6 +1382,9 @@ const BUILD={
   wall:{n:'Plank Wall',d:'Keeps the wights out.',cost:{wood:2},snap:1,wall:1},
   roof:{n:'Thatch Roof',d:'Sloped thatch. Turn it to face the ridge.',cost:{wood:2},snap:1},
   stake:{n:'Stake Wall',d:'Sharpened palisade.',cost:{wood:3},snap:1,wall:1},
+  sconce:{n:'Wall Torch',d:'An iron sconce for walls. Aim at a wall to hang it.',cost:{wood:1,resin:1},mount:1},
+  shieldmount:{n:'Shield and Axes',d:'A painted shield and crossed axes to hang on a wall.',cost:{wood:3,hide:1},mount:1},
+  trophy:{n:'Hart Trophy',d:'A mounted Fallow Hart head. Aim at a wall to hang it.',cost:{wood:2,hide:2},mount:1},
   brazier:{n:'Brazier',d:'A standing flame for dark corners.',cost:{wood:2,resin:1},r:.2,light:1.6},
   door:{n:'Plank Door',d:'Fits a wall gap. Use it to open and close.',cost:{wood:4},snap:1,wall:1},
   pillar:{n:'Log Pillar',d:'A carved post. Snaps to the corners of floors and walls.',cost:{wood:2},snap:1,pillar:1,r:.3},
@@ -1610,6 +1616,10 @@ const ITEMGEO={
     return imerge([ip(cyl(.026,.028,.22,10),19,0,0,0),ip(new THREE.BoxGeometry(.06,.05,.34),15,0,.13,0),ip(bl,16,0,.63,0),ip(new THREE.ConeGeometry(.055,.14,4),16,0,1.17,0,0,PI/4,0,.3,1,1),ip(sph(.05,10,8),15,0,-.14,0)])},
   rsword:()=>{const bl=new THREE.BoxGeometry(.03,1.05,.12,1,6,1),p=bl.attributes.position;for(let i=0;i<p.count;i++){const y=p.getY(i),z=p.getZ(i),x=p.getX(i);p.setZ(i,z*(1-Math.max(0,y-.3)*.7));p.setX(i,x*(Math.abs(z)>.04?.25:1))}bl.computeVertexNormals();
     return imerge([ip(cyl(.026,.028,.22,10),19,0,0,0),ip(new THREE.BoxGeometry(.06,.05,.38),15,0,.13,0),ip(bl,17,0,.68,0),ip(new THREE.ConeGeometry(.06,.16,4),17,0,1.28,0,0,PI/4,0,.3,1,1),ip(new THREE.OctahedronGeometry(.06,0),22,0,-.15,0,0,0,0,1,1.4,1,true)])},
+  imace:()=>{const L=[ip(cyl(.03,.036,.9,10),14,0,.28,0),ip(cyl(.06,.06,.22,10),15,0,.72,0),ip(cyl(.04,.04,.07,10),19,0,-.16,0)];for(let k=0;k<6;k++)L.push(ip(new THREE.BoxGeometry(.02,.2,.09),15,Math.cos(k*1.05)*.07,.72,Math.sin(k*1.05)*.07,0,-k*1.05,0));L.push(ip(new THREE.ConeGeometry(.04,.08,6),15,0,.87,0));return imerge(L)},
+  ispear:()=>{const bl=new THREE.OctahedronGeometry(.08,0);bl.scale(.35,2.6,1);return imerge([ip(cyl(.025,.03,1.7,10),14,0,.55,0),ip(bl,15,0,1.55,0),ip(cyl(.035,.035,.08,10),15,0,1.36,0),ip(cyl(.033,.033,.06,10),19,0,.15,0),ip(cyl(.033,.033,.06,10),19,0,-.25,0)])},
+  iaxe:()=>{const s=new THREE.Shape();s.moveTo(0,-.06);s.lineTo(.12,-.1);s.quadraticCurveTo(.2,-.26,.3,-.22);s.quadraticCurveTo(.35,0,.3,.2);s.quadraticCurveTo(.2,.18,.12,.1);s.lineTo(0,.06);s.lineTo(0,-.06);const h=new THREE.ExtrudeGeometry(s,{depth:.03,bevelEnabled:true,bevelThickness:.006,bevelSize:.006,bevelSegments:1,curveSegments:6});h.translate(0,0,-.015);
+    return imerge([ip(cyl(.033,.04,1.1,10),14,0,.34,0),ip(h,15,0,.78,.03,0,-PI/2,0),ip(cyl(.05,.05,.12,10),15,0,.78,0),ip(cyl(.04,.04,.06,10),19,0,-.18,0),ip(cyl(.036,.036,.05,10),19,0,.2,0)])},
   torch:()=>imerge([ip(cyl(.028,.034,.78,10),14,0,.25,0),ip(lumpy(cyl(.07,.055,.22,12),.1,12,2),31,0,.68,0),ip(new THREE.ConeGeometry(.1,.36,8),30,0,.95,0),ip(new THREE.ConeGeometry(.055,.24,8),30,0,.92,0)]),
   hammer:()=>imerge([ip(cyl(.03,.036,.9,10),14,0,.28,0),...logGeo(.08,.3,0,1,5).map(g=>g.applyMatrix4(new THREE.Matrix4().makeRotationY(PI/2).setPosition(0,.74,0)))])
 };
@@ -1692,14 +1702,29 @@ function karveGeo(){const L=3.9,ST=14,sec=z=>{const t=Math.abs(z/L);return{w:Mat
   for(let k=0;k<6;k++){const z=-2+k*.8,w=sec(z).w+.03;for(const sd of[1,-1])parts.push(part(Cy(.21,.21,.04,8),['#c8433a','#e8c45a','#3d6a8a'][(k+(sd>0?0:1))%3],sd*w,.12,z,0,0,PI/2))}
   parts.push(part(B(.07,1.8,.24),'#5a3d24',1.15,-.2,-3.2,0,0,.3));
   return merge(parts)}
+/* building wood: grain and knots painted per piece in object space, so every plank and log reads as wood */
+const BMAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.88,metalness:0,flatShading:true});
+BMAT.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vOP;varying vec3 vON;').replace('#include <begin_vertex>','#include <begin_vertex>\nvOP=position;vON=normal;');
+  sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vOP;varying vec3 vON;float bh(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}float bn(vec2 p){vec2 i=floor(p),f=fract(p),u=f*f*(3.-2.*f);return mix(mix(bh(i),bh(i+vec2(1,0)),u.x),mix(bh(i+vec2(0,1)),bh(i+1.),u.x),u.y);}')
+  .replace('#include <color_fragment>','#include <color_fragment>\n{vec3 n=abs(normalize(vON));vec2 q=n.y>.6?vOP.xz:n.x>n.z?vOP.zy:vOP.xy;float along=n.y>.6?q.x:q.y,across=n.y>.6?q.y:q.x;float w=bn(vec2(across*14.,along*1.2))*1.6+bn(vec2(across*60.,along*.6))*.6;float g=.5+.5*sin(w*9.+across*40.);float kn=smoothstep(.93,.99,bn(vec2(across*5.,along*2.3)+7.));diffuseColor.rgb*=.8+.24*g-.25*kn+.08*bn(q*3.);}')};
+const LOG=(r,h,x,y,z,rx,ry,rz,c)=>part(Cy(r*.92,r,h,9),c||'#6a4a2e',x,y,z,rx,ry,rz);
 const SGEO={
   karve:karveGeo,
-  floor:()=>merge([-1,0,1].map((i,k)=>part(B(.66,.14,2),PL[k%2],i*.667,.07,0))),
-  wall:()=>merge([0,1,2,3].map(i=>part(B(.5,2.4,.16),PL[i%2],-.75+i*.5,1.2,0)).concat([part(B(2.06,.16,.24),'#5f4528',0,2.3,0),part(B(2.06,.16,.24),'#5f4528',0,.1,0)])),
-  roof:()=>merge([part(B(2.12,.16,2.9),'#c2a24c',0,3.2,0,-.62),part(B(2.16,.1,.3),'#9a7e34',0,3.32,0,-.62),part(B(2.16,.1,.3),'#a88a3c',0,2.68,-.86,-.62),part(B(2.16,.1,.3),'#a88a3c',0,3.92,.86,-.62)]),
+  floor:()=>merge([0,1,2,3,4].map(k=>part(B(.39,.1,2),['#8a6a42','#80613b','#86653e'][k%3],-.8+k*.4,.13,0)).concat([LOG(.1,2.04,0,.02,-.7,0,0,PI/2,'#5f4528'),LOG(.1,2.04,0,.02,.7,0,0,PI/2,'#5f4528')])),
+  wall:()=>merge([0,1,2,3,4,5].map(i=>part(B(.31,2.2,.1),['#8a6a42','#7d5f3a','#86653e','#7a5b38'][i%4],-.78+i*.312,1.2,0,0,0,(i%3-1)*.006)).concat([LOG(.13,2.5,-.97,1.25,0),LOG(.13,2.5,.97,1.25,0),LOG(.11,2.1,0,2.36,.03,0,0,PI/2,'#5f4528'),LOG(.11,2.1,0,.12,.03,0,0,PI/2,'#5f4528'),part(B(.09,2.5,.07),'#5f4528',0,1.2,.08,0,0,.72)])),
+  roof:()=>merge([part(B(2.14,.26,1.15),'#b8963f',0,2.78,-.95,-.62),part(B(2.16,.26,1.15),'#c2a24c',0,3.28,-.1,-.62),part(B(2.18,.26,1.2),'#b08c3a',0,3.78,.78,-.62),part(B(2.2,.12,.12),'#8a7030',0,2.6,-1.42,-.62),LOG(.08,2.95,-.98,3.2,0,-.62-PI/2,0,0,'#5f4528'),LOG(.08,2.95,.98,3.2,0,-.62-PI/2,0,0,'#5f4528')]),
   stake:()=>merge([0,1,2,3].reduce((a,i)=>a.concat([part(Cy(.22,.25,2.3,6),i%2?'#7a5232':'#8a6238',-.75+i*.5,1.15,0),part(Co(.22,.55,6),'#9a7446',-.75+i*.5,2.57,0)]),[part(B(2,.14,.1),'#3a2a1c',0,1.5,.22)])),
-  bench:()=>merge([part(B(1.7,.12,.85),'#8a6a42',0,.85,0),part(B(1.7,.75,.08),'#7d5f3a',0,1.3,-.38),part(B(.12,.8,.12),'#5f4528',-.75,.4,.3),part(B(.12,.8,.12),'#5f4528',.75,.4,.3),part(B(.12,.8,.12),'#5f4528',-.75,.4,-.3),part(B(.12,.8,.12),'#5f4528',.75,.4,-.3),
-    part(B(.06,.06,.5),'#8a5a32',.3,.94,.05,0,.5),part(B(.2,.07,.14),'#9a9da2',.42,.95,.25,0,.5),part(B(.3,.2,.3),'#a8793f',-.45,1.0,0,0,.3)]),
+  bench:()=>merge([part(B(2.1,.16,.95),'#8a6a42',0,.9,0),part(B(2.1,.06,.95),'#6e5234',0,.8,0),LOG(.1,.85,-.9,.42,.34),LOG(.1,.85,.9,.42,.34),LOG(.1,.85,-.9,.42,-.34),LOG(.1,.85,.9,.42,-.34),part(B(1.9,.08,.08),'#5f4528',0,.25,.34),part(B(1.9,.08,.08),'#5f4528',0,.25,-.34),
+    // back rack and its little roof
+    LOG(.08,2.4,-1.0,1.2,-.5),LOG(.08,2.4,1.0,1.2,-.5),part(B(2.0,1.1,.06),'#7a5b38',0,1.6,-.5),part(B(2.3,.07,.75),'#6e5234',0,2.42,-.32,.42),part(B(2.3,.07,.75),'#5f4528',0,2.5,-.42,.42),
+    part(B(.04,.42,.04),'#5f4528',-.6,1.75,-.45),part(B(.26,.14,.05),'#7c8088',-.6,1.52,-.44),part(B(.04,.38,.04),'#5f4528',-.2,1.78,-.45,0,0,.15),part(B(.32,.08,.04),'#9a9da2',-.24,1.98,-.44,0,0,.15),
+    part(B(.5,.16,.02),'#9a9da2',.35,1.68,-.45),part(B(.12,.1,.05),'#6a4a2e',.07,1.68,-.45),part(Cy(.012,.012,.36,5),'#3a3a40',.75,1.8,-.45),part(Cy(.012,.012,.32,5),'#3a3a40',.82,1.78,-.45),part(Cy(.012,.012,.28,5),'#3a3a40',.89,1.76,-.45),
+    // vise, saw, hammer, shavings and a plank on the top
+    part(B(.22,.2,.24),'#55585d',.82,1.06,.25),part(Cy(.02,.02,.4,5),'#3a3a40',.82,1.08,.45,PI/2),part(B(.7,.03,.18),'#9a9da2',-.3,.99,.18,0,.2),part(B(.16,.06,.1),'#6a4a2e',-.68,1.0,.1,0,.2),
+    part(Cy(.025,.025,.36,6),'#7a5232',.25,1.0,-.05,0,.6,PI/2),part(B(.12,.08,.07),'#55585d',.36,1.0,.05,0,.6),part(B(1.0,.05,.24),'#9a7446',-.15,1.0,-.18,0,-.08),
+    part(Ico(.05),'#c9a46a',.1,.99,.3),part(Ico(.04),'#c9a46a',.2,.99,.35),part(Ico(.04),'#c9a46a',-.05,.99,.38),
+    // chopping stump with an axe in it
+    part(Cy(.3,.34,.55,10),'#6a4a2e',1.55,.27,.35),part(Cy(.28,.28,.02,10),'#c9a46a',1.55,.55,.35),part(Cy(.025,.025,.6,5),'#7a5232',1.6,.82,.35,0,0,.5),part(B(.04,.16,.12),'#9a9da2',1.48,.62,.35,0,0,.5)]),
   bed:()=>merge([part(B(1.15,.3,2.05),'#7a5232',0,.22,0),part(B(1.05,.16,1.5),'#c9b79a',0,.45,.22),part(B(1.07,.1,.5),'#9a6e44',0,.5,.6),part(B(.75,.16,.36),'#f4ead6',0,.46,-.74),part(B(1.15,.85,.1),'#5f4528',0,.5,-1.02)]),
   forge:()=>merge([part(B(1.9,1.05,1.5),'#7d8086',0,.52,0),part(B(2,.12,1.6),'#6a6d72',0,1.1,0),part(Cy(.34,.5,1.7,6),'#6a6d72',-.45,1.9,-.2),part(B(.8,.55,.1),'#241711',.1,.5,.75),part(B(.55,.3,.06),'#ff9a3a',.1,.4,.79),
     part(Cy(.3,.34,.55,6),'#6a4e30',1.5,.27,.2),part(B(.6,.2,.3),'#3a3a40',1.5,.66,.2),part(B(.3,.12,.3),'#3a3a40',1.75,.76,.2)]),
@@ -1714,25 +1739,33 @@ const SGEO={
   banner:()=>merge([part(Cy(.045,.055,3.3,6),'#5a3d24',0,1.65,0),part(Cy(.03,.03,1.2,6),'#5a3d24',0,3.08,.06,0,0,PI/2),part(Ico(.07),'#e8c45a',0,3.34,0),part(B(1.04,1.8,.03),'#a8302a',0,2.15,.07),
     part(B(1.04,.16,.035),'#e8c45a',0,2.78,.08),part(B(1.04,.12,.035),'#e8c45a',0,1.34,.08),part(Ico(.22),'#e8dcc0',0,2.1,.09,0,0,0,1,1,.15),part(B(.06,.5,.04),'#2a1e16',0,2.1,.1),part(B(.36,.06,.04),'#2a1e16',0,2.18,.1),
     part(Ico(.22),'#74777c',.1,.1,.1),part(Ico(.18),'#8a8d92',-.14,.08,-.08)]),
+  sconce:()=>merge([part(B(.16,.3,.06),'#3a3a40',0,0,-.03),part(Cy(.025,.025,.3,5),'#3a3a40',0,.05,.12,.6),part(Cy(.06,.04,.12,6),'#3a3a40',0,.18,.24),part(Cy(.04,.035,.28,6),'#6a4a2e',0,.3,.24)]),
+  shieldmount:()=>merge([part(Cy(.42,.42,.06,22),'#8a6a42',0,0,.03,PI/2),part(Cy(.44,.44,.03,22),'#55585d',0,0,.01,PI/2),part(Ico(.1),'#9a9da2',0,0,.08,0,0,0,1,1,.5),part(B(.06,.8,.02),'#a8302a',-.15,0,.065),part(B(.06,.8,.02),'#e8dcc0',.15,0,.065),
+    part(Cy(.02,.02,.9,5),'#7a5232',-.3,-.05,.12,0,0,.8),part(B(.06,.22,.05),'#9a9da2',-.62,.28,.12,0,0,.8),part(Cy(.02,.02,.9,5),'#7a5232',.3,-.05,.13,0,0,-.8),part(B(.06,.22,.05),'#9a9da2',.62,.28,.13,0,0,-.8)]),
+  trophy:()=>merge([part(B(.4,.5,.06),'#6a4a2e',0,0,.03),part(Ico(.16,1),'#a37b4d',0,-.02,.18,0,0,0,1,1,1.4),part(Ico(.1,1),'#e4d6b6',0,-.1,.36,0,0,0,1,.8,1),part(Ico(.04),'#0d0a08',.07,.03,.3),part(Ico(.04),'#0d0a08',-.07,.03,.3),
+    ...[1,-1].map(sd=>part(Cy(.025,.035,.5,5),'#d8c8a6',sd*.15,.25,.18,0,0,-sd*.5)),...[1,-1].map(sd=>part(Cy(.02,.025,.25,5),'#d8c8a6',sd*.3,.42,.18,0,0,-sd*1.1)),...[1,-1].map(sd=>part(Cy(.018,.02,.2,5),'#d8c8a6',sd*.2,.5,.2,.3,0,-sd*.2))]),
   brazier:()=>merge([part(Cy(.06,.09,1.6,5),'#55585d',0,.8,0),part(Cy(.26,.1,.24,6),'#3a3a40',0,1.68,0),part(B(.5,.05,.5),'#55585d',0,.03,0)])
 };
-const FLAMEY={fire:.35,brazier:1.85};
+const FLAMEY={fire:.35,brazier:1.85,sconce:.32};
 const DOORLEAF=()=>merge([.28,.82,1.36].map((x,i)=>part(B(.54,2.16,.1),PL[i%2],x,1.14,0)).concat([part(B(1.62,.13,.06),'#4a3620',.82,.5,.08),part(B(1.62,.13,.06),'#4a3620',.82,1.8,.08),part(B(.11,1.5,.05),'#4a3620',.82,1.15,.08,0,0,.68),
   part(B(.5,.07,.03),'#3a3a40',.25,.5,.12),part(B(.5,.07,.03),'#3a3a40',.25,1.8,.12),part(Cy(.07,.07,.03,10),'#55585d',1.45,1.1,.12,PI/2)]));
 const flameMat=new THREE.MeshBasicMaterial({color:0xffa238}),flameMat2=new THREE.MeshBasicMaterial({color:0xffe27a});
 if(POSTQ){flameMat.color.multiplyScalar(4);flameMat2.color.multiplyScalar(6)}
 const flameGeo=Co(.26,.85,5),flameGeo2=Co(.13,.5,5);
 const structs=[];
-function addStruct(type,x,base,z,rot,data){const def=BUILD[type],g=new THREE.Group(),sm=new THREE.Mesh(G('s'+type,SGEO[type]),MAT);sm.castShadow=sm.receiveShadow=SHD;g.add(sm);
+function addStruct(type,x,base,z,rot,data){const def=BUILD[type],g=new THREE.Group(),sm=new THREE.Mesh(G('s'+type,SGEO[type]),type==='karve'?MAT:BMAT);sm.castShadow=sm.receiveShadow=SHD;g.add(sm);
   const s={type,x,z,base,rot,g,cols:[],flame:null};
-  if(type==='door'){const h=new THREE.Group(),leaf=new THREE.Mesh(G('doorLeaf',DOORLEAF),MAT);leaf.castShadow=leaf.receiveShadow=SHD;h.position.x=-.82;h.add(leaf);g.add(h);s.hinge=h;s.open=!!(data&&data.o);if(s.open)h.rotation.y=-1.75}
+  if(type==='door'){const h=new THREE.Group(),leaf=new THREE.Mesh(G('doorLeaf',DOORLEAF),BMAT);leaf.castShadow=leaf.receiveShadow=SHD;h.position.x=-.82;h.add(leaf);g.add(h);s.hinge=h;s.open=!!(data&&data.o);if(s.open)h.rotation.y=-1.75}
   if(type==='box'){s.inv={};const src=data&&data.inv||{};for(const k in src)if(ITEMS[k]&&src[k]>0)s.inv[k]=src[k]|0}
-  if(FLAMEY[type]!=null){const f=new THREE.Group();f.add(new THREE.Mesh(flameGeo,flameMat),new THREE.Mesh(flameGeo2,flameMat2));f.position.y=FLAMEY[type]+.4;g.add(f);s.flame=f}
+  if(FLAMEY[type]!=null){const f=new THREE.Group();f.add(new THREE.Mesh(flameGeo,flameMat),new THREE.Mesh(flameGeo2,flameMat2));f.position.y=FLAMEY[type]+.4;if(type==='sconce'){f.position.set(0,.55,.24);f.scale.setScalar(.3)}g.add(f);s.flame=f}
   g.position.set(x,base+(type==='floor'?.02:0),z);g.rotation.y=rot*PI/2;scene.add(g);
-  if(def.wall){const cx=Math.cos(rot*PI/2),sz=-Math.sin(rot*PI/2);for(const o of[-.7,0,.7])s.cols.push(addCol({x:x+cx*o,z:z+sz*o,r:.5}))}
+  if(def.mount){s.mount=1}
+  else if(def.wall){const cx=Math.cos(rot*PI/2),sz=-Math.sin(rot*PI/2);for(const o of[-.7,0,.7])s.cols.push(addCol({x:x+cx*o,z:z+sz*o,r:.5}))}
   else if(def.r)s.cols.push(addCol({x,z,r:def.r}));
   if(s.open)s.cols.forEach(remCol);
   structs.push(s);return s}
+/* plank floors can be stood on, even raised above the ground */
+function floorAt(x,z,y){let top=null;for(const s of structs){if(s.type!=='floor')continue;if(Math.abs(s.x-x)<1.02&&Math.abs(s.z-z)<1.02){const t=s.base+.2;if(t<=y+.9&&(top==null||t>top))top=t}}return top}
 function toggleDoor(s){s.open=!s.open;s.cols.forEach(s.open?remCol:addCol);sfx('build');save()}
 const structData=s=>s.type==='door'?{o:s.open?1:0}:s.type==='box'?{inv:s.inv}:0;
 let windYaw=rnd()*6.283,sailTipShown=false;
@@ -2575,6 +2608,9 @@ function animViking(dt){blinkT-=dt;const bl=blinkT<.12?.1:1;if(blinkT<0)blinkT=2
   PM.head.rotation.y=Math.sin(T*.37)*.14*(1-P.moving)*(CUST?0:1)}
 PM.shadow=new THREE.Mesh(new THREE.CircleGeometry(.55,14),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.28,depthWrite:false}));PM.shadow.rotation.x=-PI/2;scene.add(PM.shadow);
 const TOOLG={
+  imace:()=>merge([part(B(.06,.9,.06),'#6a4a2e',0,.28,0),part(Cy(.07,.07,.22,8),'#5a5c62',0,.72,0)]),
+  ispear:()=>merge([part(B(.05,1.7,.05),'#6a4a2e',0,.55,0),part(Co(.05,.3,4),'#8d9094',0,1.55,0)]),
+  iaxe:()=>merge([part(B(.07,1.1,.07),'#6a4a2e',0,.34,0),part(B(.06,.36,.3),'#8d9094',0,.78,.16)]),
   axe:()=>merge([part(B(.07,.95,.07),'#8a5a32',0,.3,0),part(B(.08,.24,.32),'#9a9da2',0,.68,.16),part(B(.09,.08,.1),'#e0d2b0',0,.68,0)]),
   emaxe:()=>merge([part(B(.07,1,.07),'#5a3a26',0,.32,0),part(B(.08,.3,.34),'#f0a050',0,.7,.18),part(B(.08,.18,.14),'#f0a050',0,.5,.28),part(B(.09,.34,.04),'#ffd09a',0,.68,.36)]),
   hoe:()=>merge([part(B(.065,1.08,.065),'#8a5a32',0,.33,0),part(B(.26,.17,.03),'#8d9094',0,.84,.16),part(B(.05,.05,.16),'#5f6266',0,.86,.07),part(B(.08,.07,.08),'#6a4a2e',0,.86,0)]),
@@ -2722,6 +2758,12 @@ const ghost=new THREE.Mesh(B(1,1,1),ghostMat);ghost.visible=false;scene.add(ghos
 const cSnap=v=>Math.floor(v/2)*2+1,eSnap=v=>Math.round(v/2)*2;
 function placement(){const def=BUILD[buildSel];
   if(def.boat){const x=P.x+Math.sin(P.yaw)*5,z=P.z+Math.cos(P.yaw)*5,gh=getH(x,z);return{x,z,base:waveH(x,z),ok:gh<-.8&&hasCost(def.cost)&&!structs.some(s=>s.type==='karve'&&Math.hypot(s.x-x,s.z-z)<7)}}
+  if(def.mount){/* hang on the wall you face: centred on it, on whichever side you stand */let best=null,bd=3.2;const fx=Math.sin(P.yaw),fz=Math.cos(P.yaw);
+    for(const w of structs){if(!BUILD[w.type].wall||w.type==='door')continue;const d=Math.hypot(w.x-P.x,w.z-P.z);if(d<bd&&((w.x-P.x)*fx+(w.z-P.z)*fz)>-.3){bd=d;best=w}}
+    if(!best)return{x:P.x+fx*2,z:P.z+fz*2,base:getH(P.x,P.z)+1.4,ok:false,rot:buildRot};
+    let r=best.rot,nx=Math.sin(r*PI/2),nz=Math.cos(r*PI/2);if((P.x-best.x)*nx+(P.z-best.z)*nz<0){r+=2;nx=-nx;nz=-nz}
+    const off=structs.filter(s=>s.mount&&Math.hypot(s.x-best.x,s.z-best.z)<.6).length,along=[0,-.55,.55][off%3],ax=Math.cos(r*PI/2),az=-Math.sin(r*PI/2);
+    return{x:best.x+nx*.13+ax*along,z:best.z+nz*.13+az*along,base:best.base+1.55,ok:hasCost(def.cost)&&off<3,rot:r%4}}
   let x=P.x+Math.sin(P.yaw)*3,z=P.z+Math.cos(P.yaw)*3;
   if(def.snap){if(def.pillar){x=eSnap(x);z=eSnap(z)}else if(def.wall){if(buildRot%2===0){x=cSnap(x);z=eSnap(z)}else{x=eSnap(x);z=cSnap(z)}}else{x=cSnap(x);z=cSnap(z)}}
   const gh=getH(x,z);let base=gh;
@@ -2734,7 +2776,7 @@ function tryPlace(){if(!buildSel)return;
   const p=placement(),def=BUILD[buildSel];
   if(!hasCost(def.cost)){warn('Not enough materials for a '+def.n+'.');return}
   if(!p.ok){warn('It cannot stand there.');return}
-  payCost(def.cost);addStruct(buildSel,p.x,p.base,p.z,def.boat?P.yaw/(PI/2):buildRot);sfx('build');
+  payCost(def.cost);addStruct(buildSel,p.x,p.base,p.z,def.boat?P.yaw/(PI/2):p.rot!=null?p.rot:buildRot);sfx('build');
   if(buildSel==='bed'){P.spawn={x:p.x+1.5,z:p.z};toast('This is home now.')}}
 
 /* ---------- combat & gathering ---------- */
@@ -2788,8 +2830,24 @@ function startAttack(){if(!started||P.dead||panelOpen||paused||P.boat)return;if(
   const heavy=kd('heavy')&&!P.tAtk;if(heavy&&P.st<cost*1.8){warn('Too winded for a heavy blow.');return}
   if(heavy){P.combo=2;P.comboMul=2.1;P.st-=cost*1.8;P.stCd=.9;P.atkT=P.atkDur=tool.cd*1.75;P.hitDone=false;P.heavy=true;aimAssist();sfx('swing');return}P.heavy=false;
   P.combo=combo;P.comboMul=[1,1.15,1.7][combo];P.st-=cost;P.stCd=.6;P.atkT=P.atkDur=tool.cd*(fin?1.25:combo===1?.9:1);P.hitDone=false;aimAssist();sfx('swing')}
+/* heavy blows: each weapon has its own move */
+const ABIL={club:['slam',3],imace:['slam',4.2],axe:['spin',2.8],emaxe:['spin',3],iaxe:['spin',3.6],ispear:['lunge',6],sword:['flame',4.5],rsword:['frost',7.5],torch:['flame',3],pick:['sunder',0]};
+const FX=[];function ringFx(x,y,z,r,col,t){const m=new THREE.Mesh(new THREE.RingGeometry(.85,1,40),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.8,depthWrite:false,side:THREE.DoubleSide,fog:false}));m.rotation.x=-PI/2;m.position.set(x,y+.15,z);scene.add(m);FX.push({m,t:0,d:t||.45,r})}
+function fxTick(dt){for(let i=FX.length-1;i>=0;i--){const f=FX[i];f.t+=dt;const k=f.t/f.d;f.m.scale.setScalar(.2+f.r*k);f.m.material.opacity=.8*(1-k);if(k>=1){scene.remove(f.m);f.m.geometry.dispose();FX.splice(i,1)}}}
+function heavyAbility(tool,fx,fz){const a=ABIL[P.equip];if(!a)return false;const [kind,R_]=a,dmg=tool.dmg*P.comboMul*(1+.6*skF(wk())),hits=[];
+  if(kind==='slam'){shakeT=.35;sfx('slam');ringFx(P.x,P.y,P.z,R_*1.1,0xd8c8a6);for(const c of creatures){const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<R_+c.spec.r){hits.push(c);if(!c.spec.boss){c.stun=Math.max(c.stun||0,1.4)}}}
+    for(const c of hits.slice()){hitCreature(c,dmg*.8);if(!c.spec.boss&&creatures.includes(c)){const dx=c.x-P.x,dz=c.z-P.z,l=Math.hypot(dx,dz)||1;c.kx=dx/l*13;c.kz=dz/l*13}}}
+  else if(kind==='spin'){ringFx(P.x,P.y+.8,P.z,R_,0xe8e2d4,.3);for(const c of creatures.slice())if(Math.hypot(c.x-P.x,c.z-P.z)<R_+c.spec.r)hitCreature(c,dmg*.85);P.yaw+=PI*2}
+  else if(kind==='lunge'){const sx=P.x,sz=P.z;let d=0;for(;d<R_;d+=.25){const nx=sx+fx*d,nz=sz+fz*d;if(P.dg?!dgWalkR(nx,nz,.35):getH(nx,nz)<-1||getH(nx,nz)-P.y>1.1)break}d=Math.max(0,d-.25);P.x=sx+fx*d;P.z=sz+fz*d;
+    for(const c of creatures.slice()){const dx=c.x-sx,dz=c.z-sz,t=dx*fx+dz*fz,off=Math.abs(dx*fz-dz*fx);if(t>-.5&&t<d+2&&off<1.2+c.spec.r)hitCreature(c,dmg*1.1)}burst(P.x,P.y+1,P.z,10)}
+  else if(kind==='flame'){ringFx(P.x+fx*R_*.5,P.y,P.z+fz*R_*.5,R_*.7,0xff8a30);for(const c of creatures.slice()){const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d<R_+c.spec.r&&(dx*fx+dz*fz)/(d||1)>.1){c.burn=4;hitCreature(c,dmg*.9)}}}
+  else if(kind==='frost'){ringFx(P.x+fx*R_*.5,P.y,P.z+fz*R_*.5,R_*.8,0x9fe4ff,.6);for(const c of creatures.slice()){const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d<R_+c.spec.r&&(dx*fx+dz*fz)/(d||1)>.35){c.slow=4;hitCreature(c,dmg*.75)}}}
+  else return false;
+  gainSk(wk(),2);return true}
 function doHit(){const tool=(P.equip&&ITEMS[P.equip].tool)||FIST,fx=Math.sin(P.yaw),fz=Math.cos(P.yaw);let any=false;
-  for(const c of creatures.slice()){const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d<2.7+c.spec.r&&(dx*fx+dz*fz)/(d||1)>.25){if(P.combo===2&&!c.spec.boss)c.stun=Math.max(c.stun||0,.7);hitCreature(c,tool.dmg*P.comboMul*(1+.6*skF(wk())));gainSk(wk(),1.5);any=true}}
+  if(P.heavy&&ABIL[P.equip]&&ABIL[P.equip][0]!=='sunder'&&heavyAbility(tool,fx,fz))return;
+  const sunder=P.heavy&&P.equip==='pick';
+  for(const c of creatures.slice()){const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d<2.7+c.spec.r&&(dx*fx+dz*fz)/(d||1)>.25){if(P.combo===2&&!c.spec.boss)c.stun=Math.max(c.stun||0,.7);hitCreature(c,tool.dmg*P.comboMul*(1+.6*skF(wk()))*(sunder?1.6:1));gainSk(wk(),1.5);any=true}}
   if(any)return;let best=1e9,bn=null;
   near(P.x,P.z,c=>{if(c.node&&c.node.alive&&c.node.kind!=='bush'){const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d-c.r<2.3&&(dx*fx+dz*fz)/(d||1)>.2&&d<best){best=d;bn=c.node}}});
   if(P.equip==='hoe'){if(!P.dg&&!P.boat)tryLevel(fx,fz)}else if(bn)hitNode(bn,tool);else if(P.equip==='pick'&&!P.dg&&!P.boat)tryDig(fx,fz)}
@@ -2850,10 +2908,12 @@ function updCreature(c,dt){const s=c.spec,dx=P.x-c.x,dz=P.z-c.z,dp=Math.hypot(dx
     if(dp<s.reach+.3&&c.cd<=0){c.wind=s.wind;c.sx=P.x;c.sz=P.z}}
   else{c.mad=false;c.tT-=dt;if(c.tT<=0){c.tT=2+Math.random()*4;if(Math.random()<.35){c.wx=0;c.wz=0}else{const a=Math.random()*6.283;c.wx=Math.sin(a);c.wz=Math.cos(a)}}tx=c.wx;tz=c.wz;sp=s.spd*.3}
   let moving=0;
+  if(c.slow>0){c.slow-=dt;sp*=.4}
   if(sp>0&&(tx||tz)){const nx=c.x+tx*sp*dt,nz=c.z+tz*sp*dt;if(getH(nx,nz)>.15){c.x=nx;c.z=nz;c.phase+=dt*sp*(c.spec.boss?.8:2.2);moving=1}else c.tT=0;
     c.yaw=angLerp(c.yaw,Math.atan2(tx,tz),Math.min(1,dt*8))}
   if(c.kx||c.kz){const kx=c.x+c.kx*dt,kz=c.z+c.kz*dt;if(getH(kx,kz)>.15){c.x=kx;c.z=kz}c.kx*=.82;c.kz*=.82;if(Math.abs(c.kx)+Math.abs(c.kz)<.1)c.kx=c.kz=0}
   if(dp<s.r+.45&&!c.spec.boss){c.x-=dx/dp*dt*3;c.z-=dz/dp*dt*3}
+  if(c.burn>0){c.burn-=dt;c.bt=(c.bt||0)-dt;if(c.bt<=0){c.bt=.5;burst(c.x,c.y+1,c.z,3);hitCreature(c,5);if(!creatures.includes(c))return}}
   c.y=getH(c.x,c.z);
   const wp=c.wind>0?1-c.wind/s.wind:0,lunge=c.arms.length?0:Math.sin(wp*PI)*.6;
   const quad=c.knees.length===4,runG=quad&&sp>s.spd*.55;c.gw=lerp(c.gw||0,moving?(runG?1:.45):0,Math.min(1,dt*5));
@@ -2880,7 +2940,7 @@ function spawnPoint(minD,maxD){for(let i=0;i<6;i++){const a=Math.random()*6.283,
   if(getH(x,z)>1.2&&Math.hypot(x-P.spawn.x,z-P.spawn.z)>24&&Math.hypot(x-TOWN.x,z-TOWN.z)>60&&Math.hypot(x-ALT.x,z-ALT.z)>10)return[x,z]}return null}
 function spawnTick(){for(const c of creatures.slice())if(!c.spec.boss&&Math.hypot(c.x-P.x,c.z-P.z)>130)removeCreature(c);if(P.dg||inWZ(P.x,P.z))return;
   if(creatures.filter(c=>c.type==='deer').length<4&&Math.random()<.35){const p=spawnPoint(40,80);if(p){const b=biome(p[0],p[1]);if(b===1||b===2)spawnCreature('deer',p[0],p[1])}}}
-function enemyTick(dt){wreckTick(dt);if(P.dg||inWZ(P.x,P.z))return;const gap=GAPS[gapIdx];if(!gap)return;enemyT-=dt;if(enemyT>0)return;
+function enemyTick(dt){fxTick(dt);wreckTick(dt);if(P.dg||inWZ(P.x,P.z))return;const gap=GAPS[gapIdx];if(!gap)return;enemyT-=dt;if(enemyT>0)return;
   if(creatures.filter(c=>HOSTILE[c.type]).length>=3){enemyT=20;return}
   const p=spawnPoint(30,55);if(!p){enemyT=3;return}
   const b=biome(p[0],p[1]),t=b===3?'wolf':b===2?'wight':sunE<0?'wight':'boar';spawnCreature(t,p[0],p[1]);if(b===3&&boss===2&&Math.random()<.5){const q=spawnPoint(30,55);if(q)spawnCreature('wolf',q[0],q[1])}enemyT=gap*(boss2===2?.75:boss===2?.85:1)}
@@ -3267,7 +3327,7 @@ function update(dt){T+=dt;wearTick(dt);
   if(!P.dead){if(cold)hurtPlayer(1.6*dt,true);else P.hp=Math.min(maxHp(),P.hp+(P.foods.length?.7:.25)*(warm?3:1)*dt);if(P.hp>maxHp())P.hp=maxHp();if(P.st>maxSt())P.st=maxSt()}
   // build ghost
   if(buildSel){if(buildSel==='dismantle'){const s=dismantleTarget();ghost.visible=!!s;if(s){ghost.geometry=G('s'+s.type,SGEO[s.type]);ghost.position.copy(s.g.position);ghost.rotation.y=s.g.rotation.y;ghost.scale.setScalar(1.04);ghostMat.color.set(0xff5a4a)}}
-    else{const p=placement();ghost.visible=true;ghost.scale.setScalar(1);ghost.position.set(p.x,p.base,p.z);ghost.rotation.y=BUILD[buildSel].boat?P.yaw:buildRot*PI/2;ghostMat.color.set(p.ok?0x7dff8a:0xff5a4a)}}
+    else{const p=placement();ghost.visible=true;ghost.scale.setScalar(1);ghost.position.set(p.x,p.base,p.z);ghost.rotation.y=BUILD[buildSel].boat?P.yaw:(p.rot!=null?p.rot:buildRot)*PI/2;ghostMat.color.set(p.ok?0x7dff8a:0xff5a4a)}}
   // lights
   lightT-=dt;if(lightT<=0){lightT=.3;const src=structs.filter(s=>BUILD[s.type].light).map(s=>[(s.x-P.x)**2+(s.z-P.z)**2,s]).sort((a,b)=>a[0]-b[0]);
     for(let i=1;i<4;i++){const e=src[i-1];if(e&&e[0]<3600){LP[i].position.set(e[1].x,e[1].base+1.6,e[1].z);LP[i].userData.base=BUILD[e[1].type].light}else LP[i].userData.base=0}}
@@ -3361,7 +3421,7 @@ function updPlayer(dt){P.px=P.x;P.pz=P.z;
   if(P.dg&&!dgWalkR(P.x,P.z,.35)){if(dgWalkR(P.px,P.z,.35))P.x=P.px;else if(dgWalkR(P.x,P.pz,.35))P.z=P.pz;else{P.x=P.px;P.z=P.pz}}
   const rr=Math.hypot(P.x,P.z);if(rr>WLIM&&!P.dg&&!inWZ(P.x,P.z)){P.x*=WLIM/rr;P.z*=WLIM/rr}
   if(!P.dg&&P.ground&&inWZ(P.x,P.z)&&getH(P.x,P.z)-P.y>1.1){P.x=P.px;P.z=P.pz}
-  const gh=getH(P.x,P.z);
+  let gh=getH(P.x,P.z);if(!P.dg){const fl=floorAt(P.x,P.z,P.y);if(fl!=null&&fl>gh)gh=fl}
   if(gh<-1){P.y=lerp(P.y,waveH(P.x,P.z)-.8,Math.min(1,dt*6));P.vy=0;P.ground=false;P.st-=5*(1-.5*skF('swim'))*dt;P.stCd=1;if(mag>.1)gainSk('swim',dt*.8);if(P.st<=0)hurtPlayer(7*dt,true)}
   else{if(jumpQ&&P.ground&&P.st>=8&&!P.block&&P.rollT<=0){P.vy=8.2*(1+.2*skF('jump'));P.ground=false;P.st-=8*(1-.4*skF('jump'));gainSk('jump',1);P.stCd=.8}
     if(P.ground&&P.vy<=0&&P.y-gh<.7)P.y=gh;else{P.vy-=22*dt;P.y+=P.vy*dt;if(P.y<=gh){P.y=gh;P.vy=0;P.ground=true}}}
@@ -3397,6 +3457,8 @@ function updCamera(dt){updLock(dt);if(LOCK&&!CUST){const dx=LOCK.x-P.x,dz=LOCK.z
   const CD=P.boat?Math.max(camDist,13):camDist;let want=CD;
   for(let s=.8;s<=CD&&want===CD;s+=.35){const px=tx+dx*s,py=ty+dy*s,pz=tz+dz*s;
     if(Math.max(getH(px,pz),-.2)+.5>py||(P.dg&&(!dgWalk(px,pz)||py>DY+4.1))){want=Math.max(1.2,s-.6);break}
+    /* built walls and roofs stop the camera, so you can see inside your own hall */
+    if(structs.length&&!P.dg){let hit=false;for(const st of structs){const b=BUILD[st.type];if(!(b.wall||st.type==='roof'))continue;if(Math.abs(st.x-px)<1.15&&Math.abs(st.z-pz)<1.15&&py>st.base&&py<st.base+(st.type==='roof'?4.2:2.6)){if(b.wall){const r=st.rot*PI/2,nx=Math.sin(r),nz=Math.cos(r);if(Math.abs((px-st.x)*nx+(pz-st.z)*nz)>.35)continue}else if(py<st.base+2.5)continue;hit=true;break}}if(hit){want=Math.max(1.2,s-.5);break}}
     // also stop in front of tree trunks and canopies so a tree never fills the screen
     near(px,pz,c=>{const n=c.node;if(!n||!n.alive||(n.kind!=='birch'&&n.kind!=='pine'))return;const d=Math.hypot(c.x-px,c.z-pz),h=py-n.y;
       if((d<.5*n.s+.35&&h<3.2*n.s)||(d<1.7*n.s&&h>2.4*n.s&&h<8*n.s))want=Math.max(1.5,s-.6)})}
@@ -3460,7 +3522,7 @@ function frame(t){requestAnimationFrame(frame);if(PREV){GU.value=t/1000;renderer
     PERF.box.textContent=('PERF '+JSON.stringify(GRUN)+' frames='+f.length+' fps='+(1000*f.length/(t-PERF.t0)).toFixed(0)+' p50='+q(.5)+' p95='+q(.95)+' max='+q(1)+' | update avg '+av(PERF.u)+' max '+mx(PERF.u)+' | render cpu avg '+av(PERF.r)+' max '+mx(PERF.r)+' | calls '+renderer.info.render.calls+' tris '+(renderer.info.render.triangles/1e6).toFixed(2)+'M px '+renderer.getPixelRatio())+'\n'+triBreak()+'\nGL per frame: '+Object.entries(PERF.gc).map(([k,v])=>k+' '+(v/Math.max(1,PERF.f.length)).toFixed(1)).join(' ')+'\n'+(()=>{try{const gl=renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)}catch(e){return '?'}})();PERF=null}}
   if(dbgEl){if(renderErr)dbgEl.textContent='build 11\n'+renderErr;else dbgTick(dt)}}
 refreshLook();renderHotbar();
-window.__fjordborn={scene,renderer,WR:()=>WRECK,wreckH:(x,z)=>wreckH(x,z),spawnCreature:(t,x,z)=>spawnCreature(t,x,z),DGS,enterDungeon:d=>enterDungeon(d),tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,setCamYaw:v=>{camYaw=v},GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
+window.__fjordborn={scene,renderer,doHit:()=>doHit(),creatures,groundH:(x,z)=>getH(x,z),addStruct:(...a)=>addStruct(...a),WR:()=>WRECK,wreckH:(x,z)=>wreckH(x,z),spawnCreature:(t,x,z)=>spawnCreature(t,x,z),DGS,enterDungeon:d=>enterDungeon(d),tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,setCamYaw:v=>{camYaw=v},GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
 if(/peekfirst/.test(location.hash)){try{peek()}catch(e){console.error('peek '+e)}}
 {const pm=location.hash.match(/preview:(.*)$/);if(pm){try{const a=JSON.parse(decodeURIComponent(pm[1]));FJ_PREVIEW(...a)}catch(e){console.error('preview '+e)}}}
 requestAnimationFrame(frame);
