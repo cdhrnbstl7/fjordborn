@@ -1,8 +1,7 @@
-**Elden Ring style movement**
+**Clothes that fit, cheaper dodges**
 
-- **Running:** you lean into a run, hips and shoulders counter-twist with each stride, elbows bend and pump, knees lift and the toes push off.
-- **Standing:** soft knees, breathing, a slow shift of weight.
-- **Attacks:** each swing winds up with the torso, lunges off the front foot and carries you half a step forward, then follows through. The third hit and heavy attacks are a two-handed overhead blow.
-- **Roll:** a tight tuck that stays on the ground through the whole tumble.
-- **Dash and backstep:** the spine now leans into the dodge.
-- Moves ease into each other instead of snapping between poses.
+- **Dodging** now costs the same stamina as a jump.
+- **Clothes drape over the body** instead of being painted on: the shirt and trousers bridge hollows rather than showing every muscle, and hems, cuffs and necklines are clean edges.
+- **New layers:** a sleeveless leather jerkin over the shirt with a belt and pouch, and leather bracers over the forearms.
+- **Tabard-style tunic:** longer, with slits at the sides, so the panels hang and swing while your legs move through.
+- Boot tops no longer show gaps when you walk.
