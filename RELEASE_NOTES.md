@@ -1,3 +1,5 @@
-**Coat tails fit the hips, not the arms**
+**Belt and Sash is back**
 
-- The coat tails were being sized around the hanging arms and hands, which made the bottom half wide. They now fit only the hips and legs, so the arms and hands hang free at the sides.
+- The belt and cloth sash now wrap snug around the waist over whatever you are wearing (bare skin, vest or coat), with a buckle at the front.
+- The only part that hangs is the sash tail and tassel at the front.
+- Craft it at the Workbench for 1 hide; it fills the Waist slot.
