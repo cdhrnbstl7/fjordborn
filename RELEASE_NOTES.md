@@ -1,3 +1,3 @@
-**Smoother hood**
+**Hood shape**
 
-- The hood no longer bulges around the ears and the back of the head: it falls straight from its widest point and then flares out over the shoulders.
+- The back and sides of the hood now fall in one smooth slope from the crown to the shoulders, ending in a point on the back, with no rounded bulge where the head meets the neck.
