@@ -1,4 +1,6 @@
-**Seamless bodies**
+**Hands, muscle and a cloak that moves like cloth**
 
-- Your character is now one continuous body on a skeleton, like characters in modern games. Shoulders, elbows, hips and knees bend smoothly instead of hinging separate pieces, and armor rides on top.
-- Boars, deer and wolves are built the same way: legs grow out of the shoulders and haunches, the neck flows into the head, and the whole body moves as one.
+- Real gloved hands with four fingers and a thumb, gently curled, replacing the rounded ends of the arms. Tools sit in the fist.
+- Muscle shape under the clothes: deltoids, chest, biceps, forearms, thighs, calves and glutes.
+- The cloak is now cloth on a chain of bones: it trails behind you when you run, swings out when you turn, flutters, and settles when you stop.
+- The forearm guards fit properly over the arm.
