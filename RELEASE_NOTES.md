@@ -1,4 +1,3 @@
-**A more realistic look (first step)**
+**Vibrant colours are back**
 
-- New colour grade, like a film camera: muted colours, cool shadows, warm highlights, slightly lifted blacks and a gentle contrast curve. Works on phones too.
-- The daytime sky is hazier and greyer instead of postcard blue.
+- The muted colour grade and grey sky from 1.7.0 are undone; the game is back to its bright, saturated look.
