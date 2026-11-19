@@ -115,6 +115,7 @@ button:focus-visible{outline:2px solid var(--rune);outline-offset:2px}
 #biome{font-family:var(--display);font-size:28px;line-height:1;font-weight:700;letter-spacing:.02em}
 #clock{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--parch);opacity:.85;margin-top:2px}
 #quest{margin-top:8px;font-size:14px;line-height:1.3;background:#000a;padding:6px 10px;border-left:3px solid var(--ember);text-align:left;text-shadow:none}
+#quest .tstep{color:var(--ember);font-weight:700;margin-right:4px}
 #quest small{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ember);font-weight:700}
 
 #map{pointer-events:auto;cursor:pointer;right:var(--sr);top:var(--st);width:112px;height:112px;border-radius:50%;border:3px solid var(--edge);box-shadow:0 0 0 1px #000,0 4px 12px #0008;background:#1c3a4c}
@@ -330,6 +331,7 @@ body.kbonly #acts{display:none!important}
       <button class="btn" id="pGfx" type="button">Graphics: High</button>
       <button class="btn" id="pKeys" type="button">Controls (key bindings)</button>
       <button class="btn" id="pBright" type="button">Brightness: Normal</button>
+      <button class="btn" id="pHints" type="button">Hints: On</button>
       <button class="btn" id="pMove" type="button">Move your saga to another device</button>
       <button class="btn" id="pRot" type="button" hidden>Keep sideways when the phone is upright: Off</button>
       <button class="btn" id="pLeave" type="button">Save and leave to title screen</button>
@@ -473,7 +475,7 @@ let HQ=!!GFX.rich;const SHD=GFX.shadow>0,POSTQ=!!GFX.post;
 const GR_T=[[1,20,2,2],[4500,40,4,2],[7500,48,5,3],[12000,70,6,3],[26000,92,8,4]][GFX.grass],PB_T=[[4,20],[400,20],[800,24],[1400,30],[2800,38]][GFX.pebbles];
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,GFX.res));layout();
 const LC=h=>new THREE.Color(h).convertSRGBToLinear();
-THREE.ShaderChunk.tonemapping_pars_fragment+='\nvec3 tkGrade(vec3 c){float l=dot(c,vec3(0.2126,0.7152,0.0722));c=mix(vec3(l),c,0.82);c*=mix(vec3(0.95,0.99,1.04),vec3(1.03,1.0,0.94),smoothstep(0.02,0.45,l));return c*0.94;}\n';
+THREE.ShaderChunk.tonemapping_pars_fragment+='\nvec3 tkGrade(vec3 c){float l=dot(c,vec3(0.2126,0.7152,0.0722));c=mix(vec3(l),c,0.82);c*=mix(vec3(0.95,0.99,1.04),vec3(1.03,1.0,0.94),smoothstep(0.02,0.45,l));return c*'+(EDITION==='phone'?'0.86':'0.94')+';}\n';
 THREE.ShaderChunk.tonemapping_fragment='#if defined( TONE_MAPPING )\n\tgl_FragColor.rgb = tkGrade( toneMapping( gl_FragColor.rgb ) );\n#endif\n';
 const hemi=new THREE.HemisphereLight(0xdfeeff,LC(0x4a4236),.6);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff0d8,2);scene.add(sun);scene.add(sun.target);
@@ -1158,7 +1160,7 @@ GEO.pineLeaf=(()=>{const cards=[];for(let t=0;t<7;t++){const y=1.9+t*.95,R=2.45*
 {const toC=A=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(A.pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(A.uv,2));g.setAttribute('normal',new THREE.Float32BufferAttribute(A.nrm,3));g.setAttribute('color',new THREE.Float32BufferAttribute(A.col,3));return g};
   const decim=(A,k)=>{const o={pos:[],uv:[],nrm:[],col:[]},nc=A.pos.length/18;for(let c=0;c<nc;c++){if(c%k)continue;o.pos.push(...A.pos.slice(c*18,c*18+18));o.uv.push(...A.uv.slice(c*12,c*12+12));o.nrm.push(...A.nrm.slice(c*18,c*18+18));o.col.push(...A.col.slice(c*18,c*18+18))}return o};
   for(let v=0;v<TREE_NV;v++){const PA=pineCards(null,v),BA=birchCards(null,v);GEO['pineLeaf'+v]=toC(PA);GEO['birchLeaf'+v]=toC(BA);GEO['pineLeafLo'+v]=toC(decim(PA,3));GEO['birchLeafLo'+v]=toC(decim(BA,3))}GEO.pineLeaf=GEO.pineLeaf0;GEO.birchLeaf=GEO.birchLeaf0;GEO.pineLeafLo=GEO.pineLeafLo0;GEO.birchLeafLo=GEO.birchLeafLo0}
-const LEAFM=new Map();function leafMat(tex,low){const key=low?'low':tex;if(LEAFM.has(key))return LEAFM.get(key);const m=new THREE.MeshStandardMaterial({map:tex,alphaTest:.5,side:THREE.DoubleSide,vertexColors:true,roughness:.8,metalness:0});m.extensions={derivatives:true};
+const LEAFM=new Map();function leafMat(tex,low){const key=low?'low':tex;if(LEAFM.has(key))return LEAFM.get(key);const m=new THREE.MeshStandardMaterial({map:tex,alphaTest:.5,side:THREE.DoubleSide,vertexColors:true,roughness:.95,metalness:0,envMapIntensity:.35});m.extensions={derivatives:true};
   if(POST_OK)m.alphaToCoverage=true;
   m.onBeforeCompile=sh=>{sh.uniforms.uTime=GU;
     sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n{vec2 tdx=dFdx(vUv*'+[256,512,1024][GFX.tex]+'.0),tdy=dFdy(vUv*'+[256,512,1024][GFX.tex]+'.0);float lod=max(0.0,0.5*log2(max(dot(tdx,tdx),dot(tdy,tdy))));diffuseColor.a*=1.0+lod*0.35;}');
@@ -2527,7 +2529,24 @@ function openPanel(t){if(P.dead||!started||paused)return;unlockMouse();panelOpen
 function closePanel(){panelOpen=false;$('panel').hidden=true;if(shopOpen){shopOpen=false;$('tTrade').hidden=true;if(tab==='trade')tab='bag'}if(storeRef){storeRef=null;$('tStore').hidden=true;if(tab==='store')tab='bag'}}
 function setBuild(k){buildSel=k;$('buildbar').hidden=!k;ghost.visible=false;if(k){$('bbName').textContent=BUILD[k].n;$('bbPlace').textContent=k==='dismantle'?'Remove':'Place';$('bbRot').hidden=k==='dismantle';
   if(k!=='dismantle')ghost.geometry=G('s'+k,SGEO[k])}}
+/* the tutorial: one small task at a time; finish it and the raven gives the next */
+const tch=()=>isTouch(),TK=(k,t)=>tch()?t:k;
+const TUT=[
+  {t:()=>'Look around and move. '+TK('Use W A S D to walk and move the mouse to look.','Push the left stick to walk; drag anywhere else to look.')+' Walk a little way from where you woke.',d:()=>Math.hypot(P.x-P.spawn.x,P.z-P.spawn.z)>8},
+  {t:()=>'Gather what lies in the grass: walk over branches and loose stones to pick them up. Collect 4 wood and 3 stone ('+Math.min(4,P.inv.wood||0)+'/4 wood, '+Math.min(3,P.inv.stone||0)+'/3 stone).',d:h=>h('axe')||h('emaxe')||(P.inv.wood>=4&&P.inv.stone>=3)},
+  {t:()=>'Make your first tool. Open your bag ('+TK('press Tab','tap Bag')+'), go to Craft, and craft a Stone Axe.',d:h=>h('axe')||h('emaxe')},
+  {t:()=>'Wield the axe ('+TK('press 1, or Wield in the bag','Wield it in the bag')+') and fell a white birch: '+TK('click','tap Strike')+' to swing at the trunk. Gather 3 wood and 2 stone for a mallet ('+Math.min(3,P.inv.wood||0)+'/3 wood, '+Math.min(2,P.inv.stone||0)+'/2 stone).',d:h=>h('hammer')||(P.inv.wood>=3&&P.inv.stone>=2)},
+  {t:()=>"Craft a Builder's Mallet in the bag. The mallet lets you build.",d:h=>h('hammer')},
+  {t:()=>'Build a Campfire: open the bag, go to Build, pick Campfire, and place it '+TK('with a click','with Place')+'. Fire keeps you warm and cooks meat.',d:(h,hs)=>hs('fire')},
+  {t:()=>'Build a Workbench next to your fire. Clothes, picks and better tools are made there.',d:(h,hs)=>hs('bench')},
+  {t:()=>'Hunt for hide. Fallow Harts and Bristlebacks roam the meadows; strike them down and take their hide ('+Math.min(2,P.inv.hide||0)+'/2).',d:h=>(P.inv.hide||0)>=2||Object.values(P.armor).some(Boolean)},
+  {t:()=>'Get dressed. At the workbench, craft Wool Trousers and put them on (Bag, then Wear).',d:()=>Object.values(P.armor).some(Boolean)},
+  {t:()=>'Dodge and defend. '+TK('Press Space','Tap Dodge')+' to backstep or dash, and hold '+TK('the right mouse button','Block')+' to raise your shield. Try a dodge now.',d:()=>P.rollT>0}];
+let HINTS=true;try{HINTS=localStorage.getItem('fjordborn-hints')!=='0'}catch(e){}
+function tutTick(){if(P.tut==null)P.tut=0;const h=k=>P.inv[k]>0,hs=t=>structs.some(s=>s.type===t);
+  while(P.tut<TUT.length&&TUT[P.tut].d(h,hs)){P.tut++;if(HINTS&&started)toast(P.tut<TUT.length?'Task done. The raven has more counsel.':'Tutorial complete. The raven will guide your saga from here.')}}
 function questText(){const h=k=>P.inv[k]>0,hs=t=>structs.some(s=>s.type===t);
+  if(P.tut!=null&&P.tut<TUT.length)return'<b class="tstep">Step '+(P.tut+1)+' of '+TUT.length+'</b> '+TUT[P.tut].t();
   if(boss2===1)return'Fell Hrimgrim. Run clear of the red ring when he slams, and step off the blue mark before his ice boulder lands.';
   if(boss===2){const left=CHESTS.filter(c=>!c.open).length,sea=left?' Or build a Karve and sail for the '+left+' hoards on the islets.':'';
     if(boss2===0)return'Grimrok is fallen, but something stirs on the highest Hoarfell peak. Hunt Rimewolves for fangs ('+Math.min(4,P.inv.fang||0)+'/4) and lay them on the Frost Cairn under the blue beam.'+sea;
@@ -2832,7 +2851,7 @@ $('bbDone').addEventListener('click',()=>setBuild(null));
 
 /* ---------- save / load ---------- */
 function save(){if(!started||wiping)return false;try{const inv=Object.assign({},P.inv);if(boss===1)inv.core=(inv.core||0)+3;if(boss2===1)inv.fang=(inv.fang||0)+4;
-  localStorage.setItem(KEY,JSON.stringify({v:1,inv,eq:P.equip,ar:P.armor,fo:P.foods,x:P.dg?P.dg.site.ux:P.x,z:P.dg?P.dg.site.uz:P.z,sp:P.spawn,t:time,day,boss:boss===2?2:0,b2:boss2===2?2:0,sk:SK,w:4,lc:[...new Set([...LOOTOPEN,...LOOT.filter(c=>c.open).map(c=>c.key)])],disc:SITES.map((t,i)=>t.disc?i:-1).filter(i=>i>=0),dig:DIG,wr:wearSave(),ts:townSeen?1:0,dead:deadIds,st:structs.map(s=>[s.type,s.x,s.base,s.z,s.rot,structData(s)]),ch:CHESTS.filter(c=>c.open).map(c=>c.i)}));
+  localStorage.setItem(KEY,JSON.stringify({v:1,tu:P.tut,inv,eq:P.equip,ar:P.armor,fo:P.foods,x:P.dg?P.dg.site.ux:P.x,z:P.dg?P.dg.site.uz:P.z,sp:P.spawn,t:time,day,boss:boss===2?2:0,b2:boss2===2?2:0,sk:SK,w:4,lc:[...new Set([...LOOTOPEN,...LOOT.filter(c=>c.open).map(c=>c.key)])],disc:SITES.map((t,i)=>t.disc?i:-1).filter(i=>i>=0),dig:DIG,wr:wearSave(),ts:townSeen?1:0,dead:deadIds,st:structs.map(s=>[s.type,s.x,s.base,s.z,s.rot,structData(s)]),ch:CHESTS.filter(c=>c.open).map(c=>c.i)}));
   lastSaveAt={when:new Date(),day};saveFailed=false;return true}catch(e){saveFailed=true;return false}}
 function updSaveMsg(){const m=$('saveMsg');m.classList.toggle('bad',saveFailed);
   if(saveFailed)m.textContent='This browser blocked saving, which a private window can do. Progress will be lost when you close the page.';
@@ -2855,6 +2874,7 @@ $('pGfx').textContent='Graphics settings: '+(['Low','Medium','High','Ultra'][gfx
 /* brightness: phones run the low graphics path, which has no bloom, so it starts brighter; players can push it further */
 const BRI=[1,1.3,1.65,.8],BRN=['Normal','Bright','Brightest','Dim'];let briIdx=0;try{const v=parseInt(localStorage.getItem('fjordborn-bright'),10);if(v>=0&&v<BRI.length)briIdx=v}catch(e){}
 function applyBright(){const e=(HQ?.82:1.12)*BRI[briIdx];renderer.toneMappingExposure=e;if(POST.on)POST.final.uniforms.exposure.value=e;$('pBright').textContent='Brightness: '+BRN[briIdx]}
+const showHints=()=>{$('pHints').textContent='Hints: '+(HINTS?'On':'Off')};showHints();$('pHints').addEventListener('click',()=>{HINTS=!HINTS;try{localStorage.setItem('fjordborn-hints',HINTS?'1':'0')}catch(e){}showHints();uiT=0});
 $('pBright').addEventListener('click',()=>{briIdx=(briIdx+1)%BRI.length;try{localStorage.setItem('fjordborn-bright',String(briIdx))}catch(e){}applyBright()});
 applyBright();
 const GROWS=[['preset','Preset',[['Low',0],['Medium',1],['High',2],['Ultra',3]]],
@@ -2925,7 +2945,7 @@ document.addEventListener('fullscreenchange',updFull);document.addEventListener(
 $('fsClose').addEventListener('click',()=>{$('fsHelp').hidden=true});
 $('fsOpen').addEventListener('click',()=>{save();$('fsHelp').hidden=true});
 function readSave(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');return s&&s.v===1?s:null}catch(e){return null}}
-function applySave(s){P.inv=s.inv||{};P.equip=s.eq&&P.inv[s.eq]>0?s.eq:null;P.armor=Object.assign({},s.ar||{});if(P.armor.body===true)P.armor.body='tunic';if(P.armor.head===true)P.armor.head='helm';delete P.armor.cloak;for(const k in P.armor)if(P.armor[k]&&(!ITEMS[P.armor[k]]||!(P.inv[P.armor[k]]>0)))P.armor[k]=false;P.foods=(s.fo||[]).filter(f=>ITEMS[f.id]&&ITEMS[f.id].food);
+function applySave(s){P.tut=s.tu==null?TUT.length:s.tu;P.inv=s.inv||{};P.equip=s.eq&&P.inv[s.eq]>0?s.eq:null;P.armor=Object.assign({},s.ar||{});if(P.armor.body===true)P.armor.body='tunic';if(P.armor.head===true)P.armor.head='helm';delete P.armor.cloak;for(const k in P.armor)if(P.armor[k]&&(!ITEMS[P.armor[k]]||!(P.inv[P.armor[k]]>0)))P.armor[k]=false;P.foods=(s.fo||[]).filter(f=>ITEMS[f.id]&&ITEMS[f.id].food);
   P.x=+s.x||0;P.z=+s.z||2;P.y=Math.max(getH(P.x,P.z),-1.2);P.spawn=s.sp||{x:0,z:2};time=+s.t||.1;day=s.day||1;boss=s.boss||0;boss2=s.b2||0;if(s.sk)for(const k in s.sk)if(SKILLS[k]&&s.sk[k]>0){SK[k]=+s.sk[k];skCalc(k)}
   townSeen=!!s.ts;if(s.w!==4){s.dead=[];setTimeout(()=>toast(s.w===3?'Ruins, landmarks and old barrows have appeared across the isle. Explore to put them on your map.':'The isle has grown far larger while you were away, with ruins, landmarks and barrows to find.','big'),1500)}
   if(s.disc)for(const i of s.disc)if(SITES[i])SITES[i].disc=true;if(s.lc)for(const k of s.lc){LOOTOPEN.add(k);const c=LOOT.find(c=>c.key===k);if(c&&!c.open)openLoot(c,true)}if(Array.isArray(s.dig)){for(const e of s.dig){if(e.length>2)levelAt(e[0],e[1],e[2],true);else digAt(e[0],e[1],true)}DIG.push(...s.dig)}wearLoad(s.wr);
@@ -3031,7 +3051,7 @@ function updSky(){const th=time<.68?time/.68*PI:PI+(time-.68)/.32*PI,e=Math.sin(
   const U=skyMat.uniforms;U.top.value.copy(CA);U.hor.value.copy(CB);scene.background.copy(CB);scene.fog.color.copy(CB).convertSRGBToLinear();
   const sx=Math.cos(th),sy=Math.sin(th),sz=.35;U.sunDir.value.set(sx,sy,sz);U.moonDir.value.set(-sx,-sy+.1,-sz);U.night.value=1-k;
   U.sunCol.value.setRGB(1,.9-.28*du,.78-.42*du).multiplyScalar(smooth(-.08,.06,sy));
-  if(sy>-.05){sun.position.set(P.x+sx*120,P.y+Math.max(.12,sy)*120,P.z+sz*120);sun.color.setRGB(1,.93-.25*du,.82-.45*du);sun.intensity=.15+2.2*smooth(-.05,.3,sy)}
+  if(sy>-.05){sun.position.set(P.x+sx*120,P.y+Math.max(.12,sy)*120,P.z+sz*120);sun.color.setRGB(1,.93-.25*du,.82-.45*du);sun.intensity=.15+1.8*smooth(-.05,.3,sy)}
   else{sun.position.set(P.x-sx*120,P.y+Math.max(.2,-sy)*120,P.z-sz*120);sun.color.setRGB(.55,.65,.95);sun.intensity=.22}
   sun.target.position.set(P.x,P.y,P.z);
   sun.intensity*=1-gloom*.72;U.sunCol.value.multiplyScalar(1-gloom*.85);
@@ -3095,7 +3115,7 @@ function update(dt){T+=dt;wearTick(dt);
   if(hurtT>0){hurtT-=dt;$('hurt').style.opacity=clamp(hurtT*2,0,1)}
   $('hpF').style.width=P.hp/maxHp()*100+'%';$('stF').style.width=clamp(P.st/maxSt(),0,1)*100+'%';
   uiT-=dt;if(uiT<=0){uiT=.25;$('hpT').textContent=Math.ceil(P.hp)+' / '+maxHp();{const inT=Math.hypot(P.x-TOWN.x,P.z-TOWN.z)<26;$('biome').textContent=P.dg?P.dg.name:inT?TOWN.name:BIOME[bi];if(inT&&!townSeen){townSeen=true;toast('Welcome to Hvalvik. Talk to the villagers, and trade with Hallvard at his stall by the gate.','big')}}$('clock').textContent='Day '+day+' · '+phase();
-    $('quest').innerHTML="<small>Raven's counsel</small>"+questText();
+    tutTick();$('quest').hidden=!HINTS;if(HINTS)$('quest').innerHTML="<small>Raven's counsel</small>"+questText();
     const st=[];if(cold)st.push('<span class="bad">Freezing</span>');if(warm)st.push('<span class="good">Warm</span>');if(getH(P.x,P.z)<-1)st.push('<span>Swimming</span>');if(armorVal())st.push('<span>Armor '+armorVal()+'</span>');$('status').innerHTML=st.join('');
     const pr=$('prompt');if(useTarget&&!panelOpen&&!buildSel){pr.hidden=false;pr.innerHTML='<kbd>E / Use</kbd>'+useTarget.label}else pr.hidden=true;
     if(squeezed&&!sqWarned&&!fsEl()){sqWarned=true;toast('The game only has part of your screen. Tap the full screen button at the top.','big')}
@@ -3274,7 +3294,7 @@ function frame(t){requestAnimationFrame(frame);if(PREV){GU.value=t/1000;renderer
     PERF.box.textContent=('PERF '+JSON.stringify(GRUN)+' frames='+f.length+' fps='+(1000*f.length/(t-PERF.t0)).toFixed(0)+' p50='+q(.5)+' p95='+q(.95)+' max='+q(1)+' | update avg '+av(PERF.u)+' max '+mx(PERF.u)+' | render cpu avg '+av(PERF.r)+' max '+mx(PERF.r)+' | calls '+renderer.info.render.calls+' tris '+(renderer.info.render.triangles/1e6).toFixed(2)+'M px '+renderer.getPixelRatio())+'\n'+triBreak()+'\nGL per frame: '+Object.entries(PERF.gc).map(([k,v])=>k+' '+(v/Math.max(1,PERF.f.length)).toFixed(1)).join(' ')+'\n'+(()=>{try{const gl=renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)}catch(e){return '?'}})();PERF=null}}
   if(dbgEl){if(renderErr)dbgEl.textContent='build 11\n'+renderErr;else dbgTick(dt)}}
 refreshLook();renderHotbar();
-window.__fjordborn={scene,renderer,photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
+window.__fjordborn={scene,renderer,tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
 if(/peekfirst/.test(location.hash)){try{peek()}catch(e){console.error('peek '+e)}}
 {const pm=location.hash.match(/preview:(.*)$/);if(pm){try{const a=JSON.parse(decodeURIComponent(pm[1]));FJ_PREVIEW(...a)}catch(e){console.error('preview '+e)}}}
 requestAnimationFrame(frame);
