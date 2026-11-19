@@ -1,3 +1,3 @@
-**Capelet that drapes**
+**Capelet fitted like real cloth**
 
-- The shoulder piece of the Hood and Cape no longer clings to the arms. The hood now carries on as one continuous capelet that drapes over the shoulders and hangs free, so your arms move underneath it.
+- The hood's capelet is now fitted to the body with the arms held out in a T, then the arms are lowered and the cloth comes down with them. It rests over the shoulders and upper arms and moves with them when you swing or raise your arms.
