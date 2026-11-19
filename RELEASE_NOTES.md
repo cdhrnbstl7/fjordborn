@@ -1,3 +1,4 @@
-**Belt height**
+**A more realistic look (first step)**
 
-- The belt and sash sit half a step higher, just under the lowest button.
+- New colour grade, like a film camera: muted colours, cool shadows, warm highlights, slightly lifted blacks and a gentle contrast curve. Works on phones too.
+- The daytime sky is hazier and greyer instead of postcard blue.
