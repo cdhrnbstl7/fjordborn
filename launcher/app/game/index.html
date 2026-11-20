@@ -477,7 +477,9 @@ $('turnRot').addEventListener('click',()=>setRotPref(true));
 $('pRot').addEventListener('click',()=>setRotPref(!rotPref));
 layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
-const GAME_VERSION='1.12.2';
+/* developer switches: all off in the public game; only the private developer edition has the menu that turns them on */
+const DEV={on:0,god:0,ghost:0,fly:0,clip:0,creative:0,speed:1,up:0,down:0};
+const GAME_VERSION='1.13.0';
 const EDITION='desktop';/* build_editions.py sets 'phone' or 'desktop' */
 /* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
 if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
@@ -2931,12 +2933,12 @@ function warn(msg){const n=performance.now();if(n-lastWarn>1500){lastWarn=n;toas
 function addItem(id,n,quiet){P.inv[id]=(P.inv[id]||0)+n;uiDirty=true;if(!quiet)toast('+'+n+' '+ITEMS[id].n);if(!KNOWN.has(id))discover(id)}
 /* discovery: recipes and buildings unlock as you first lay hands on what they need, Valheim-style */
 const KNOWN=new Set();
-const recKnown=r=>Object.keys(r.cost).every(k=>KNOWN.has(k));
+const recKnown=r=>DEV.creative||Object.keys(r.cost).every(k=>KNOWN.has(k));
 function discover(id){const before=new Set(RECIPES.filter(recKnown).map(r=>r.id).concat(Object.keys(BUILD).filter(k=>!BUILD[k].hide&&recKnown(BUILD[k])).map(k=>'b:'+k)));KNOWN.add(id);
   if(!started)return;const neu=[];for(const r of RECIPES)if(recKnown(r)&&!before.has(r.id))neu.push(ITEMS[r.id].n);for(const k in BUILD)if(!BUILD[k].hide&&recKnown(BUILD[k])&&!before.has('b:'+k))neu.push(BUILD[k].n);
   toast('New find: '+ITEMS[id].n+(neu.length?'. You can now make: '+neu.slice(0,4).join(', ')+(neu.length>4?' and '+(neu.length-4)+' more':''):''),'big');if(neu.length)sfx('craft')}
-const hasCost=c=>Object.keys(c).every(k=>(P.inv[k]||0)>=c[k]);
-const payCost=c=>{for(const k in c){P.inv[k]-=c[k]}uiDirty=true};
+const hasCost=c=>DEV.creative||Object.keys(c).every(k=>(P.inv[k]||0)>=c[k]);
+const payCost=c=>{if(DEV.creative)return;for(const k in c){P.inv[k]-=c[k]}uiDirty=true};
 function equip(id){if(id==='hammer'&&P.equip==='hammer'&&!buildSel){openPanel('build');return}P.equip=P.equip===id?null:id;if(P.equip!=='hammer'&&buildSel)setBuild(null);refreshLook();uiDirty=true;if(P.equip==='hammer'&&started&&!panelOpen)openPanel('build')}
 /* the Homeward Stone: leave any tomb, ship or wreck and arrive at your bed (or where you woke) */
 function goHome(){if(panelOpen)closePanel();if(P.dg){const d=P.dg;P.dg=null;grassMesh.visible=pebMesh.visible=true;for(const c of creatures.slice())if(c.dg)removeCreature(c);for(const l of DLIGHTS)l.visible=false}
@@ -2948,7 +2950,7 @@ function useItem(id){const it=ITEMS[id];detailId=id;
   else if(it.tool)equip(id);
   else if(it.slot){P.armor[it.slot]=P.armor[it.slot]===id?false:id;refreshLook();toast((P.armor[it.slot]===id?'You put on the ':'You take off the ')+it.n+'.')}
   uiDirty=true}
-function craft(r){const st=r.st&&STN[r.st];if(st&&!nearStruct(r.st,st[1])){toast('You need a '+st[0]+' close by.');return}
+function craft(r){const st=r.st&&STN[r.st];if(st&&!DEV.creative&&!nearStruct(r.st,st[1])){toast('You need a '+st[0]+' close by.');return}
   if(!hasCost(r.cost)){toast('Not enough materials.');return}
   if(ITEMS[r.id].tool||ITEMS[r.id].slot||r.id==='hammer'){if(P.inv[r.id]>0){toast('You already carry one.');return}}
   if(ITEMS[r.id].ship){const dk=structs.filter(s=>s.type==='dock').sort((a,b)=>Math.hypot(a.x-P.x,a.z-P.z)-Math.hypot(b.x-P.x,b.z-P.z))[0],a=dk.rot*PI/2,fx=Math.sin(a),fz=Math.cos(a),off=10.5+4.2*SHIPS[r.id].sc,x=dk.x+fx*off,z=dk.z+fz*off;
@@ -2984,10 +2986,10 @@ function renderPanel(){
       return'<div class="irow"><span class="slot"><img src="'+icon(o.id)+'" alt=""></span><div><b>'+(o.n>1?o.n+'× ':'')+ITEMS[o.id].n+'</b><p>'+ITEMS[o.id].d+'</p></div><span class="ct">'+o.p+' silver</span><button type="button" class="btn'+(ok?' go':'')+'" data-act="buy" data-i="'+i+'"'+(ok?'':' disabled')+'>Buy</button></div>'}).join('');
     const sl=Object.keys(SELL).filter(k=>P.inv[k]>0);
     h+='<h5>Sell</h5>'+(sl.length?sl.map(k=>'<div class="irow"><span class="slot"><img src="'+icon(k)+'" alt=""></span><div><b>'+ITEMS[k].n+'</b><p>'+SELL[k]+' silver each</p></div><span class="ct">×'+P.inv[k]+'</span><button type="button" class="btn" data-act="sell" data-id="'+k+'">Sell all</button></div>').join(''):'<p class="note">Nothing Hallvard wants. He buys hides, tusks, fangs, cores, ore and the like.</p>')}
-  else if(tab==='craft'){const lockedN=RECIPES.filter(r=>!recKnown(r)).length;h=RECIPES.map((r,i)=>{if(!recKnown(r))return'';const it=ITEMS[r.id],ok=hasCost(r.cost)&&(!r.st||nearStruct(r.st,STN[r.st][1]));
+  else if(tab==='craft'){const lockedN=RECIPES.filter(r=>!recKnown(r)).length;h=RECIPES.map((r,i)=>{if(!recKnown(r))return'';const it=ITEMS[r.id],ok=hasCost(r.cost)&&(!r.st||DEV.creative||nearStruct(r.st,STN[r.st][1]));
     return'<div class="row"><div class="slot"><img src="'+icon(r.id)+'" alt=""></div><div><h4>'+it.n+'</h4><p>'+it.d+'</p>'+chips(r.cost,r.st)+'</div><button type="button" class="btn'+(ok?' go':'')+'" data-act="craft" data-i="'+i+'"'+(ok?'':' disabled')+'>Craft</button></div>'}).join('')+(lockedN?'<p style="margin:8px 0 0;color:var(--dim)">'+lockedN+' more recipes unlock as you find new materials.</p>':'')}
   else{if(!(P.inv.hammer>0))h='<p style="margin:0;color:var(--dim)">Craft a Builder\'s Mallet first (3 wood, 2 stone). Carry it and this tab opens up.</p>';
-    else h=Object.keys(BUILD).filter(k=>!BUILD[k].hide&&recKnown(BUILD[k])).map(k=>{const b=BUILD[k],ok=hasCost(b.cost);
+    else h=Object.keys(BUILD).filter(k=>(!BUILD[k].hide||DEV.creative)&&recKnown(BUILD[k])).map(k=>{const b=BUILD[k],ok=hasCost(b.cost);
       return'<div class="row"><div class="slot"><img src="'+icon(k)+'" alt=""></div><div><h4>'+b.n+'</h4><p>'+b.d+'</p>'+chips(b.cost)+'</div><button type="button" class="btn'+(ok?' go':'')+'" data-act="build" data-id="'+k+'">Choose</button></div>'}).join('')}
   body.innerHTML=h}
 /* the quick bar: eight slots for tools, weapons, food and anything usable; fills itself as you craft, and you can add or remove items from the bag */
@@ -3063,7 +3065,7 @@ function tryPlace(){if(!buildSel)return;
   if(buildSel==='bed'){P.spawn={x:p.x+1.5,z:p.z};toast('This is home now.')}}
 
 /* ---------- combat & gathering ---------- */
-function hurtPlayer(d,raw,src){if(P.dead||!started)return;
+function hurtPlayer(d,raw,src){if(P.dead||!started||DEV.god)return;
   if(!raw&&src){if(P.rollT>0&&(P.dmode==='roll'?P.rollT>.12&&P.rollT<.56:P.rollT>(P.rollDur||.32)-.27))return;
     if(P.block){const ang=Math.atan2(src.x-P.x,src.z-P.z),diff=Math.abs(((ang-P.yaw+PI)%(2*PI)+2*PI)%(2*PI)-PI),bx=P.x+Math.sin(P.yaw)*.6,bz=P.z+Math.cos(P.yaw)*.6;
       if(diff<1.8){if(P.blockT<.25+.1*skF('block')){if(src.c){src.c.stun=src.c.spec.boss?1.4:2.2;src.c.wind=0;if(src.c.spec.boss)ring.visible=false}
@@ -3185,7 +3187,7 @@ function updCreature(c,dt){const s=c.spec,dx=P.x-c.x,dz=P.z-c.z,dp=Math.hypot(dx
     if(c.wind<=0&&c.atk==='throw'){throwBoulder(c);c.cd=1.2;c.atk=null}
     else if(c.wind<=0){if(s.boss){ring.visible=false;sfx('slam');shakeT=.5;if(Math.hypot(P.x-c.sx,P.z-c.sz)<5.5)hurtPlayer(s.dmg*c.tier,false,{x:c.x,z:c.z,c})}else if(dp<s.reach+.8)hurtPlayer(s.dmg*c.tier,false,{x:c.x,z:c.z,c});c.cd=s.cd}}
   else if(s.flee&&dp<s.flee&&!P.dead){tx=-dx/dp;tz=-dz/dp;sp=s.spd}
-  else if(s.aggro&&!P.dead&&dp<(c.mad?s.aggro*2.2:s.aggro)){c.mad=true;
+  else if(s.aggro&&!P.dead&&!DEV.ghost&&dp<(c.mad?s.aggro*2.2:s.aggro)){c.mad=true;
     if(c.type==='troll'&&dp>9&&dp<34&&c.cd<=0&&c.tc<=0){c.wind=1.05;c.atk='throw';c.sx=P.x;c.sz=P.z;c.tc=5.5}
     else if(dp>s.reach*.85){tx=dx/dp;tz=dz/dp;sp=s.spd}else{c.yaw=angLerp(c.yaw,Math.atan2(dx,dz),Math.min(1,dt*8))}
     if(dp<s.reach+.3&&c.cd<=0){c.wind=s.wind;c.sx=P.x;c.sz=P.z}}
@@ -3720,7 +3722,7 @@ function updPlayer(dt){P.px=P.x;P.pz=P.z;
   if(P.dead){P.deadT-=dt;if(P.deadT<=0)respawn();PM.g.position.set(P.x,P.y+.3,P.z);return}
   let ix=joy.x,iy=-joy.y;if(kd('forward'))iy+=1;if(kd('back'))iy-=1;if(kd('right'))ix+=1;if(kd('left'))ix-=1;
   let mag=Math.hypot(ix,iy);if(mag>1){ix/=mag;iy/=mag;mag=1}
-  const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),mx=fx*iy-fz*ix,mz=fz*iy+fx*ix,swim=getH(P.x,P.z)<-1&&(P.dg||floorAt(P.x,P.z,P.y)==null);
+  const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),mx=fx*iy-fz*ix,mz=fz*iy+fx*ix,swim=!DEV.fly&&getH(P.x,P.z)<-1&&(P.dg||floorAt(P.x,P.z,P.y)==null);
   const wantBlock=(P.rmb||P.tBlock||kd('block'))&&!swim&&!panelOpen&&!(P.guardBreak>0);
   if(wantBlock&&!P.block&&P.rollT<=0&&P.atkT<=0){P.block=true;P.blockT=0}else if(!wantBlock)P.block=false;
   if(P.block)P.blockT+=dt;if(P.guardBreak>0)P.guardBreak-=dt;
@@ -3731,23 +3733,24 @@ function updPlayer(dt){P.px=P.x;P.pz=P.z;
     P.dashF=P.rollX*Math.sin(P.yaw)+P.rollZ*Math.cos(P.yaw);P.dashS=P.rollX*Math.cos(P.yaw)-P.rollZ*Math.sin(P.yaw);sfx('roll');jumpQ=false}
   rollQ=false;
   const run=(kd('sprint')||(kd('roll')&&T-spaceAt>.3)||Math.hypot(joy.x,joy.y)>.93)&&mag>.1&&!P.winded&&P.st>1&&!swim&&!P.block;P.running=run;
-  let sp=swim?2.8*(1+.5*skF('swim')):run?8.4*(1+.15*skF('run')):5.2;if(P.atkT>0)sp*=P.heavy?.15:.4;if(P.block)sp*=.45;if(P.recT>0){P.recT-=dt;sp*=.35}if(LOCK&&!run)sp*=.85;
+  let sp=swim?2.8*(1+.5*skF('swim')):run?8.4*(1+.15*skF('run')):5.2;if(P.atkT>0)sp*=P.heavy?.15:.4;if(P.block)sp*=.45;if(P.recT>0){P.recT-=dt;sp*=.35}if(LOCK&&!run)sp*=.85;sp*=DEV.speed;if(DEV.fly)sp=Math.max(sp,11*DEV.speed);if(DEV.god){P.st=maxSt();P.winded=false}
   if(P.block)P.yaw=angLerp(P.yaw,Math.atan2(fx,fz),Math.min(1,dt*12));
   if(P.rollT>0){P.rollT-=dt;const D=P.rollDur||.32,q=Math.min(1,(D-P.rollT)/D),rs=P.dmode==='roll'?7.2*(.55+.45*Math.sin(q*PI))+.8:P.dmode==='back'?11*Math.pow(1-q,1.4)+1:16*Math.pow(1-q,1.6)+1.5;P.x+=P.rollX*rs*dt;P.z+=P.rollZ*rs*dt;P.moving=0;if(P.rollT<=0)P.recT=P.dmode==='roll'?.15:.12}
   else if(mag>.06){P.cs=P.cs==null?sp:P.cs+(sp-P.cs)*Math.min(1,dt*6);sp=P.cs;P.x+=mx*sp*dt;P.z+=mz*sp*dt;P.mvx=mx/(mag||1);P.mvz=mz/(mag||1);if(P.atkT<=0&&!P.block)P.yaw=angLerp(P.yaw,LOCK&&!run?Math.atan2(LOCK.x-P.x,LOCK.z-P.z):Math.atan2(mx,mz),Math.min(1,dt*(LOCK&&!run?12:9)));P.phase+=dt*sp*1.9;P.moving=Math.min(1,P.moving+dt*8)}
   else{P.moving=Math.max(0,P.moving-dt*8);/* a little momentum: you slide to a stop rather than freezing */if(P.cs>.4&&P.mvx!=null){P.cs*=Math.max(0,1-dt*10);P.x+=P.mvx*P.cs*dt;P.z+=P.mvz*P.cs*dt}else P.cs=null;if(LOCK&&P.rollT<=0&&P.atkT<=0)P.yaw=angLerp(P.yaw,Math.atan2(LOCK.x-P.x,LOCK.z-P.z),Math.min(1,dt*8))}
   if(run){P.st-=3.5*(1-.5*skF('run'))*dt;P.stCd=.4;gainSk('run',dt*.8);if(P.st<=1.5){P.winded=true;warn('Out of breath. Walk it off.')}}
   if(P.winded&&P.st>=Math.min(20,maxSt()*.3))P.winded=false;
-  near(P.x,P.z,c=>{const dx=P.x-c.x,dz=P.z-c.z,d=Math.hypot(dx,dz),m=c.r+.35;if(d<m&&d>.0001){
+  if(!DEV.clip)near(P.x,P.z,c=>{const dx=P.x-c.x,dz=P.z-c.z,d=Math.hypot(dx,dz),m=c.r+.35;if(d<m&&d>.0001){
     /* boulders are solid domes: once you are above one (jumped up, or a small rock you can step on) it holds you instead of pushing you off */
     const n=c.node;if(n&&n.alive&&ROCKISH.has(n.kind)){const top=rockTop(n,c,Math.max(0,d-.2));if(P.y>=top-(P.ground?.38:.6))return}
     P.x=c.x+dx/d*m;P.z=c.z+dz/d*m}});
-  if(P.dg&&!dgWalkR(P.x,P.z,.35)){if(dgWalkR(P.px,P.z,.35))P.x=P.px;else if(dgWalkR(P.x,P.pz,.35))P.z=P.pz;else{P.x=P.px;P.z=P.pz}}
-  const rr=Math.hypot(P.x,P.z);if(rr>WLIM&&!P.dg&&!inWZ(P.x,P.z)){P.x*=WLIM/rr;P.z*=WLIM/rr}
-  if(!P.dg&&P.ground&&inWZ(P.x,P.z)&&getH(P.x,P.z)-P.y>1.1){P.x=P.px;P.z=P.pz}
+  if(P.dg&&!DEV.clip&&!dgWalkR(P.x,P.z,.35)){if(dgWalkR(P.px,P.z,.35))P.x=P.px;else if(dgWalkR(P.x,P.pz,.35))P.z=P.pz;else{P.x=P.px;P.z=P.pz}}
+  const rr=Math.hypot(P.x,P.z);if(rr>WLIM&&!P.dg&&!DEV.clip&&!inWZ(P.x,P.z)){P.x*=WLIM/rr;P.z*=WLIM/rr}
+  if(!P.dg&&!DEV.clip&&P.ground&&inWZ(P.x,P.z)&&getH(P.x,P.z)-P.y>1.1){P.x=P.px;P.z=P.pz}
   let gh=getH(P.x,P.z);if(!P.dg){const fl=floorAt(P.x,P.z,P.y);if(fl!=null&&fl>gh)gh=fl}
   if(!P.dg)near(P.x,P.z,c=>{const n=c.node;if(!n||!n.alive||!ROCKISH.has(n.kind))return;const d=Math.hypot(P.x-c.x,P.z-c.z);if(d>c.r+.3)return;const t=rockTop(n,c,Math.max(0,d-.2));if(t>gh&&P.y>=t-.6)gh=t});
-  if(gh<-1){P.y=lerp(P.y,waveH(P.x,P.z)-.8,Math.min(1,dt*6));P.vy=0;P.ground=false;P.st-=5*(1-.5*skF('swim'))*dt;P.stCd=1;if(mag>.1)gainSk('swim',dt*.8);if(P.st<=0)hurtPlayer(7*dt,true)}
+  if(DEV.fly){const up=(kd('jump')||DEV.up)?1:0,dn=(keys.KeyC||keys.ControlLeft||DEV.down)?1:0;P.y+=(up-dn)*9*DEV.speed*dt;P.vy=0;if(!DEV.clip&&P.y<gh){P.y=gh}P.ground=P.y<=gh+.05;P.fallV=0}
+  else if(gh<-1){P.y=lerp(P.y,waveH(P.x,P.z)-.8,Math.min(1,dt*6));P.vy=0;P.ground=false;P.st-=5*(1-.5*skF('swim'))*dt;P.stCd=1;if(mag>.1)gainSk('swim',dt*.8);if(P.st<=0)hurtPlayer(7*dt,true)}
   else{if(jumpQ&&P.ground&&P.st>=8&&!P.block&&P.rollT<=0){P.vy=8.2*(1+.2*skF('jump'));P.ground=false;P.st-=8*(1-.4*skF('jump'));gainSk('jump',1);P.stCd=.8}
     if(P.ground&&P.vy<=0&&P.y-gh<.7)P.y=gh;else{P.vy-=22*dt;P.y+=P.vy*dt;if(P.y<=gh){P.y=gh;P.vy=0;P.ground=true}}}
   jumpQ=false;
@@ -3850,6 +3853,7 @@ function frame(t){requestAnimationFrame(frame);if(PREV){GU.value=t/1000;renderer
     PERF.box.textContent=('PERF '+JSON.stringify(GRUN)+' frames='+f.length+' fps='+(1000*f.length/(t-PERF.t0)).toFixed(0)+' p50='+q(.5)+' p95='+q(.95)+' max='+q(1)+' | update avg '+av(PERF.u)+' max '+mx(PERF.u)+' | render cpu avg '+av(PERF.r)+' max '+mx(PERF.r)+' | calls '+renderer.info.render.calls+' tris '+(renderer.info.render.triangles/1e6).toFixed(2)+'M px '+renderer.getPixelRatio())+'\n'+triBreak()+'\nGL per frame: '+Object.entries(PERF.gc).map(([k,v])=>k+' '+(v/Math.max(1,PERF.f.length)).toFixed(1)).join(' ')+'\n'+(()=>{try{const gl=renderer.getContext(),e=gl.getExtension('WEBGL_debug_renderer_info');return e?gl.getParameter(e.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)}catch(e){return '?'}})();PERF=null}}
   if(dbgEl){if(renderErr)dbgEl.textContent='build 11\n'+renderErr;else dbgTick(dt)}}
 refreshLook();renderHotbar();
+
 window.__fjordborn={scene,renderer,craftId:id=>craft(RECIPES.find(r=>r.id===id)),KNOWN,addItem:(i,n)=>addItem(i,n),recKnown:id=>recKnown(RECIPES.find(r=>r.id===id)),musicState:()=>JSON.stringify({next:MUS.next,mood:MUS.mood,ac:!!AC,bus:!!BUS.master}),setCamPitch:v=>{camPitch=v},openMap:()=>openMap(),doHit:()=>doHit(),creatures,groundH:(x,z)=>getH(x,z),addStruct:(...a)=>addStruct(...a),WR:()=>WRECK,wreckH:(x,z)=>wreckH(x,z),spawnCreature:(t,x,z)=>spawnCreature(t,x,z),DGS,enterDungeon:d=>enterDungeon(d),tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,setCamYaw:v=>{camYaw=v},GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
 if(/peekfirst/.test(location.hash)){try{peek()}catch(e){console.error('peek '+e)}}
 {const pm=location.hash.match(/preview:(.*)$/);if(pm){try{const a=JSON.parse(decodeURIComponent(pm[1]));FJ_PREVIEW(...a)}catch(e){console.error('preview '+e)}}}

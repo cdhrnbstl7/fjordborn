@@ -1,5 +1,5 @@
 // Fjordborn desktop app: runs the game in its own window with the bundled engine.
-const { app, BrowserWindow, protocol, net, shell, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, protocol, net, shell, Menu, ipcMain, safeStorage } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -22,6 +22,7 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 const GAME_DIR = path.join(__dirname, 'game');
+let devHtml = null;
 let win = null;
 
 if (!app.requestSingleInstanceLock()) {
@@ -36,6 +37,8 @@ if (!app.requestSingleInstanceLock()) {
       const u = new URL(req.url);
       let rel = decodeURIComponent(u.pathname);
       if (rel === '/' || rel === '') rel = '/index.html';
+      // the developer edition is held only in memory after the launcher unlocks it with the password
+      if (rel === '/dev.html') return devHtml ? new Response(devHtml, { headers: { 'content-type': 'text/html; charset=utf-8' } }) : new Response('Locked', { status: 403 });
       const file = path.normalize(path.join(GAME_DIR, rel));
       if (!file.startsWith(GAME_DIR)) return new Response('Not found', { status: 404 });
       return net.fetch(pathToFileURL(file).toString());
@@ -49,7 +52,7 @@ if (!app.requestSingleInstanceLock()) {
     const saveOpts = () => { try { fs.writeFileSync(optFile, JSON.stringify(opts)); } catch (e) {} };
 
     // ---- the game window ----
-    const openGame = () => {
+    const openGame = (page) => {
       win = new BrowserWindow({
         width: 1600, height: 900, minWidth: 960, minHeight: 540,
         fullscreen: !process.env.FJORD_WINDOWED && opts.full,
@@ -68,7 +71,7 @@ if (!app.requestSingleInstanceLock()) {
       // Links (like "open on its own page") go to the normal web browser.
       win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
       win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('app://')) { e.preventDefault(); if (/^https?:/.test(url)) shell.openExternal(url); } });
-      win.loadURL('app://fjordborn/' + (process.env.FJORD_PAGE || 'index.html'));
+      win.loadURL('app://fjordborn/' + (page || process.env.FJORD_PAGE || 'index.html'));
     };
     const note = (msg) => { try { if (win) win.webContents.executeJavaScript('window.FJ_NOTE&&FJ_NOTE(' + JSON.stringify(msg) + ')').catch(() => {}); } catch (e) {} };
 
@@ -76,7 +79,16 @@ if (!app.requestSingleInstanceLock()) {
     const useLauncher = !process.env.FJORD_PAGE && !process.env.FJORD_SKIP_LAUNCHER;
     let lw = null, status = { msg: 'Ready to play', block: false };
     const send = (s) => { status = s; if (lw && !lw.isDestroyed()) lw.webContents.send('fjl:status', s); };
-    ipcMain.handle('fjl:info', () => ({ version: app.getVersion(), full: !!opts.full }));
+    // developer edition: the password is remembered (encrypted by the operating system) only if asked
+    const keyFile = path.join(app.getPath('userData'), 'dev.key');
+    const savedPass = () => { try { if (safeStorage.isEncryptionAvailable() && fs.existsSync(keyFile)) return safeStorage.decryptString(fs.readFileSync(keyFile)); } catch (e) {} return ''; };
+    ipcMain.handle('fjl:info', () => ({ version: app.getVersion(), full: !!opts.full, devPass: savedPass() }));
+    ipcMain.on('fjl:devplay', (_e, html, pass, remember) => {
+      if (typeof html !== 'string' || !html.includes('DEVELOPER EDITION')) return;
+      devHtml = html;
+      try { if (remember && pass && safeStorage.isEncryptionAvailable()) fs.writeFileSync(keyFile, safeStorage.encryptString(pass)); else if (!remember && fs.existsSync(keyFile)) fs.unlinkSync(keyFile); } catch (e) {}
+      if (status.block) return; openGame('dev.html'); if (lw) { const l = lw; lw = null; l.close(); }
+    });
     ipcMain.on('fjl:play', () => { if (status.block) return; openGame(); if (lw) { const l = lw; lw = null; l.close(); } });
     ipcMain.on('fjl:install', () => { if (autoUpdater) { send({ msg: 'Installing the update. Fjordborn will restart...', busy: true, block: true }); setImmediate(() => autoUpdater.quitAndInstall(true, true)); } });
     ipcMain.on('fjl:check', () => check(true));

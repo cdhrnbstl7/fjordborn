@@ -1,3 +1,10 @@
+**Fjordborn 1.13.0**
+
+- **Launcher:** a Developer tab for the game's creator. It is locked by a password, and the developer edition behind it is encrypted.
+- Small behind-the-scenes changes to support it. Nothing changes in normal play.
+
+---
+
 **Fjordborn 1.12.2**
 
 - **A nebula in the night sky:** muted rose, teal and amber gas with dark dust lanes and a cluster of young stars, high in the north-west after dark. It is kept dim so it doesn't distract from play.

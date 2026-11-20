@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('FJL', {
   info: () => ipcRenderer.invoke('fjl:info'),
   onStatus: (fn) => ipcRenderer.on('fjl:status', (_e, s) => fn(s)),
   play: () => ipcRenderer.send('fjl:play'),
+  devPlay: (html, pass, remember) => ipcRenderer.send('fjl:devplay', html, pass, remember),
   install: () => ipcRenderer.send('fjl:install'),
   check: () => ipcRenderer.send('fjl:check'),
   quit: () => ipcRenderer.send('fjl:quit'),
