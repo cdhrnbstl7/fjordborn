@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fjordborn Launcher</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://api.github.com">
+<style>
+@font-face{font-family:'Grenze Gotisch';font-weight:700;src:url(fonts/grenze-gotisch-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Alegreya Sans';font-weight:400;src:url(fonts/alegreya-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Alegreya Sans';font-weight:700;src:url(fonts/alegreya-sans-latin-700-normal.woff2) format('woff2')}
+:root{--ember:#e08a2e;--parch:#e9dfc8;--dim:#9a9283;--line:#ffffff1a;--panel:#0d0f11cc}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#07080a;color:var(--parch);font:15px/1.45 'Alegreya Sans',system-ui,sans-serif;overflow:hidden;user-select:none}
+#bg{position:fixed;inset:0;z-index:0}
+#grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.09;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>")}
+#shade{position:fixed;inset:0;z-index:1;background:linear-gradient(90deg,#07080af0 0%,#07080ac0 38%,#07080a30 70%,#07080a10),linear-gradient(0deg,#07080aee 0%,transparent 35%)}
+.app{position:relative;z-index:2;height:100%;display:grid;grid-template-rows:38px 1fr auto}
+.bar{display:flex;align-items:center;-webkit-app-region:drag;padding:0 8px 0 18px;border-bottom:1px solid var(--line);background:#050607b0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.bar span{flex:1}
+.bar button{-webkit-app-region:no-drag;background:none;border:0;color:var(--dim);width:38px;height:30px;font-size:16px;cursor:pointer;border-radius:4px}
+.bar button:hover{background:#ffffff14;color:var(--parch)}.bar button.x:hover{background:#b03a2e;color:#fff}
+main{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:28px;padding:30px 34px 0;min-height:0}
+h1{font-family:'Grenze Gotisch',serif;font-size:76px;line-height:.85;margin:6px 0 4px;letter-spacing:.01em;text-shadow:0 4px 30px #000}
+.sub{color:var(--dim);letter-spacing:.24em;text-transform:uppercase;font-size:12px;margin-bottom:22px}
+.news{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--ember);padding:14px 16px;overflow:auto;max-height:calc(100vh - 330px);backdrop-filter:blur(3px)}
+.news h3{margin:0 0 8px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
+.news article{padding:10px 0;border-top:1px solid var(--line)}.news article:first-of-type{border-top:0;padding-top:2px}
+.news b{display:block;font-size:16px}.news time{font-size:12px;color:var(--dim)}
+.news ul{margin:6px 0 0;padding-left:18px;color:#d6cdb8;font-size:14px}.news li{margin:2px 0}
+.side{display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;gap:10px;padding-bottom:6px}
+.opt{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.chip{background:#0d0f11b8;border:1px solid var(--line);color:var(--parch);padding:7px 12px;border-radius:3px;font:inherit;font-size:13px;cursor:pointer}
+.chip:hover{border-color:#ffffff44}.chip[aria-pressed=true]{border-color:var(--ember);color:#fff}
+footer{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;padding:16px 34px 22px;background:linear-gradient(0deg,#050607,#05060700);border-top:1px solid var(--line)}
+.st{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;display:flex;justify-content:space-between;gap:10px;margin-bottom:7px}
+.st b{color:var(--parch);font-weight:400}
+.prog{height:6px;background:#ffffff12;border-radius:1px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#b8641c,var(--ember));transition:width .3s}
+.prog.ind i{width:30%;animation:ind 1.2s ease-in-out infinite}
+@keyframes ind{0%{transform:translateX(-100%)}100%{transform:translateX(340%)}}
+#play{min-width:230px;height:62px;border:0;border-radius:2px;background:var(--ember);color:#140b03;font:700 24px/1 'Alegreya Sans',sans-serif;letter-spacing:.28em;text-transform:uppercase;cursor:pointer;box-shadow:0 0 0 1px #ffb86a55 inset,0 10px 40px #e08a2e33;transition:filter .15s,transform .1s}
+#play:hover{filter:brightness(1.1)}#play:active{transform:translateY(1px)}
+#play:disabled{background:#3a332b;color:#8a7f70;box-shadow:none;cursor:default}
+#play.upd{background:#5aa36a;color:#06140a}
+@media (prefers-reduced-motion:reduce){.prog.ind i{animation:none;width:100%;opacity:.4}}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas><div id="shade"></div><div id="grain"></div>
+<div class="app">
+  <div class="bar"><span>Fjordborn launcher</span><button type="button" id="min" aria-label="Minimise">&#8211;</button><button type="button" class="x" id="close" aria-label="Close">&#10005;</button></div>
+  <main>
+    <section>
+      <h1>Fjordborn</h1>
+      <div class="sub">A Viking survival saga</div>
+      <div class="news" id="news"><h3>News and patch notes</h3><p style="color:var(--dim);margin:0">Fetching the latest news&hellip;</p></div>
+    </section>
+    <section class="side">
+      <div class="opt">
+        <button type="button" class="chip" id="oFull" aria-pressed="true">Full screen</button>
+        <button type="button" class="chip" id="oCheck">Check for updates</button>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div>
+      <div class="st"><span id="stMsg">Starting&hellip;</span><span>Installed <b id="ver">-</b></span></div>
+      <div class="prog ind" id="prog"><i></i></div>
+    </div>
+    <button type="button" id="play" disabled>Play</button>
+  </footer>
+</div>
+<script>
+const $=id=>document.getElementById(id),api=window.FJL||null;
+/* background: layered fjord ridges, slow drifting mist and falling ash, drawn live */
+(()=>{const c=$('bg'),x=c.getContext('2d');let W,H,R=[],F=[];const rs=(s=>()=>(s=s*16807%2147483647)/2147483647)(7);
+  function size(){W=c.width=innerWidth*devicePixelRatio;H=c.height=innerHeight*devicePixelRatio;R=[0,1,2,3,4].map(k=>{const pts=[];let y=.42+k*.1;for(let i=0;i<=60;i++){y+=(rs()-.5)*.03;pts.push(y-Math.max(0,Math.sin(i/60*Math.PI*(1.5+k*.4)+k))*(.18-k*.03))}return pts});F=Array.from({length:90},()=>({x:rs()*W,y:rs()*H,s:.3+rs()*1.4,v:.2+rs()*.6}))}
+  addEventListener('resize',size);size();const red=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  function draw(t){const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#1a2128');g.addColorStop(.55,'#3a3a36');g.addColorStop(1,'#0b0c0d');x.fillStyle=g;x.fillRect(0,0,W,H);
+    const sun=x.createRadialGradient(W*.72,H*.38,0,W*.72,H*.38,H*.55);sun.addColorStop(0,'#e0a05a55');sun.addColorStop(1,'#00000000');x.fillStyle=sun;x.fillRect(0,0,W,H);
+    R.forEach((pts,k)=>{const sh=24-k*4;x.fillStyle='rgb('+sh+','+(sh+3)+','+(sh+6)+')';x.beginPath();x.moveTo(0,H);pts.forEach((p,i)=>x.lineTo(i/60*W,p*H+k*H*.02));x.lineTo(W,H);x.fill();
+      if(k<3){const my=(pts[30]+.06+k*.06)*H+Math.sin(t/4000+k)*8,mg=x.createLinearGradient(0,my-H*.05,0,my+H*.05);mg.addColorStop(0,'#b9c3c800');mg.addColorStop(.5,'#b9c3c814');mg.addColorStop(1,'#b9c3c800');x.fillStyle=mg;x.fillRect(0,my-H*.05,W,H*.1)}});
+    x.fillStyle='#d8d2c4';for(const f of F){f.y+=f.v*devicePixelRatio;f.x+=Math.sin(t/1500+f.y*.01)*.3;if(f.y>H){f.y=-5;f.x=Math.random()*W}x.globalAlpha=.35;x.fillRect(f.x,f.y,f.s*devicePixelRatio,f.s*devicePixelRatio)}x.globalAlpha=1;
+    if(!red)requestAnimationFrame(draw)}requestAnimationFrame(draw)})();
+/* news: the last few releases from GitHub, notes trimmed to their bullet points */
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+fetch('https://api.github.com/repos/cdhrnbstl7/fjordborn/releases?per_page=4').then(r=>r.json()).then(list=>{if(!Array.isArray(list)||!list.length)throw 0;
+  $('news').innerHTML='<h3>News and patch notes</h3>'+list.map(r=>{const lines=(r.body||'').split('\n').map(l=>l.trim()).filter(l=>/^[-*] /.test(l)).slice(0,7).map(l=>'<li>'+esc(l.slice(2).replace(/\*\*/g,''))+'</li>').join('');
+    return '<article><b>'+esc(r.name||r.tag_name)+'</b><time>'+new Date(r.published_at).toLocaleDateString()+'</time>'+(lines?'<ul>'+lines+'</ul>':'')+'</article>'}).join('')})
+  .catch(()=>{$('news').innerHTML='<h3>News and patch notes</h3><p style="color:var(--dim);margin:0">Offline. News will show when you are connected.</p>'});
+let ready=false,mode='play';
+function setStatus(s){$('stMsg').textContent=s.msg;const p=$('prog');p.classList.toggle('ind',!!s.busy&&s.pct==null);p.firstElementChild.style.width=(s.pct!=null?s.pct:(s.busy?30:100))+'%';
+  const b=$('play');if(s.state==='downloaded'){mode='install';b.textContent='Update';b.classList.add('upd');b.disabled=false}else{mode='play';b.textContent='Play';b.classList.remove('upd');b.disabled=!!s.block}}
+if(api){api.info().then(i=>{$('ver').textContent=i.version;$('oFull').setAttribute('aria-pressed',String(i.full))});api.onStatus(setStatus);
+  $('play').onclick=()=>{if(mode==='install')api.install();else api.play()};$('oCheck').onclick=()=>api.check();
+  $('oFull').onclick=e=>{const on=e.target.getAttribute('aria-pressed')!=='true';e.target.setAttribute('aria-pressed',String(on));api.setOpt('full',on)};
+  $('close').onclick=()=>api.quit();$('min').onclick=()=>api.minimize()}
+else setStatus({msg:'Ready',block:false});
+addEventListener('keydown',e=>{if(e.key==='Enter'&&!$('play').disabled)$('play').click()});
+</script>
+</body>
+</html>

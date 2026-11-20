@@ -1,5 +1,6 @@
 // Fjordborn desktop app: runs the game in its own window with the bundled engine.
-const { app, BrowserWindow, protocol, net, shell, Menu, globalShortcut } = require('electron');
+const { app, BrowserWindow, protocol, net, shell, Menu, ipcMain } = require('electron');
+const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
 let autoUpdater = null;
@@ -41,56 +42,83 @@ if (!app.requestSingleInstanceLock()) {
     });
 
     Menu.setApplicationMenu(null);
-    win = new BrowserWindow({
-      width: 1600, height: 900, minWidth: 960, minHeight: 540,
-      fullscreen: !process.env.FJORD_WINDOWED,
-      backgroundColor: '#000000',
-      title: 'Fjordborn',
-      icon: path.join(__dirname, 'icon.ico'),
-      autoHideMenuBar: true,
-      show: false,
-      webPreferences: {
-        contextIsolation: true,
-        sandbox: true,
-        nodeIntegration: false,
-        backgroundThrottling: false,
-        spellcheck: false
-      }
-    });
-    win.once('ready-to-show', () => win.show());
+    // settings kept between launches (full screen or windowed)
+    const optFile = path.join(app.getPath('userData'), 'launcher.json');
+    let opts = { full: true };
+    try { opts = Object.assign(opts, JSON.parse(fs.readFileSync(optFile, 'utf8'))); } catch (e) {}
+    const saveOpts = () => { try { fs.writeFileSync(optFile, JSON.stringify(opts)); } catch (e) {} };
 
-    // F11 toggles full screen; Ctrl+Shift+I is left out on purpose.
-    win.webContents.on('before-input-event', (e, input) => {
-      if (input.type === 'keyDown' && input.key === 'F11') {
-        win.setFullScreen(!win.isFullScreen()); e.preventDefault();
-      }
-      if (input.type === 'keyDown' && input.alt && input.key === 'Enter') {
-        win.setFullScreen(!win.isFullScreen()); e.preventDefault();
-      }
-    });
+    // ---- the game window ----
+    const openGame = () => {
+      win = new BrowserWindow({
+        width: 1600, height: 900, minWidth: 960, minHeight: 540,
+        fullscreen: !process.env.FJORD_WINDOWED && opts.full,
+        backgroundColor: '#000000',
+        title: 'Fjordborn',
+        icon: path.join(__dirname, 'icon.ico'),
+        autoHideMenuBar: true,
+        show: false,
+        webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, backgroundThrottling: false, spellcheck: false }
+      });
+      win.once('ready-to-show', () => win.show());
+      // F11 or Alt+Enter toggles full screen; Ctrl+Shift+I is left out on purpose.
+      win.webContents.on('before-input-event', (e, input) => {
+        if (input.type === 'keyDown' && (input.key === 'F11' || (input.alt && input.key === 'Enter'))) { win.setFullScreen(!win.isFullScreen()); e.preventDefault(); }
+      });
+      // Links (like "open on its own page") go to the normal web browser.
+      win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
+      win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('app://')) { e.preventDefault(); if (/^https?:/.test(url)) shell.openExternal(url); } });
+      win.loadURL('app://fjordborn/' + (process.env.FJORD_PAGE || 'index.html'));
+    };
+    const note = (msg) => { try { if (win) win.webContents.executeJavaScript('window.FJ_NOTE&&FJ_NOTE(' + JSON.stringify(msg) + ')').catch(() => {}); } catch (e) {} };
 
-    // Links (like "open on its own page") go to the normal web browser.
-    win.webContents.setWindowOpenHandler(({ url }) => {
-      if (/^https?:/.test(url)) shell.openExternal(url);
-      return { action: 'deny' };
-    });
-    win.webContents.on('will-navigate', (e, url) => {
-      if (!url.startsWith('app://')) { e.preventDefault(); if (/^https?:/.test(url)) shell.openExternal(url); }
-    });
+    // ---- the launcher: news, version, updates, and the Play button (like Tarkov's) ----
+    const useLauncher = !process.env.FJORD_PAGE && !process.env.FJORD_SKIP_LAUNCHER;
+    let lw = null, status = { msg: 'Ready to play', block: false };
+    const send = (s) => { status = s; if (lw && !lw.isDestroyed()) lw.webContents.send('fjl:status', s); };
+    ipcMain.handle('fjl:info', () => ({ version: app.getVersion(), full: !!opts.full }));
+    ipcMain.on('fjl:play', () => { if (status.block) return; openGame(); if (lw) { const l = lw; lw = null; l.close(); } });
+    ipcMain.on('fjl:install', () => { if (autoUpdater) { send({ msg: 'Installing the update. Fjordborn will restart...', busy: true, block: true }); setImmediate(() => autoUpdater.quitAndInstall(true, true)); } });
+    ipcMain.on('fjl:check', () => check(true));
+    ipcMain.on('fjl:quit', () => app.quit());
+    ipcMain.on('fjl:min', () => { if (lw) lw.minimize(); });
+    ipcMain.on('fjl:opt', (_e, k, v) => { opts[k] = v; saveOpts(); });
 
-    win.loadURL('app://fjordborn/' + (process.env.FJORD_PAGE || 'index.html'));
-
-    // Updates: check GitHub for a newer version, download it in the background, install it when the game is quit.
-    const note = (msg) => { try { win.webContents.executeJavaScript('window.FJ_NOTE&&FJ_NOTE(' + JSON.stringify(msg) + ')').catch(() => {}); } catch (e) {} };
-    if (autoUpdater && app.isPackaged && !process.env.FJORD_NO_UPDATE) {
+    let checking = false, downloaded = false;
+    const canUpdate = autoUpdater && app.isPackaged && !process.env.FJORD_NO_UPDATE;
+    function check(manual) {
+      if (!canUpdate) { send({ msg: manual ? 'Updates only work in the installed game.' : 'Ready to play', block: false }); return; }
+      if (checking || downloaded) return; checking = true;
+      if (lw) send({ msg: 'Checking for updates...', busy: true, block: true });
+      // never keep the player waiting on a slow connection
+      const t = setTimeout(() => { if (checking && !status.pct) send({ msg: 'The update server is slow to answer. You can play now.', block: false }); }, 12000);
+      autoUpdater.checkForUpdates().catch(() => {}).finally(() => clearTimeout(t));
+    }
+    if (canUpdate) {
       autoUpdater.autoDownload = true;
       autoUpdater.autoInstallOnAppQuit = true;
-      autoUpdater.on('update-available', (i) => note('Downloading Fjordborn ' + i.version + ' in the background...'));
-      autoUpdater.on('update-downloaded', (i) => note('Fjordborn ' + i.version + ' is ready. It installs when you quit the game.'));
-      autoUpdater.on('error', () => {});
-      const check = () => autoUpdater.checkForUpdates().catch(() => {});
-      setTimeout(check, 8000);
-      setInterval(check, 2 * 60 * 60 * 1000);
+      autoUpdater.on('update-available', (i) => { send({ msg: 'Downloading update ' + i.version + '...', busy: true, pct: 0, block: true }); note('Downloading Fjordborn ' + i.version + ' in the background...'); });
+      autoUpdater.on('download-progress', (p) => send({ msg: 'Downloading update: ' + Math.round(p.percent) + '%  (' + (p.bytesPerSecond / 1048576).toFixed(1) + ' MB/s)', busy: true, pct: p.percent, block: true }));
+      autoUpdater.on('update-not-available', () => { checking = false; send({ msg: 'Fjordborn is up to date', block: false }); });
+      autoUpdater.on('update-downloaded', (i) => { checking = false; downloaded = true; send({ msg: 'Update ' + i.version + ' is ready. Press Update to install it.', state: 'downloaded', block: false }); note('Fjordborn ' + i.version + ' is ready. It installs when you quit the game.'); });
+      autoUpdater.on('error', () => { checking = false; if (!downloaded) send({ msg: 'Could not reach the update server. You can still play.', block: false }); });
+      setInterval(() => { if (!lw) check(false); }, 2 * 60 * 60 * 1000);
+    }
+
+    if (useLauncher) {
+      lw = new BrowserWindow({
+        width: 1120, height: 660, minWidth: 900, minHeight: 560, frame: false, resizable: true,
+        backgroundColor: '#07080a', title: 'Fjordborn', icon: path.join(__dirname, 'icon.ico'), show: false,
+        webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, preload: path.join(__dirname, 'preload.js'), spellcheck: false }
+      });
+      lw.once('ready-to-show', () => lw.show());
+      lw.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
+      lw.webContents.on('did-finish-load', () => { send(status); check(false); });
+      lw.on('closed', () => { if (lw) { lw = null; if (!win) app.quit(); } });
+      lw.loadURL('app://fjordborn/launcher.html');
+    } else {
+      openGame();
+      if (canUpdate) setTimeout(() => check(false), 8000);
     }
   });
 

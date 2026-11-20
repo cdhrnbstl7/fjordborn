@@ -1,5 +1,5 @@
 import json,os,sys
-src=open('out_phone.html',encoding='utf-8').read()
+src=open('/home/claude/work/out_phone.html',encoding='utf-8').read()
 out=sys.argv[1]; os.makedirs(out,exist_ok=True)
 head='''<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -9,6 +9,7 @@ head='''<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <style>html,body{background:#000;height:100%;overscroll-behavior:none}</style>
+<script>window.FJ_WEBAPP=true</script>
 '''
 k=src.index('viewport-fit=cover">')+len('viewport-fit=cover">')
 open(f'{out}/index.html','w',encoding='utf-8').write(src[:k]+'\n'+head+src[k:])
@@ -25,4 +26,7 @@ for s in(180,192,512):
   d.polygon([(51*u,48*u),(66*u,64*u),(51*u,68*u)],fill='#c96f3a')
   im.save(f'{out}/icon-{s}.png')
 open(f'{out}/.nojekyll','w').close()
+import re
+ver=re.search(r"const GAME_VERSION='([^']+)'",src).group(1)
+json.dump({'version':ver},open(f'{out}/version.json','w'))
 print('ok',os.path.getsize(f'{out}/index.html'))
