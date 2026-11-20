@@ -1,3 +1,29 @@
+**Fjordborn 1.14.0: the wilds bite back**
+
+- **Many more enemies:** something new turns up every 25 to 50 seconds, and the "Enemies appear" setting is gone.
+- **Sunmeads by day:**
+  - **Cinderhorn Ogre:** a fat, horned brute with a burning club. Its fire slam leaves you burning.
+  - **Gilded Centipede:** its poison bite keeps hurting after it lands.
+  - **Sunscale Stalker:** a red-crested lizard that leaps at you.
+  - **Goblin Raiders:** hunt in packs.
+  - **Hobgoblin Brute:** wears a spiked gauntlet and has a wide cleave.
+- **Sunmeads by night:**
+  - **Redmane Ravager:** steel-clawed and pounces.
+  - **Cinder Hound:** a red hound that pounces.
+  - **Hollow Strawman**
+  - **Crimson Revenant:** a rare armoured knight with a greatsword.
+- **Rare roaming giant:** the Ember Colossus, a cracked, burning giant with a huge axe.
+- **Hoarfells:**
+  - **Rimecore Golem:** raises ice spikes around itself.
+  - **Frostcoil Serpent:** its frost breath slows you.
+  - **Glacier Arachnid:** spits web that roots you in place.
+  - **Chained Brute:** a rare brute that swings iron balls on chains and knocks you back.
+- **Telegraphed attacks:** big attacks show a warning ring first, so you can dodge them.
+- **Afflictions:** burning, poison, frost slow and webbing, each with a warning.
+- **New drops:** Gilded Chitin, Hard Scales and Frostglass. The rare monsters also drop gold and Sea Garnets.
+
+---
+
 **Fjordborn 1.13.0**
 
 - **Launcher:** a Developer tab for the game's creator. It is locked by a password, and the developer edition behind it is encrypted.
