@@ -471,7 +471,7 @@ $('turnRot').addEventListener('click',()=>setRotPref(true));
 $('pRot').addEventListener('click',()=>setRotPref(!rotPref));
 layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
-const GAME_VERSION='1.12.0';
+const GAME_VERSION='1.12.1';
 const EDITION='phone';/* build_editions.py sets 'phone' or 'desktop' */
 /* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
 if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
@@ -1408,7 +1408,7 @@ const ITEMS={
   ispear:{n:'Iron Spear',d:'Long reach. Heavy blow: Lunge, driving forward through every foe in your path.',tool:{dmg:34,chop:0,mine:0,cd:.5,stam:9}},
   iaxe:{n:'Iron Battleaxe',d:'A bearded war axe that also fells trees. Heavy blow: Whirlwind, a full circle of steel.',tool:{dmg:44,chop:34,mine:0,cd:.58,stam:11}},
   torch:{n:'Torch',d:'Lights the night around you.',tool:{dmg:6,chop:0,mine:0,cd:.5,stam:5,light:1}},
-  hammer:{n:"Builder's Mallet",d:'Carry it to unlock the Build tab.'},
+  hammer:{n:"Builder's Mallet",d:'Equip it from the quick bar or the bag, then Strike (or tap it again on the bar) to open the build menu. Choose a piece, Strike to place it.',tool:{dmg:3,chop:0,mine:0,cd:.6,stam:4}},
   hoe:{n:'Ground Hoe',d:'Strike the ground ahead to level it to where you stand: shaves humps, fills hollows. Lay floors on the flat.',tool:{dmg:5,chop:0,mine:0,cd:.5,stam:5}},
   tunic:{n:'Hide Tunic',d:'Wear: a heavy hide coat. Turns blows and keeps out the Hoarfell cold.',armor:3,slot:'body',warm:1},
   coat:{n:'Hooded Coat',d:'Wear: a deep hood and a fitted buttoned coat with long tails, all one garment. Keeps out the cold.',armor:3,slot:'body',warm:1},
@@ -1436,7 +1436,7 @@ const SKFX={run:f=>'Run drain −'+pct(.5*f)+', speed +'+pct(.15*f),jump:f=>'Hei
   wood:f=>'Chopping +'+pct(f),mine:f=>'Mining +'+pct(f),swords:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),axes:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),
   clubs:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),unarmed:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),block:f=>'Block cost −'+pct(.5*f)+', parry window +'+Math.round(f*100)+' ms',
   sail:f=>'Sailing speed +'+pct(.25*f),cook:f=>'Extra roast '+pct(.5*f)+' of the time'};
-const TOOLBAR=['axe','baxe','emaxe','iaxe','pick','bpick','hoe','club','imace','ispear','sword','rsword','torch'];
+const TOOLBAR=['axe','hammer','baxe','emaxe','iaxe','pick','bpick','hoe','club','imace','ispear','sword','rsword','torch'];
 const RECIPES=[
   {id:'axe',cost:{wood:4,stone:3}},{id:'hammer',cost:{wood:3,stone:2}},{id:'hoe',cost:{wood:4,stone:4}},{id:'club',cost:{wood:6}},{id:'torch',cost:{wood:1,resin:1}},
   {id:'cooked',cost:{meat:1},st:'fire'},
@@ -2923,7 +2923,7 @@ function discover(id){const before=new Set(RECIPES.filter(recKnown).map(r=>r.id)
   toast('New find: '+ITEMS[id].n+(neu.length?'. You can now make: '+neu.slice(0,4).join(', ')+(neu.length>4?' and '+(neu.length-4)+' more':''):''),'big');if(neu.length)sfx('craft')}
 const hasCost=c=>Object.keys(c).every(k=>(P.inv[k]||0)>=c[k]);
 const payCost=c=>{for(const k in c){P.inv[k]-=c[k]}uiDirty=true};
-function equip(id){P.equip=P.equip===id?null:id;refreshLook();uiDirty=true}
+function equip(id){if(id==='hammer'&&P.equip==='hammer'&&!buildSel){openPanel('build');return}P.equip=P.equip===id?null:id;if(P.equip!=='hammer'&&buildSel)setBuild(null);refreshLook();uiDirty=true;if(P.equip==='hammer'&&started&&!panelOpen)openPanel('build')}
 /* the Homeward Stone: leave any tomb, ship or wreck and arrive at your bed (or where you woke) */
 function goHome(){if(panelOpen)closePanel();if(P.dg){const d=P.dg;P.dg=null;grassMesh.visible=pebMesh.visible=true;for(const c of creatures.slice())if(c.dg)removeCreature(c);for(const l of DLIGHTS)l.visible=false}
   if(P.boat)leaveBoat();if(typeof leaveWreck==='function')leaveWreck();P.x=P.spawn.x;P.z=P.spawn.z;P.y=getH(P.x,P.z)+.2;P.vy=0;sfx('horn');toast('The Homeward Stone flares, and you are home.','big')}
@@ -2996,7 +2996,7 @@ const TUT=[
   {t:()=>'Make your first tool. Open your bag ('+TK('press Tab','tap Bag')+'), go to Craft, and craft a Stone Axe.',d:h=>h('axe')||h('emaxe')},
   {t:()=>'Wield the axe ('+TK('press 1, or Wield in the bag','Wield it in the bag')+') and fell a white birch: '+TK('click','tap Strike')+' to swing at the trunk. Gather 3 wood and 2 stone for a mallet ('+Math.min(3,P.inv.wood||0)+'/3 wood, '+Math.min(2,P.inv.stone||0)+'/2 stone).',d:h=>h('hammer')||(P.inv.wood>=3&&P.inv.stone>=2)},
   {t:()=>"Craft a Builder's Mallet in the bag. The mallet lets you build.",d:h=>h('hammer')},
-  {t:()=>'Build a Campfire: open the bag, go to Build, pick Campfire, and place it '+TK('with a click','with Place')+'. Fire keeps you warm and cooks meat.',d:(h,hs)=>hs('fire')},
+  {t:()=>'Build a Campfire: equip the mallet ('+TK('its number key, or Wield in the bag','tap it on the quick bar')+') to open the build menu, pick Campfire, and place it '+TK('with a click','with Place')+'. Fire keeps you warm and cooks meat.',d:(h,hs)=>hs('fire')},
   {t:()=>'Build a Workbench next to your fire. Clothes, picks and better tools are made there.',d:(h,hs)=>hs('bench')},
   {t:()=>'Hunt for hide. Fallow Harts and Bristlebacks roam the meadows; strike them down and take their hide ('+Math.min(2,P.inv.hide||0)+'/2).',d:h=>(P.inv.hide||0)>=2||Object.values(P.armor).some(Boolean)},
   {t:()=>'Get dressed. At the workbench, craft Wool Trousers and put them on (Bag, then Wear).',d:()=>Object.values(P.armor).some(Boolean)},
@@ -3093,7 +3093,7 @@ function toggleLock(){if(LOCK){LOCK=null;lockMark.visible=false;return}if(!start
   for(const c of creatures){if(c.hp<=0)continue;const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d>22)continue;const dot=(dx*fx+dz*fz)/(d||1);if(dot<-.2)continue;const sc=d+(1-dot)*14;if(sc<bs){bs=sc;best=c}}
   if(best){LOCK=best;sfx('pick')}else warn('Nothing to lock on to.')}
 function updLock(dt){if(LOCK&&!lockValid(LOCK))LOCK=null;lockMark.visible=!!LOCK;if(!LOCK)return;const s=LOCK.spec;lockMark.position.set(LOCK.x,LOCK.y+s.barY*.52,LOCK.z);lockMark.rotation.y+=dt*2.5;lockMark.scale.setScalar((s.scale||1)>1?2:1)}
-function startAttack(){if(!started||P.dead||panelOpen||paused||P.boat)return;if(buildSel){tryPlace();return}if(P.atkT>0||P.block||P.rollT>0)return;
+function startAttack(){if(!started||P.dead||panelOpen||paused||P.boat)return;if(buildSel){tryPlace();return}if(P.equip==='hammer'){openPanel('build');return}if(P.atkT>0||P.block||P.rollT>0)return;
   const tool=(P.equip&&ITEMS[P.equip].tool)||FIST,chain=T-P.lastAtkEnd<.6&&P.combo<2,combo=chain?P.combo+1:0,fin=combo===2,cost=tool.stam*.65*(fin?1.3:1)*(1-.35*skF(wk()));
   if(P.st<cost){warn('Too winded to swing.');return}
   const heavy=kd('heavy')&&!P.tAtk;if(heavy&&P.st<cost*1.8){warn('Too winded for a heavy blow.');return}

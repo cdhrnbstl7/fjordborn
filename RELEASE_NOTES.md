@@ -1,3 +1,9 @@
+**Fjordborn 1.12.1**
+
+- **Builder's Mallet can be equipped:** it sits on the quick bar like other tools. Equipping it opens the build menu, and Strike with the mallet in hand reopens it.
+
+---
+
 **Fjordborn 1.12.0: launcher, ships, ore veins and a castle-galleon**
 
 - **New launcher:** the desktop game now opens to a launcher with news, your version and a Play button. Updates download there with a progress bar, then the Update button installs them and restarts.
