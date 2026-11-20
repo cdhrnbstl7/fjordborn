@@ -473,7 +473,7 @@ layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
 /* developer switches: all off in the public game; only the private developer edition has the menu that turns them on */
 const DEV={on:0,god:0,ghost:0,fly:0,clip:0,creative:0,speed:1,up:0,down:0};
-const GAME_VERSION='1.14.0';
+const GAME_VERSION='1.14.1';
 const EDITION='phone';/* build_editions.py sets 'phone' or 'desktop' */
 /* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
 if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
@@ -2097,8 +2097,37 @@ const MODELS={
     const arms=[1,-1].map(sd=>{const p=pivot(g,sd*.33,1.56,0);cadd(p,cC(.068,.048,.6,8),m.dSkin,0,-.3,0);cadd(p,cS(.05,8,6),m.dSkin,0,-.64,0);
       if(sd>0){cadd(p,new THREE.BoxGeometry(.035,.8,.085),m.dMail,0,-1.08,.02);cadd(p,new THREE.BoxGeometry(.06,.04,.24),m.dRust,0,-.7,.02)}else cadd(p,cC(.32,.32,.05,14),m.dRust,-.06,-.5,.05,0,0,PI/2);return p});
     return{g,legs,arms}},
-  ghost(){return spectre(false)},
-  wraith(){return spectre(true)},
+  /* the Colossus's drowned ghost: a glowing green spirit, fat in the head, its body tapering to a curling tail, long clawed arms and a wide crooked grin */
+  ghost(){const g=new THREE.Group(),body=new THREE.Group();g.add(body);body.position.y=.55;
+    const M=new THREE.MeshStandardMaterial({color:LC('#6fe08a'),emissive:LC('#2fbf5a'),emissiveIntensity:1.2,roughness:.4,transparent:true,opacity:.6,depthWrite:false}),
+      Sh=new THREE.MeshBasicMaterial({color:new THREE.Color('#7affa0').convertSRGBToLinear().multiplyScalar(POST_OK?1.4:1),transparent:true,opacity:.16,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.BackSide}),
+      D=new THREE.MeshBasicMaterial({color:0x0a2a12}),Tt=new THREE.MeshBasicMaterial({color:0xd8ffd8}),E=new THREE.MeshBasicMaterial({color:new THREE.Color('#fff36a').convertSRGBToLinear().multiplyScalar(POST_OK?5:1)});
+    cadd(body,cS(.52,18,14),M,0,1.7,0,0,0,0,1,1.05,.95);cadd(body,cS(.6,18,14),Sh,0,1.7,0,0,0,0,1,1.05,.95);
+    const tail=[];let par=body,y=1.25;for(let i=0;i<6;i++){const p=pivot(par,0,i?-.28:y,i?-.04:0);const r=.42-i*.065;cadd(p,cS(r,12,10),M,0,0,0,0,0,0,1,1.2,1);cadd(p,cS(r*1.15,12,10),Sh,0,0,0);tail.push(p);par=p}
+    cadd(body,cS(.14,10,8),M,0,1.66,.48,0,0,0,1,.8,1.4);for(const sd of[1,-1]){cadd(body,cS(.09,10,8),D,sd*.19,1.86,.42,0,0,0,1.2,.8,.6);cadd(body,cS(.045,8,6),E,sd*.19,1.86,.47);cadd(body,cK(.04,.22,4),M,sd*.22,2.0,.38,-.4,0,sd*.6)}
+    cadd(body,new THREE.BoxGeometry(.5,.12,.06),D,0,1.48,.46,0,0,0);for(let i=0;i<7;i++)cadd(body,new THREE.BoxGeometry(.05,.05,.03),Tt,-.18+i*.06,1.52-(i%2)*.04,.49);
+    const arms=[1,-1].map(sd=>{const p=pivot(body,sd*.45,1.55,.05);cadd(p,cC(.12,.07,.9,10),M,0,-.42,0);cadd(p,cS(.13,10,8),M,0,-.9,.06,0,0,0,1.2,.8,1);for(let k=-2;k<=1;k++)cadd(p,cK(.03,.32,5),M,k*.06+.03,-1.08,.12,PI-.4);return p});
+    return{g,legs:[],arms,body,flutter:tail,fx:'x'}},
+  /* wraiths: hooded, robed in black rags that tear into drifting smoke, bone-thin clawed hands, a void under the hood; some carry a rusted sword, some a chained scythe */
+  wraith(){const g=new THREE.Group(),body=new THREE.Group();g.add(body);body.position.y=.7;
+    const R=new THREE.MeshStandardMaterial({color:LC('#17161a'),map:TEX.wool,roughness:.95,side:THREE.DoubleSide}),R2=new THREE.MeshStandardMaterial({color:LC('#2a2830'),map:TEX.wool,roughness:.95,side:THREE.DoubleSide}),
+      Sm=new THREE.MeshBasicMaterial({color:0x1a1a1e,transparent:true,opacity:.28,depthWrite:false}),B=new THREE.MeshStandardMaterial({color:LC('#4a4640'),map:TEX.leather,roughness:.7}),
+      V=new THREE.MeshBasicMaterial({color:0x020203}),E=new THREE.MeshBasicMaterial({color:new THREE.Color('#bfe8ff').convertSRGBToLinear().multiplyScalar(POST_OK?4:1)}),Ru=new THREE.MeshStandardMaterial({color:LC('#4a3a2c'),map:TEX.metal,roughness:.6,metalness:.5});
+    // hood and shoulders
+    cadd(body,cS(.36,14,10),R,0,2.05,-.02,0,0,0,1,1.15,1.05);cadd(body,new THREE.SphereGeometry(.4,16,12,0,PI*2,0,PI*.7),R2,0,2.12,-.06,.2);cadd(body,cS(.24,12,8),V,0,2.0,.16,0,0,0,1,1.1,.6);
+    for(const sd of[1,-1])cadd(body,cS(.028,6,4),E,sd*.08,2.03,.3);cadd(body,cK(.15,.4,6),R2,0,2.42,-.18,-.5);
+    cadd(body,cS(.45,14,10),R,0,1.62,0,0,0,0,1.25,.7,.85);cadd(body,cC(.36,.55,1.2,14,4,true),R,0,1.0,0);
+    // rags: long tapering strips that hang and flutter
+    const fl=[];for(let i=0;i<18;i++){const a=i/18*6.283+Math.random()*.2,r=.42+Math.random()*.12,p=pivot(body,Math.sin(a)*r,1.35+Math.random()*.25,Math.cos(a)*r);p.rotation.y=a;const L=1.1+Math.random()*1.1;
+      cadd(p,new THREE.PlaneGeometry(.16+Math.random()*.1,L,1,3),i%3?R:R2,0,-L/2,0,0,0,(Math.random()-.5)*.2);fl.push(p)}
+    // sleeves with rags, bony clawed hands
+    const arms=[1,-1].map(sd=>{const p=pivot(body,sd*.5,1.72,0);cadd(p,cC(.13,.2,.85,10,1,true),R,0,-.4,0);for(let k=0;k<4;k++)cadd(p,new THREE.PlaneGeometry(.08,.5+k*.1),R2,(k-1.5)*.06,-.95,-.02,0,0,0);
+      cadd(p,cC(.035,.03,.35,6),B,0,-.95,.06);for(let k=-2;k<=1;k++)cadd(p,cC(.012,.006,.3,4),B,k*.035+.02,-1.22,.1,.3);return p});
+    // smoke trailing below
+    for(let i=0;i<6;i++)cadd(body,cS(.35-i*.04,10,8),Sm,(Math.random()-.5)*.2,.35-i*.22,(Math.random()-.5)*.2,0,0,0,1.2,.8,1.2);
+    if(Math.random()<.55){const w=pivot(arms[0],0,-1.2,.1);w.rotation.x=-1.5;cadd(w,cC(.025,.025,.3,6),B,0,0,0);cadd(w,new THREE.BoxGeometry(.24,.04,.05),Ru,0,.15,0);cadd(w,new THREE.BoxGeometry(.09,1.3,.025),Ru,0,.85,0,0,0,.04)}
+    else{const w=pivot(arms[0],0,-1.2,.1);w.rotation.x=-1.0;cadd(w,cC(.03,.03,2.6,6),B,0,.6,0);const bl=new THREE.TorusGeometry(.7,.05,4,16,PI*.7);cadd(w,bl,Ru,-.35,1.75,0,0,0,PI*.55);for(let k=0;k<7;k++)cadd(w,new THREE.TorusGeometry(.05,.015,4,6),Ru,.05,.5-k*.09,0,k%2?PI/2:0)}
+    return{g,legs:[],arms,body,flutter:fl,fx:'x'}},
   troll(){const m=cmats(),g=new THREE.Group();
     cadd(g,cS(.7,20,14),m.troll,0,2.0,.1,.35,0,0,1.1,1,.9);cadd(g,cS(.55,18,12),m.trollDark,0,1.4,0,0,0,0,1,.85,.85);
     cadd(g,cS(.36,16,12),m.troll,0,2.6,.62,0,0,0,1,.9,1);cadd(g,cS(.2,12,10),m.trollDark,0,2.5,.9,0,0,0,1.1,.7,.8);
@@ -2242,7 +2271,7 @@ function spawnCreature(type,x,z){const s=CREAT[type],m=MODELS[type](),sc=s.scale
   const sh=new THREE.Mesh(SHADOWG,SHADOWM);sh.rotation.x=-PI/2;sh.position.y=.06;sh.scale.setScalar(s.r*1.3/sc);m.g.add(sh);
   const bar=new THREE.Sprite(new THREE.SpriteMaterial({color:0xd0483c}));bar.scale.set(1.2/sc,.13/sc,1);bar.position.y=s.barY/sc;bar.visible=false;m.g.add(bar);
   const y=getH(x,z);m.g.position.set(x,y,z);scene.add(m.g);
-  const tier=s.boss?1:1+.45*(boss===2)+.45*(boss2===2);const c={type,spec:s,tier,mhp:s.hp*tier,g:m.g,legs:m.legs,arms:m.arms,knees:m.knees||[],head:m.head||null,tail:m.tail||null,ears:m.ears||[],body:m.body||null,segs:m.segs||null,spc:(s.sp?s.sp.cd*.4:0),meshes,bar,x,z,y,yaw:Math.random()*6.28,hp:s.hp*tier,cd:1,wind:0,tT:0,wx:0,wz:0,phase:0,flash:0,kx:0,kz:0,sx:0,sz:0,mad:false};
+  const tier=s.boss?1:1+.45*(boss===2)+.45*(boss2===2);const c={type,spec:s,tier,mhp:s.hp*tier,g:m.g,legs:m.legs,arms:m.arms,knees:m.knees||[],head:m.head||null,tail:m.tail||null,ears:m.ears||[],body:m.body||null,segs:m.segs||null,flutter:m.flutter||null,spc:(s.sp?s.sp.cd*.4:0),meshes,bar,x,z,y,yaw:Math.random()*6.28,hp:s.hp*tier,cd:1,wind:0,tT:0,wx:0,wz:0,phase:0,flash:0,kx:0,kz:0,sx:0,sz:0,mad:false};
   creatures.push(c);return c}
 let FLASHMS=null;function setFlash(c,on){if(!FLASHMS){FLASHMS=FLASHM.clone();FLASHMS.skinning=true}for(const p of c.meshes)p[0].material=on?(p[0].isSkinnedMesh?FLASHMS:FLASHM):p[1]}
 function removeCreature(c){scene.remove(c.g);c.bar.material.dispose();const i=creatures.indexOf(c);if(i>=0)creatures.splice(i,1)}
@@ -3385,6 +3414,7 @@ function updCreature(c,dt){const s=c.spec,dx=P.x-c.x,dz=P.z-c.z,dp=Math.hypot(dx
   for(const e of c.ears){if(e.userData.r0==null)e.userData.r0=e.rotation.z;const tw=Math.max(0,Math.sin(T*1.1+c.x*3+e.userData.r0*5)-.94)*12;e.rotation.z=e.userData.r0+tw*.35*Math.sign(e.userData.r0||1)}
   if(c.head){const idle=!moving&&c.wind<=0,graze=idle&&c.type==='deer'&&!c.mad&&Math.sin(T*.25+c.x*.7)>.15;c.head.rotation.x=lerp(c.head.rotation.x,moving?(runG?Math.sin(c.phase)*.08:Math.sin(c.phase*2+PI*.5)*.05)+(c.wind>0?.25:0):graze?.95:Math.sin(T*.6+c.z)*.08,Math.min(1,dt*3));
     c.head.rotation.y=lerp(c.head.rotation.y,idle&&!graze?Math.sin(T*.45+c.x)*.35:0,Math.min(1,dt*2))}
+  if(c.flutter){for(let i=0;i<c.flutter.length;i++){const f=c.flutter[i];f.rotation.x=Math.sin(T*3.2+i*1.7+c.x)*.18+(moving?-.35:0)}if(c.body)c.body.position.y=(c.body.userData.by??(c.body.userData.by=c.body.position.y))+Math.sin(T*1.6+c.z)*.12}
   if(c.segs){for(let i=1;i<c.segs.length;i++)c.segs[i].rotation.y=Math.sin(T*(moving?7:2)-i*.65+c.x)*(moving?.16:.05);if(c.segs[0])c.segs[0].rotation.x=(c.type==='serpent'?-.35:0)+(c.wind>0?-.25*Math.sin((1-c.wind/s.wind)*PI):0)}
   if(c.tail)c.tail.rotation.y=Math.sin(T*(moving?7:2.2)+c.x)*(moving?.3:.18);
   for(let i=0;i<c.arms.length;i++)c.arms[i].rotation.x=c.wind>0&&c.atk==='throw'?(i?-.4:lerp(-1,-3.1,Math.min(1,wp*1.4))):c.wind>0?(s.boss?lerp(-3,-.2,Math.pow(wp,6)):-1.9+Math.sin(wp*PI)*.5):(i?sw:-sw)*.6;

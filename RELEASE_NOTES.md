@@ -1,3 +1,10 @@
+**Fjordborn 1.14.1**
+
+- **New look for the Drowned Colossus's wraiths:** hooded figures in black rags that flutter and tear into drifting smoke, with a void under the hood, faint pale eyes and bony clawed hands. Some carry a rusted sword, some a chained scythe.
+- **New look for the Drowned Ghost:** a glowing green spirit with a curling tail, long clawed arms and a crooked grin.
+
+---
+
 **Fjordborn 1.14.0: the wilds bite back**
 
 - **Many more enemies:** something new turns up every 25 to 50 seconds, and the "Enemies appear" setting is gone.
