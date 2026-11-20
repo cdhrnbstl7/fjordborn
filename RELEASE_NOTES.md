@@ -1,3 +1,9 @@
+**Fjordborn 1.12.2**
+
+- **A nebula in the night sky:** muted rose, teal and amber gas with dark dust lanes and a cluster of young stars, high in the north-west after dark. It is kept dim so it doesn't distract from play.
+
+---
+
 **Fjordborn 1.12.1**
 
 - **Builder's Mallet can be equipped:** it sits on the quick bar like other tools. Equipping it opens the build menu, and Strike with the mallet in hand reopens it.
