@@ -1,3 +1,16 @@
+## 1.18.0 — The tombs, rebuilt
+- New tomb entrances: a carved stone portal set into a heap of mossy boulders, with an iron-banded door standing ajar, glowing runes in the lintel, torch posts, standing stones along a flagstone path and mist at the threshold.
+- Every tomb has its own look inside:
+  - Barrow of Ketil: a warm, torchlit crypt with banners and braziers.
+  - Tomb of Grim-Eye: violet torches, hanging chains and reflective puddles.
+  - Tombs high in the mountains: frost halls with icicles and cold blue light.
+  - New tomb, Deepfall Caves: a drowned cavern with rough rock walls, stalactites, mossy floors and a glowing turquoise pool ringed with crystals.
+- Real stonework: block-and-mortar walls and irregular flagstone floors, arched brick vaults over the corridors, arched doorways (some with portcullises), columns with bases and capitals, and tall pillared halls with arcades.
+- Lantern niches, iron sconces, candle clusters, cobwebs, rubble, skulls, urns, sarcophagi and shafts of light falling through cracks in the vaults.
+- Each treasure hall now ends in a raised dais with a stone throne beneath a carved, gilded sun.
+- The tomb map is now an inked parchment floor plan with hatched rock and gridded floors, revealed as you explore. The big map (M) shows the explored part.
+- Ghosts haunt the drowned cavern; wraiths walk among the draugr of Grim-Eye.
+
 ## 1.17.1 — Spirits, second pass
 - Hooded wraiths are slimmer and more draped, with hanging folds in the robe, thinner sleeves and long wispy strands running from the chest to the ground.
 - The bone wraith's shoulder pads are now a thin torn cloak, its hair hangs longer over the shoulders, and the smoke beneath it is a thin trailing wisp.
