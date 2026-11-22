@@ -1,3 +1,7 @@
+## 1.16.0 — The Sunmeads monsters, sculpted
+- The ogre, giant centipede, crested lizard, goblin and hobgoblin now have full sculpted bodies made to match the reference art, with skeletal animation, glowing eyes and their own weapons (the ogre's burning club, the goblins' blades).
+- Fixed lighting on all sculpted creatures (some surfaces were drawn inside-out, giving pale streaks).
+
 **Fjordborn 1.15.0: real animals**
 
 - **Sculpted animals:** every animal is now one sculpted, skinned body, made the same way as your character, with fur grain and legs that bend as they walk.

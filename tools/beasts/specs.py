@@ -268,3 +268,148 @@ def rime_color(g,n):
     if z>.83 and y>.95:c=(.06,.06,.08)
     t=nz(x*70,y*70,z*70)*.08-.04;return tuple(max(0,min(1,k*(1+t))) for k in c)
 _p,_b=wolf();SPECS['rimewolf']={'name':'rimewolf','parts':_p,'bones':_b,'color':rime_color,'shape':fur_shape(.016),'view':1.6,'voxel':.008,'tris':5000}
+
+# ================= MONSTERS =================
+BIPED_IF={'legs':['legL','legR'],'arms':['armL','armR'],'head':'head','body':'spine'}
+def biped_bones(J,tail=None):
+    B=[('root',None,J['hip'],J['waist']),('spine','root',J['waist'],J['chest']),('neck','spine',J['chest'],J['neckt']),('head','neck',J['neckt'],J['face'])]
+    for t,d in (('L',1),('R',-1)):
+        m=lambda p:(d*p[0],p[1],p[2])
+        B+=[('arm'+t,'spine',m(J['sh']),m(J['el'])),('fore'+t,'arm'+t,m(J['el']),m(J['wr'])),('leg'+t,'root',m(J['hp']),m(J['kn'])),('shin'+t,'leg'+t,m(J['kn']),m(J['an']))]
+    if tail:B.append(('tail','root',tail[0],tail[1]))
+    return B
+def spike(base,tip,r0,r1=.004):return {'skin':[('s0',None,base,r0),('s1','s0',tip,r1)],'sub':1}
+def horn(pts,rs):return {'skin':[('h%d'%i,('h%d'%(i-1) if i else None),p,r) for i,(p,r) in enumerate(zip(pts,rs))],'sub':2}
+def gtone(c,g,amp=.12,f=40):
+    v=nz(g[0]*f,g[1]*f,g[2]*f)*amp-amp/2;return tuple(max(0,min(1,k*(1+v))) for k in c)
+
+# ---- Cinderhorn Ogre (fat red horned brute) ----
+def ogre():
+    P=[]
+    P+=[ell((0,1.55,.3),(.95,.88,.9)),ell((0,2.3,0),(.82,.55,.58)),ell((0,2.65,-.08),(.5,.25,.38)),ell((0,1.3,0),(.62,.35,.5))]
+    P+=sym(lambda d:ell((d*.82,2.42,0),(.36,.32,.36)))
+    P+=[ell((0,2.78,.42),(.28,.27,.3)),ell((0,2.6,.55),(.27,.17,.24)),ell((0,2.88,.6),(.27,.08,.1)),ell((0,2.72,.72),(.1,.09,.08))]
+    P+=sym(lambda d:mcap((d*.88,2.45,0),(d*1.08,1.75,.06),.27))+sym(lambda d:mcap((d*1.08,1.75,.06),(d*1.14,1.12,.22),.24))+sym(lambda d:ell((d*1.15,.95,.27),(.2,.22,.19)))
+    P+=sym(lambda d:mcap((d*.48,1.3,0),(d*.55,.72,.06),.33))+sym(lambda d:mcap((d*.55,.72,.06),(d*.55,.2,0),.26))+sym(lambda d:ell((d*.55,.11,.13),(.23,.12,.31)))
+    P+=sym(lambda d:horn([(d*.18,2.96,.42),(d*.45,3.15,.36),(d*.62,3.45,.26),(d*.58,3.72,.1)],[.1,.08,.05,.012]))
+    P+=sym(lambda d:spike((d*.13,2.55,.75),(d*.19,2.74,.82),.04))
+    for i in range(7):P.append(spike((0,2.62-i*.2,-.5+i*.02-(.1 if i>2 else 0)),(0,2.82-i*.2,-.86+i*.02-(.1 if i>2 else 0)),.07-.004*i))
+    P+=sym(lambda d:spike((d*.95,2.7,-.1),(d*1.25,2.95,-.2),.06))
+    P+=[ell((0,.98,.68),(.42,.32,.06),(6,0,0)),ell((0,.98,-.52),(.42,.32,.06),(-8,0,0))]   # loincloth flaps
+    J={'hip':(0,1.3,0),'waist':(0,1.9,0),'chest':(0,2.6,0),'neckt':(0,2.75,.38),'face':(0,2.75,.8),'sh':(.9,2.45,0),'el':(1.08,1.75,.06),'wr':(1.15,1.0,.24),'hp':(.48,1.3,0),'kn':(.55,.72,.06),'an':(.55,.12,.05)}
+    return P,biped_bones(J)
+def ogre_color(g,n):
+    x,y,z=g;c=(.62,.14,.1)
+    v=abs(math.sin(x*9+math.sin(y*7)*1.5)*math.sin(y*8+math.sin(z*6)*1.3));c=mix(c,(.42,.08,.06),sm(.12,.0,v)*.55)   # fine dark vein lines
+    c=mix(c,(.7,.22,.15),sm(.2,-.4,n[1])*sm(.5,1.0,z)*sm(1.0,2.0,y)*.4)
+    if .85<y<1.32 and abs(x)<.7 and (abs(z)>.45 or n[1]<.3):c=(.24,.17,.11)   # loincloth
+    if y<.24:c=(.3,.07,.06)
+    if (y>2.9 and abs(x)>.14 and z<.55) or (z<-.55 and y>1.6 and abs(x)<.1) or (abs(x)>.92 and y>2.78 and n[1]>.2):c=mix((.82,.76,.64),(.3,.24,.2),sm(3.3,3.75,y) if y>2.9 else 0)   # horns and bone spikes
+    if abs(x)>.12 and y>2.55 and z>.76 and y<2.76:c=(.88,.82,.7)    # tusks
+    return gtone(c,g,.1,30)
+_p,_b=ogre();SPECS['ogre']={'name':'ogre','parts':_p,'bones':_b,'color':ogre_color,'iface':BIPED_IF,'view':4.2,'voxel':.018,'tris':7000}
+
+# ---- Gilded Centipede (rearing, gold-shelled, sickle jaws) ----
+def centipede():
+    P=[];B=[];segs=[];prev=None;pts=[]
+    for i in range(12):
+        y=[1.75,1.35,.95,.62][i] if i<4 else .45;z=[.0,-.35,-.62,-.95][i] if i<4 else -.95-(i-3)*.6;pts.append((0,y,z))
+    for i,(x,y,z) in enumerate(pts):
+        w=.46-.018*i
+        P.append(ell((0,y,z),(w,.26,.3),(-35 if i<3 else 0,0,0)))
+        if i>0:
+            for d in (1,-1):
+                if i<4:P.append(horn([(d*w*.8,y,z),(d*(w+.35),y-.05,z+.25),(d*(w+.45),y-.25,z+.45)],[.05,.035,.008]))
+                else:P.append(horn([(d*w*.85,y-.05,z),(d*(w+.42),y+.05,z+.05),(d*(w+.62),.02,z+.18)],[.05,.035,.01]))
+        nm='seg%d'%i;nxt=pts[i+1] if i+1<len(pts) else (0,.4,z-.5);B.append((nm,prev,(x,y,z),nxt));prev=nm;segs.append(nm)
+    P+=[ell((0,2.0,.3),(.36,.3,.38),(-20,0,0)),ell((0,2.25,.18),(.22,.18,.22))]
+    P+=sym(lambda d:horn([(d*.28,1.95,.5),(d*.55,1.85,.85),(d*.48,1.62,1.2),(d*.18,1.48,1.32)],[.075,.06,.04,.008]))
+    P+=sym(lambda d:horn([(d*.18,2.3,.3),(d*.35,2.6,.15),(d*.4,2.85,-.05)],[.05,.035,.008]))
+    P+=[horn([(0,2.35,.25),(0,2.7,.05),(0,2.95,-.15)],[.08,.05,.01])]
+    B.append(('head','seg0',(0,1.9,.15),(0,2.0,.7)))
+    return P,B,segs
+def centi_color(g,n):
+    x,y,z=g;c=(.86,.56,.14)
+    c=mix(c,(.92,.88,.78),sm(.1,-.5,n[1])*(1 if y<1.3 else sm(.2,-.4,n[2])))       # pale banded belly
+    if abs(x)>.5:c=mix((.8,.42,.1),(.92,.88,.8),sm(.25,.0,y) if y<.3 else sm(.65,.95,abs(x)))   # legs: orange with pale tips
+    v=fbm(x*9,y*9,z*9);c=mix(c,(.55,.28,.06),sm(.6,.85,v)*.6)
+    if z>1.0:c=(.9,.86,.76)
+    return gtone(c,g,.08,40)
+_p,_b,_s=centipede();SPECS['centipede']={'name':'centipede','parts':_p,'bones':_b,'color':centi_color,'iface':{'segs':_s,'head':'head','legs':[],'arms':[]},'view':3.2,'voxel':.014,'tris':6500}
+
+# ---- Sunscale Stalker (hunched blue lizardman, cream belly, red crest) ----
+def lizard():
+    P=[]
+    P+=[ell((0,1.15,-.12),(.25,.25,.25)),ell((0,1.42,.05),(.27,.33,.27),(-30,0,0)),ell((0,1.76,.26),(.36,.3,.3),(-30,0,0))]
+    P+=sym(lambda d:ell((d*.32,1.86,.3),(.15,.15,.15)))
+    P+=[mcap((0,1.84,.4),(0,2.0,.6),.14),ell((0,2.06,.68),(.13,.12,.16)),mcap((0,2.03,.75),(0,1.97,1.04),.075),ell((0,1.93,.82),(.09,.05,.18),(10,0,0))]
+    P+=sym(lambda d:mcap((d*.2,1.15,-.1),(d*.25,.76,.16),.14))+sym(lambda d:mcap((d*.25,.76,.16),(d*.25,.42,-.12),.08))+sym(lambda d:mcap((d*.25,.42,-.12),(d*.25,.08,0),.055))+sym(lambda d:ell((d*.25,.05,.12),(.08,.04,.15)))
+    P+=sym(lambda d:mcap((d*.36,1.86,.3),(d*.46,1.46,.38),.09))+sym(lambda d:mcap((d*.46,1.46,.38),(d*.46,1.06,.5),.07))+sym(lambda d:ell((d*.46,.98,.55),(.07,.08,.06)))
+    for d in (1,-1):
+        for k in range(3):P.append(spike((d*(.43+k*.03),.94,.58),(d*(.43+k*.04),.8,.7),.02))
+        for k in range(3):P.append(spike((d*.25+(k-1)*.04,.04,.24),(d*.25+(k-1)*.05,.02,.36),.018))
+    P+=[horn([(0,1.15,-.3),(0,1.0,-.8),(0,.7,-1.3),(0,.42,-1.8),(0,.22,-2.3)],[.2,.15,.1,.06,.015])]
+    for i in range(9):  # dorsal crest from head down the back
+        t=i/8;bx=(0,2.15-t*.95,.55-t*.85);P.append(spike(bx,(0,bx[1]+.35-.15*t,bx[2]-.12),.05-.02*t))
+    for i in range(5):P.append(spike((0,1.0-i*.13,-.8-i*.27),(0,1.18-i*.13,-.9-i*.27),.04))
+    P+=sym(lambda d:horn([(d*.08,2.14,.6),(d*.15,2.3,.4),(d*.18,2.4,.2)],[.035,.025,.006]))
+    for k in range(5):
+        a=-1.1+k*.55;P.append(spike((math.sin(a)*.12,1.9+math.cos(a)*.02,.72),(math.sin(a)*.3,1.82,.62),.03))   # throat frill
+    P+=sym(lambda d:spike((d*.06,1.95,.98),(d*.07,1.86,1.0),.014))   # fangs
+    J={'hip':(0,1.15,-.1),'waist':(0,1.45,.05),'chest':(0,1.82,.3),'neckt':(0,2.0,.6),'face':(0,1.98,1.02),'sh':(.36,1.86,.3),'el':(.46,1.46,.38),'wr':(.46,1.0,.52),'hp':(.2,1.15,-.1),'kn':(.25,.76,.16),'an':(.25,.08,0)}
+    return P,biped_bones(J,tail=((0,1.15,-.3),(0,.5,-1.6)))
+def lizard_color(g,n):
+    x,y,z=g;c=(.14,.19,.44)
+    v=nz(x*55,y*55,z*55);c=mix(c,(.28,.38,.7),sm(.6,.9,v)*.6)                         # scale speckle
+    belly=sm(.15,.6,n[2])*sm(.12,.0,abs(x)-.05) if 1.0<y<1.9 and z>-.2 else 0
+    c=mix(c,(.88,.82,.64),max(belly,sm(-.1,-.6,n[1])*sm(1.95,1.85,y)*sm(.6,.85,z)))      # cream belly and throat
+    if (abs(x)<.05 and n[1]>.0 and ((y>1.3 and z<.6 and z>-.4) or (z<-.7))) :c=(.72,.16,.12)  # red crest
+    if y>1.8 and z>.6 and z<.76 and abs(x)>.1 and n[2]>.3:c=(.72,.16,.12)                 # frill
+    if y<.09 or (y<1.0 and abs(x)>.4 and z>.55):c=(.86,.82,.72)                          # claws
+    if y>2.15 and abs(x)>.06 and z<.62:c=(.85,.8,.68)
+    return gtone(c,g,.08,40)
+_p,_b=lizard();SPECS['lizard']={'name':'lizard','parts':_p,'bones':_b,'color':lizard_color,'iface':dict(BIPED_IF,tail='tail'),'view':3.0,'voxel':.012,'tris':6500}
+
+# ---- Goblin Raider ----
+def goblin():
+    P=[]
+    P+=[ell((0,.86,0),(.15,.13,.12)),ell((0,1.03,.03),(.15,.17,.13)),ell((0,1.25,.03),(.2,.15,.13),(-15,0,0))]
+    P+=sym(lambda d:ell((d*.19,1.3,.02),(.08,.08,.08)))
+    P+=[mcap((0,1.33,.07),(0,1.42,.14),.07),ell((0,1.52,.14),(.18,.17,.18)),ell((0,1.43,.24),(.14,.08,.13)),horn([(0,1.54,.3),(0,1.48,.4),(0,1.42,.42)],[.045,.035,.014])]
+    P+=sym(lambda d:horn([(d*.15,1.56,.1),(d*.34,1.62,.02),(d*.52,1.7,-.06)],[.045,.035,.008]))
+    P+=sym(lambda d:mcap((d*.09,.86,0),(d*.12,.52,.16),.065))+sym(lambda d:mcap((d*.12,.52,.16),(d*.11,.08,-.02),.045))+sym(lambda d:ell((d*.11,.04,.06),(.05,.035,.1)))
+    P+=sym(lambda d:mcap((d*.21,1.3,.02),(d*.27,1.0,.06),.05))+sym(lambda d:mcap((d*.27,1.0,.06),(d*.3,.72,.14),.04))+sym(lambda d:ell((d*.3,.66,.16),(.045,.05,.04)))
+    P+=[ell((0,1.33,-.02),(.27,.1,.19)),ell((0,1.2,-.14),(.22,.2,.06),(-8,0,0))]      # fur mantle
+    P+=sym(lambda d:spike((d*.04,1.42,.24),(d*.045,1.36,.26),.012))
+    J={'hip':(0,.86,0),'waist':(0,1.05,.03),'chest':(0,1.32,.05),'neckt':(0,1.45,.1),'face':(0,1.5,.32),'sh':(.21,1.3,.02),'el':(.27,1.0,.06),'wr':(.3,.68,.15),'hp':(.09,.86,0),'kn':(.12,.52,.16),'an':(.11,.06,-.02)}
+    return P,biped_bones(J)
+def goblin_color(g,n):
+    x,y,z=g;c=(.42,.56,.22)
+    c=mix(c,(.3,.4,.16),sm(.6,.85,fbm(x*8,y*8,z*8))*.6)
+    if (1.24<y<1.45 and (z<.05 or abs(x)>.17) and abs(x)<.32 and not (y>1.4 and abs(x)<.1)) or (z<-.1 and 1.0<y<1.42):c=(.32,.24,.17)   # fur mantle
+    if .78<y<.95 and abs(x)<.17:c=(.36,.26,.18)
+    if y<.06:c=(.2,.17,.13)
+    return gtone(c,g,.1,50)
+_p,_b=goblin();SPECS['goblin']={'name':'goblin','parts':_p,'bones':_b,'color':goblin_color,'iface':BIPED_IF,'view':2.0,'voxel':.008,'tris':5000}
+
+# ---- Hobgoblin Brute ----
+def hobgob():
+    P=[]
+    P+=[ell((0,1.15,0),(.24,.2,.18)),ell((0,1.38,.04),(.27,.24,.2)),ell((0,1.72,.02),(.42,.28,.26),(-8,0,0)),ell((0,1.88,-.06),(.3,.14,.2))]
+    P+=sym(lambda d:ell((d*.38,1.82,.0),(.16,.15,.16)))
+    P+=[mcap((0,1.9,.05),(0,2.0,.12),.11),ell((0,2.12,.12),(.15,.16,.16)),ell((0,2.04,.2),(.13,.09,.12)),ell((0,2.17,.24),(.13,.04,.06))]
+    P+=sym(lambda d:horn([(d*.13,2.16,.08),(d*.26,2.2,.02),(d*.36,2.25,-.04)],[.035,.025,.006]))
+    P+=sym(lambda d:spike((d*.08,2.0,.28),(d*.1,2.08,.3),.016))
+    for i in range(6):P.append(spike((0,2.25-i*.05,.16-i*.07),(0,2.42-i*.05,.1-i*.08),.04))   # mohawk
+    P+=sym(lambda d:mcap((d*.13,1.15,0),(d*.16,.62,.08),.12))+sym(lambda d:mcap((d*.16,.62,.08),(d*.16,.1,-.02),.085))+sym(lambda d:ell((d*.16,.05,.07),(.08,.05,.14)))
+    P+=sym(lambda d:mcap((d*.42,1.84,0),(d*.5,1.42,.04),.11))+sym(lambda d:mcap((d*.5,1.42,.04),(d*.54,1.02,.14),.095))+sym(lambda d:ell((d*.55,.94,.17),(.09,.1,.09)))
+    J={'hip':(0,1.15,0),'waist':(0,1.4,.04),'chest':(0,1.85,.02),'neckt':(0,2.0,.12),'face':(0,2.06,.32),'sh':(.42,1.84,0),'el':(.5,1.42,.04),'wr':(.54,.98,.16),'hp':(.13,1.15,0),'kn':(.16,.62,.08),'an':(.16,.08,-.02)}
+    return P,biped_bones(J)
+def hob_color(g,n):
+    x,y,z=g;c=(.74,.52,.28)
+    c=mix(c,(.55,.36,.18),sm(.6,.85,fbm(x*7,y*7,z*7))*.6)
+    if y>2.24 and abs(x)<.05:c=(.12,.1,.09)
+    if .95<y<1.3 and abs(x)<.3:c=(.25,.2,.16)
+    if y<.32:c=(.3,.22,.15)                                       # wraps
+    return gtone(c,g,.1,40)
+_p,_b=hobgob();SPECS['hobgob']={'name':'hobgob','parts':_p,'bones':_b,'color':hob_color,'iface':BIPED_IF,'view':2.8,'voxel':.01,'tris':5500}

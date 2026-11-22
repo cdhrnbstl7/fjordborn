@@ -45,6 +45,18 @@ def build(sp):
     bpy.context.view_layer.objects.active=obs[0];bpy.ops.object.transform_apply(location=True,rotation=True,scale=True);bpy.ops.object.join()
     ob=bpy.context.view_layer.objects.active;ob.name=sp['name']
     rm=ob.modifiers.new('R','REMESH');rm.mode='VOXEL';rm.voxel_size=sp.get('voxel',.012);rm.use_smooth_shade=True;bpy.ops.object.modifier_apply(modifier='R')
+    # drop loose crumbs left by spike tips thinner than the voxel size
+    import bmesh as _bm;bm=_bm.new();bm.from_mesh(ob.data);bm.verts.ensure_lookup_table();seen=set();kill=[]
+    for v in bm.verts:
+        if v.index in seen:continue
+        stack=[v];isl=[];seen.add(v.index)
+        while stack:
+            a=stack.pop();isl.append(a)
+            for e in a.link_edges:
+                o=e.other_vert(a)
+                if o.index not in seen:seen.add(o.index);stack.append(o)
+        if len(isl)<200:kill+=isl
+    _bm.ops.delete(bm,geom=kill,context='VERTS');bm.to_mesh(ob.data);bm.free()
     sm=ob.modifiers.new('S','CORRECTIVE_SMOOTH') if False else ob.modifiers.new('S','SMOOTH');sm.factor=sp.get('sfac',.6);sm.iterations=sp.get('siter',12);bpy.ops.object.modifier_apply(modifier='S')
     me=ob.data
     if 'shape' in sp:
@@ -69,17 +81,16 @@ def build(sp):
         c=sp['color'](g,nn);C+=[max(0,min(255,int(x*255))) for x in c]
         ws=sorted([(gr.weight,bn.index(gi[gr.group])) for gr in v.groups if gi.get(gr.group) in bn and gr.weight>.01],reverse=True)[:4]
         if not ws:
-            nofit+=1;best=None
+            nofit+=1;ds=[]
             for k,b in enumerate(sp['bones']):
-                a=mathutils.Vector(b[2]);t=mathutils.Vector(b[3]);d=t-a;q=mathutils.Vector(g);u=max(0,min(1,(q-a).dot(d)/max(1e-6,d.dot(d))));dd=(a+d*u-q).length
-                if best is None or dd<best[0]:best=(dd,k)
-            ws=[(1,best[1])]
+                a=mathutils.Vector(b[2]);t=mathutils.Vector(b[3]);d=t-a;q=mathutils.Vector(g);u=max(0,min(1,(q-a).dot(d)/max(1e-6,d.dot(d))));ds.append(((a+d*u-q).length,k))
+            ds.sort();d0=ds[0][0]+1e-4;ws=[(1/((dd+1e-4)/d0)**6,k) for dd,k in ds[:3] if dd<d0*2.2]
         t=sum(w for w,_ in ws);ws=[(w/t,b) for w,b in ws]+[(0,0)]*(4-len(ws))
         SI+=[b for _,b in ws];SW+=[int(round(w*255)) for w,_ in ws]
     T=[]
     for t in me.loop_triangles:T+=[t.vertices[0],t.vertices[2],t.vertices[1]]
     nv=len(me.vertices);open('/home/claude/beasts/out/%s.bin'%sp['name'],'wb').write(struct.pack('<%df'%len(P),*P)+struct.pack('<%df'%len(NR),*NR)+bytes(C)+bytes(SI)+bytes(SW)+struct.pack('<%dI'%len(T),*T))
-    json.dump({'name':sp['name'],'nv':nv,'nt':len(T)//3,'bones':[{'n':b[0],'p':b[1],'h':list(b[2])} for b in sp['bones']]},open('/home/claude/beasts/out/%s.json'%sp['name'],'w'))
+    json.dump({'name':sp['name'],'iface':sp.get('iface'),'nv':nv,'nt':len(T)//3,'bones':[{'n':b[0],'p':b[1],'h':list(b[2])} for b in sp['bones']]},open('/home/claude/beasts/out/%s.json'%sp['name'],'w'))
     col=me.color_attributes.new('Col','BYTE_COLOR','POINT')
     for i in range(nv):col.data[i].color=(C[i*3]/255,C[i*3+1]/255,C[i*3+2]/255,1)
     sc=bpy.context.scene;sc.render.engine='BLENDER_WORKBENCH';sc.display.shading.light='STUDIO';sc.display.shading.color_type='VERTEX';sc.display.shading.show_cavity=True;sc.render.resolution_x=900;sc.render.resolution_y=600
