@@ -1,3 +1,9 @@
+## 1.17.0 — Wraiths and the drowned ghost, sculpted
+- Wraiths are rebuilt from the ground up: a hooded wraith with a hollow void under the cowl and bone-thin claws, its robe shredding into rags that fray, tear and fall apart into smoke. It comes in three kinds: the bare-clawed dread, the reaper with a chained scythe, and the sworn with a rusted sword and a green light under the hood.
+- New bone wraith: a skull with stringy hair, open ribcage and spine, a rotted mantle and long skeletal arms, with smoke where its legs should be.
+- The drowned ghost is redone as a glowing, see-through spirit with hollow eyes, a wailing mouth, kelp hanging from its chin, a rusted manacle on one wrist and bubbles rising through it.
+- Spirits now float and drift instead of walking, and their rags stream behind them as they move.
+
 ## 1.16.0 — The Sunmeads monsters, sculpted
 - The ogre, giant centipede, crested lizard, goblin and hobgoblin now have full sculpted bodies made to match the reference art, with skeletal animation, glowing eyes and their own weapons (the ogre's burning club, the goblins' blades).
 - Fixed lighting on all sculpted creatures (some surfaces were drawn inside-out, giving pale streaks).

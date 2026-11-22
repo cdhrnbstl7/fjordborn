@@ -413,3 +413,99 @@ def hob_color(g,n):
     if y<.32:c=(.3,.22,.15)                                       # wraps
     return gtone(c,g,.1,40)
 _p,_b=hobgob();SPECS['hobgob']={'name':'hobgob','parts':_p,'bones':_b,'color':hob_color,'iface':BIPED_IF,'view':2.8,'voxel':.01,'tris':5500}
+
+# ================= SPIRITS =================
+def neg(c,r,rot=None):d=ell(c,r,rot);d['neg']=True;return d
+FLOAT_IF={'legs':[],'arms':['armL','armR'],'head':'head','body':'root','flutter':[],'float':1}
+def spirit_bones(J,extra=()):
+    B=[('root',None,J['base'],J['waist']),('spine','root',J['waist'],J['chest']),('neck','spine',J['chest'],J['neckt']),('head','neck',J['neckt'],J['face'])]
+    for t,d in (('L',1),('R',-1)):
+        m=lambda p:(d*p[0],p[1],p[2])
+        B+=[('arm'+t,'spine',m(J['sh']),m(J['el'])),('fore'+t,'arm'+t,m(J['el']),m(J['wr'])),('hand'+t,'fore'+t,m(J['wr']),m(J['tip']))]
+    return B+list(extra)
+def claws(d,w,n=4,L=.13,r=.014,spread=.035,down=.6):
+    """long bony fingers from a hand at w, reaching forward then hooking down"""
+    out=[]
+    for k in range(n):
+        o=(k-(n-1)/2)*spread;x0=d*(w[0]+o*.6);p0=(x0,w[1],w[2]+.02);p1=(x0+d*o*.5,w[1]-.03,w[2]+L);p2=(x0+d*o*.8,w[1]-.03-L*down,w[2]+L*1.6);p3=(x0+d*o*.9,w[1]-L*1.3*down,w[2]+L*1.75)
+        out.append(horn([p0,p1,p2,p3],[r,r*.85,r*.6,r*.18]))
+    out.append(horn([(d*(w[0]-.03),w[1],w[2]),(d*(w[0]-.07),w[1]-.04,w[2]+.08),(d*(w[0]-.07),w[1]-.1,w[2]+.14)],[r,r*.7,r*.2]))   # thumb
+    return out
+
+# ---- Hooded wraith: tall cowl with a hollow void face, hunched shoulders, robe tearing into rags, bone-thin scabbed hands ----
+def wraith():
+    P=[]
+    P+=[ell((0,2.36,-.06),(.27,.33,.3)),ell((0,2.6,-.12),(.15,.2,.18),(-25,0,0)),ell((0,2.74,-.2),(.06,.1,.08),(-40,0,0)),ell((0,2.38,.14),(.26,.34,.16),(12,0,0)),neg((0,2.26,.22),(.17,.25,.26))]   # hood, peak, cowl rim, the void
+    P+=[ell((0,2.06,-.02),(.42,.17,.3))]+sym(lambda d:ell((d*.37,2.0,-.02),(.19,.17,.2)))
+    P+=[ell((0,1.74,0),(.4,.34,.28)),ell((0,1.38,-.01),(.32,.34,.24)),ell((0,1.04,-.02),(.28,.32,.22)),ell((0,.78,-.03),(.22,.2,.18))]+sym(lambda d:ell((d*.2,1.3,-.12),(.14,.5,.1),(0,0,d*6)))          # robe to a flared hem
+    for d in (1,-1):
+        P.append(cap([(d*.38,2.0,0),(d*.56,1.66,.08),(d*.67,1.36,.24)],[.1,.11,.18],sub=2));P.append(ell((d*.68,1.2,.1),(.08,.2,.05),(25,0,0)))          # bell sleeve widening to the cuff
+        P.append(mcap((d*.62,1.44,.18),(d*.7,1.24,.36),.03))                                            # bone forearm out of the cuff
+        P.append(ell((d*.71,1.2,.4),(.045,.035,.055)))
+        P+=claws(d,(.71,1.19,.42),L=.12,r=.013)
+    J={'base':(0,.9,0),'waist':(0,1.45,0),'chest':(0,2.0,0),'neckt':(0,2.22,0),'face':(0,2.3,.35),'sh':(.38,2.0,0),'el':(.56,1.66,.08),'wr':(.7,1.22,.38),'tip':(.74,1.0,.66)}
+    return P,spirit_bones(J)
+def wraith_color(g,n):
+    x,y,z=g;c=(.07,.068,.075)
+    v=fbm(x*6,y*3,z*6);c=mix(c,(.15,.14,.155),sm(.45,.85,v)*.7)                     # worn cloth
+    c=mix(c,(.03,.03,.035),sm(.1,-.6,n[1])*.6)                                     # folds in shadow underneath
+    if y>2.0 and z>.08 and abs(x)<.19 and n[2]<.5 and y<2.55:c=(.004,.004,.006)                # the void inside the hood
+    r=math.hypot(x-(.71 if x>0 else -.71),0)
+    if abs(x)>.6 and y<1.4 and z>.3:                                                 # bone arms and scabbed grey hands
+        c=mix((.46,.43,.4),(.42,.2,.17),sm(.6,.9,nz(x*70,y*70,z*70))*.7)
+    return gtone(c,g,.1,30)
+SPECS['wraith']={'name':'wraith','parts':wraith()[0],'bones':wraith()[1],'color':wraith_color,'iface':dict(FLOAT_IF,mat='cloth'),'view':3.0,'voxel':.009,'tris':8000}
+
+# ---- Bone wraith: a skull with stringy hair, open ribcage and spine, tattered mantle, long skeletal arms, no legs ----
+def bonewraith():
+    P=[]
+    P+=[ell((0,2.32,.02),(.15,.17,.18)),ell((0,2.22,.13),(.12,.13,.1))]+sym(lambda d:ell((d*.085,2.2,.17),(.045,.035,.045)))
+    P+=sym(lambda d:neg((d*.055,2.26,.23),(.042,.042,.05)))+[neg((0,2.18,.245),(.02,.03,.03))]
+    P+=[ell((0,2.07,.13),(.1,.045,.09),(-12,0,0))]                                  # jaw hanging open
+    for k in range(5):P.append(spike((-.06+k*.03,2.135,.21),(-.06+k*.03,2.105,.215),.011))
+    for k in range(4):P.append(ell((0,2.06-k*.045,-.03),(.035,.022,.035)))           # neck bones
+    for k in range(13):y=1.92-k*.075;P.append(ell((0,y,-.1+k*.003),(.04,.028,.04)));P.append(spike((0,y,-.12),(0,y-.03,-.17),.016))
+    for k in range(6):
+        y=1.84-k*.1;w=.2+.03*math.sin(k/5*3)
+        P+=sym(lambda d:horn([(d*.03,y,-.1),(d*w*.85,y,-.07),(d*w,y-.05,.05),(d*w*.7,y-.1,.16),(d*.05,y-.12,.2 if k<4 else .15)],[.02,.019,.018,.016,.012]))
+    P+=[ell((0,1.68,.2),(.03,.16,.022))]
+    P+=sym(lambda d:horn([(d*.02,1.94,.14),(d*.16,1.98,.08),(d*.3,1.98,-.01)],[.022,.02,.02]))
+    P+=[ell((0,1.99,-.19),(.4,.12,.15)),ell((0,1.6,-.25),(.27,.38,.05),(8,0,0))]+sym(lambda d:ell((d*.34,1.97,-.06),(.13,.12,.13)))   # mantle and back drape
+    for d in (1,-1):
+        P.append(mcap((d*.32,1.95,0),(d*.56,1.66,.14),.035));P.append(ell((d*.56,1.66,.14),(.045,.045,.045)))
+        P.append(mcap((d*.555,1.66,.13),(d*.72,1.46,.38),.022));P.append(mcap((d*.575,1.64,.15),(d*.745,1.44,.36),.018))
+        P.append(ell((d*.74,1.42,.42),(.05,.03,.055)))
+        P+=claws(d,(.74,1.41,.44),L=.14,r=.012)
+    J={'base':(0,.95,-.06),'waist':(0,1.45,-.08),'chest':(0,1.95,-.05),'neckt':(0,2.1,0),'face':(0,2.22,.3),'sh':(.32,1.95,0),'el':(.56,1.66,.14),'wr':(.74,1.43,.4),'tip':(.78,1.25,.66)}
+    return P,spirit_bones(J)
+def bone_color(g,n):
+    x,y,z=g;c=(.6,.54,.43)
+    c=mix(c,(.32,.27,.2),sm(.2,-.7,n[1])*.6+sm(.55,.85,fbm(x*14,y*14,z*14))*.35)      # aged, stained bone
+    if (z<-.15 and y>1.15) or (y>1.84 and abs(x)>.18 and abs(x)<.5 and z<.12) :c=mix((.07,.065,.07),(.14,.13,.13),fbm(x*6,y*4,z*6))   # mantle cloth
+    if y>2.15 and abs(x)<.1 and z>.2 and n[2]>.2 and abs(x)>.02 and y<2.31:c=mix(c,(.05,.04,.03),sm(2.2,2.25,y)*sm(.0,.04,abs(x)))   # sockets darken
+    return gtone(c,g,.08,40)
+SPECS['bonewraith']={'name':'bonewraith','parts':bonewraith()[0],'bones':bonewraith()[1],'color':bone_color,'iface':dict(FLOAT_IF,mat='cloth'),'view':3.0,'voxel':.007,'tris':9000}
+
+# ---- Drowned ghost (original): bulbous head, sunken eyes, gaping wail, long reaching arms with hooked claws, a body tapering into a curling tail ----
+def ghost():
+    P=[]
+    P+=[ell((0,2.0,0),(.5,.5,.45)),ell((0,1.56,-.03),(.42,.4,.35)),ell((0,1.18,-.1),(.3,.32,.27))]
+    P.append(cap([(0,1.0,-.16),(0,.72,-.3),(0,.52,-.5),(0,.46,-.74),(0,.56,-.92)],[.25,.19,.13,.07,.02],sub=2))
+    P+=[ell((0,2.14,.33),(.38,.09,.12),(-10,0,0))]+sym(lambda d:ell((d*.27,1.88,.3),(.14,.11,.12)))+[ell((0,1.42,.24),(.2,.1,.12))]   # brow, cheeks, sagging chin
+    P+=sym(lambda d:neg((d*.17,2.0,.44),(.1,.085,.09)))+[neg((0,1.64,.4),(.15,.17,.22))]                                                 # sunken eyes, wailing mouth
+    P+=sym(lambda d:neg((d*.03,1.84,.47),(.015,.025,.03)))
+    for d in (1,-1):
+        P.append(cap([(d*.4,1.72,0),(d*.7,1.45,.16),(d*.82,1.2,.42)],[.14,.1,.075],sub=2))
+        P.append(ell((d*.84,1.16,.5),(.1,.06,.12)))
+        for k in range(3):
+            o=(k-1)*.055;P.append(horn([(d*(.84+o),1.15,.56),(d*(.86+o*1.4),1.12,.72),(d*(.87+o*1.6),1.0,.86),(d*(.86+o*1.6),.9,.86)],[.032,.026,.016,.004]))
+        P.append(horn([(d*.79,1.15,.52),(d*.74,1.1,.64),(d*.73,1.02,.7)],[.028,.018,.004]))
+    J={'base':(0,1.1,-.1),'waist':(0,1.55,0),'chest':(0,1.85,0),'neckt':(0,1.95,0),'face':(0,2.05,.45),'sh':(.4,1.72,0),'el':(.7,1.45,.16),'wr':(.83,1.18,.45),'tip':(.86,.95,.85)}
+    tail=[('tail0','root',(0,1.0,-.16),(0,.72,-.3)),('tail1','tail0',(0,.72,-.3),(0,.52,-.5)),('tail2','tail1',(0,.52,-.5),(0,.46,-.74)),('tail3','tail2',(0,.46,-.74),(0,.56,-.92))]
+    return P,spirit_bones(J,tail)
+def ghost_color(g,n):
+    x,y,z=g;c=(.62,1.0,.7)
+    c=mix(c,(.25,.75,.42),sm(1.3,.5,y))                                                            # deeper green toward the tail
+    if z>.3 and ((abs(abs(x)-.17)<.1 and 1.9<y<2.09) or (abs(x)<.15 and 1.48<y<1.8)) and n[2]<.6:c=(.02,.12,.06)   # hollow eyes and throat
+    return c
+SPECS['ghost']={'name':'ghost','parts':ghost()[0],'bones':ghost()[1],'color':ghost_color,'iface':dict(FLOAT_IF,mat='ghost',flutter=['tail0','tail1','tail2','tail3']),'view':2.8,'voxel':.012,'tris':6000}

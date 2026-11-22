@@ -24,7 +24,7 @@ def build(sp):
     mb=bpy.data.metaballs.new('mb');mo=link(bpy.data.objects.new('mb',mb));mb.resolution=sp.get('mbres',.014);mb.render_resolution=mb.resolution;mb.threshold=.6
     for p in sp['parts']:
         if 'e' in p:
-            e=mb.elements.new();e.type='ELLIPSOID';e.stiffness=2;e.radius=1/.575;r=p['r'];e.size_x=r[0]*p.get('k',1);e.size_y=r[2]*p.get('k',1);e.size_z=r[1]*p.get('k',1);e.co=cv(p['e'])
+            e=mb.elements.new();e.type='ELLIPSOID';e.stiffness=2;e.radius=1/.575;r=p['r'];e.size_x=r[0]*p.get('k',1);e.size_y=r[2]*p.get('k',1);e.size_z=r[1]*p.get('k',1);e.co=cv(p['e']);e.use_negative=bool(p.get('neg'))
             rot=p.get('rot') or (0,0,0);q=mathutils.Euler((math.radians(-rot[0]),math.radians(-rot[2]),math.radians(rot[1])),'XYZ').to_quaternion();e.rotation=q
         elif 'mc' in p:
             a=cv(p['mc'][0]);b=cv(p['mc'][1]);d=b-a;e=mb.elements.new();e.type='CAPSULE';e.stiffness=2;e.radius=p['r']/.575;e.size_x=d.length/2;e.co=(a+b)/2
