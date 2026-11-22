@@ -1,3 +1,15 @@
+**Fjordborn 1.15.0: real animals**
+
+- **Sculpted animals:** every animal is now one sculpted, skinned body, made the same way as your character, with fur grain and legs that bend as they walk.
+  - **Red stag:** full branching antlers, a shaggy dark neck and a pale rump.
+  - **Spotted doe**
+  - **Wild boar:** dark and bristly, with a mane along its spine and tusks.
+  - **Grey wolf:** a dark saddle, pale legs and face, and a brush tail. Grey wolves hunt in small packs in the Sunmeads at night and in the Gloamwood.
+  - **Rimewolf:** a pale wolf of the Hoarfells.
+  - **Brown bear (new):** a shoulder hump, round ears and long claws. It lives in the Sunmeads and the Gloamwood, and only fights if you get close.
+
+---
+
 **Fjordborn 1.14.1**
 
 - **New look for the Drowned Colossus's wraiths:** hooded figures in black rags that flutter and tear into drifting smoke, with a void under the hood, faint pale eyes and bony clawed hands. Some carry a rusted sword, some a chained scythe.
