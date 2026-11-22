@@ -480,7 +480,7 @@ layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
 /* developer switches: all off in the public game; only the private developer edition has the menu that turns them on */
 const DEV={on:0,god:0,ghost:0,fly:0,clip:0,creative:0,speed:1,up:0,down:0};
-const GAME_VERSION='1.18.1';
+const GAME_VERSION='1.18.2';
 const EDITION='desktop';/* build_editions.py sets 'phone' or 'desktop' */
 /* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
 if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
@@ -2679,7 +2679,7 @@ function buildCrypt(d){const th=d.theme||'ember',T=DTHEME[th],ps=[],S=[],GL=[],w
   if(GL.length){const gm=new THREE.Mesh(merge(GL),new THREE.MeshBasicMaterial({vertexColors:true,toneMapped:false}));gm.position.copy(m.position);scene.add(gm);d.extra.push(gm)}
   if(webs.length){const P=[],U=[];for(const [a,b,c,e] of webs){P.push(...a,...b,...c,...a,...c,...e);U.push(0,0,1,0,.72,.72,0,0,.72,.72,0,1)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));
     const wm=new THREE.Mesh(g,new THREE.MeshBasicMaterial({map:webTex(),color:0xb8b8b8,transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false}));wm.position.copy(m.position);scene.add(wm);d.extra.push(wm)}
-  {const [bx,bz]=tileW(d,si,sj),beam=new THREE.Mesh(Cy(.9,1.6,5,8),new THREE.MeshBasicMaterial({color:0xfff2cf,transparent:true,opacity:.13,depthWrite:false,fog:false}));beam.position.set(bx-1.2,DY+2.4,bz);scene.add(beam)}
+  {const [bx,bz]=tileW(d,si,sj),beam=new THREE.Mesh(Cy(.9,1.6,5,8),new THREE.MeshBasicMaterial({color:0xfff2cf,transparent:true,opacity:.13,depthWrite:false,fog:false}));beam.position.set(bx-1.2,DY+2.4,bz);scene.add(beam);d.extra.push(beam)}
   for(const [sx,sz,H] of d.shafts){const col=T.frost?0xd8ecff:CAVE?0xc8fff0:0xfff0d0,b=new THREE.Mesh(new THREE.CylinderGeometry(.7,2.4,H,12,1,true),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.075,depthWrite:false,fog:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));b.position.set(d.ox+sx,DY+H/2,d.oz+sz);b.rotation.z=.12;scene.add(b);d.extra.push(b);
     const hole=new THREE.Mesh(new THREE.CircleGeometry(.75,12),new THREE.MeshBasicMaterial({color:col,fog:false}));hole.rotation.x=PI/2;hole.position.set(d.ox+sx+H*.06,DY+H-.02,d.oz+sz);scene.add(hole);d.extra.push(hole);
     const dust=smokePoints(40,[sx,H*.45,sz],[1.6,H*.9,1.6],'#fff2d8',{sp:.025,rise:.5,wob:.35,size:.05,a:.7,add:1});dust.position.set(d.ox,DY,d.oz);scene.add(dust);d.extra.push(dust)}
@@ -2691,6 +2691,9 @@ function buildCrypt(d){const th=d.theme||'ember',T=DTHEME[th],ps=[],S=[],GL=[],w
   const [ex,ez,ery,ey]=chestAt;d.chest=LOOT.find(c=>c.key===d.name)||lootChest(d.name,ex,ez,ery,DY+ey,()=>{addItem('silver',20+d.i*8);addItem('shard',4);addItem('ingot',2);addItem('core',1);addItem(['rimeiron','fang','cake'][d.i%3],2);toast('The grave goods of '+d.name+' are yours.','big')});
   if(LOOTOPEN.has(d.name)&&!d.chest.open)openLoot(d.chest,true)}
 const stoneC=k=>['#8a8d92','#7a7d82','#6f7378','#83868b'][k&3];
+/* settle a site into its ground: anything near the base follows the slope and is bedded a little below the surface */
+function conformSite(t,geo,rigid){const p=geo.attributes.position,c=Math.cos(t.rot),sn=Math.sin(t.rot);for(let k=0;k<p.count;k++){const lx=p.getX(k),ly=p.getY(k),lz=p.getZ(k);if(ly>1.6&&!rigid)continue;
+  const wx=t.x+lx*c+lz*sn,wz=t.z-lx*sn+lz*c,g=getH(wx,wz)-t.y;if(rigid){p.setY(k,ly+g);continue}const w=ly<=0?1:Math.max(0,1-ly/1.6);p.setY(k,ly+g*w-(ly<.25?.3*(1-Math.max(ly,0)/.25):0))}p.needsUpdate=true;geo.computeBoundingSphere()}
 function siteMesh(t,ps){const m=new THREE.Mesh(merge(ps),MAT);m.position.set(t.x,t.y,t.z);m.rotation.y=t.rot;m.castShadow=m.receiveShadow=SHD;SITEG.add(m);t.mesh=m;return m}
 const sw=(t,lx,lz)=>{const c=Math.cos(t.rot),s=Math.sin(t.rot);return[t.x+lx*c+lz*s,t.z-lx*s+lz*c]};
 const siteCol=(t,lx,lz,r)=>{const [x,z]=sw(t,lx,lz);addCol({x,z,r})};
@@ -2752,12 +2755,12 @@ for(const t of SITES){const r=lcg(Math.floor(t.x*31+t.z*17)+999),ps=[];
     if(th==='drowned')for(let q=0;q<18;q++){const x=(r()-.5)*4.6,l=.5+r()*1.8;ps.push(part(B(.05,l,.05),r()<.5?'#3f6a2c':'#2f5222',x,4.5-l/2,5.72+r()*.1,0,0,(r()-.5)*.2))}
     if(FROST){ps.push(part(lumpy(Ico(1,0),.2,2,3),'#eef3f6',0,4.82,5,0,0,0,2.5,.18,.8));for(let q=0;q<14;q++){const l=.25+r()*.7;ps.push(part(Co(.05+r()*.05,l,5),'#cfe6f4',(r()-.5)*4.2,3.55-l/2,5.62,PI,0,0))}}
     if(th==='violet')for(const sd of[-1,1])for(let q=0;q<10;q++)ps.push(part(new THREE.TorusGeometry(.06,.016,4,8),'#2c2b30',sd*2.05,3.6-q*.13,5.62,0,q%2?PI/2:0,0));
-    siteMesh(t,ps);{const mk=(arr,mat)=>{const m=new THREE.Mesh(mergeN(arr),mat);m.position.set(t.x,t.y,t.z);m.rotation.y=t.rot;m.castShadow=m.receiveShadow=SHD;SITEG.add(m)};mk(R,dStone(FROST?'rockF':'rock'));mk(K,dStone(FROST?'blockF':'block'))}
+    siteMesh(t,ps);conformSite(t,t.mesh.geometry,1);t.mesh.geometry.computeVertexNormals();{const mk=(arr,mat)=>{const gg=mergeN(arr);conformSite(t,gg);const m=new THREE.Mesh(gg,mat);m.position.set(t.x,t.y,t.z);m.rotation.y=t.rot;m.castShadow=m.receiveShadow=SHD;SITEG.add(m)};mk(R,dStone(FROST?'rockF':'rock'));mk(K,dStone(FROST?'blockF':'block'))}
     const glyph=new THREE.Mesh(G('barrowGlyph',()=>merge([part(B(.12,.38,.03),'#fff',-1.05,0,0),part(B(.12,.38,.03),'#fff',1.05,0,0),part(B(.08,.3,.03),'#fff',0,0,0),part(B(.24,.06,.03),'#fff',0,.08,0,0,0,.6)])),runeMat);
     {const [gx,gz]=sw(t,0,5.68);glyph.position.set(gx,t.y+4.02,gz);glyph.rotation.y=t.rot;SITEG.add(glyph)}
     for(const [x,z] of[[2.9,7.7],[-2.9,7.6]]){const rs=new THREE.Mesh(G('barrowRune',()=>merge([part(B(.08,.9,.04),'#fff',0,0,0),part(B(.4,.08,.04),'#fff',0,.2,0,0,0,.5),part(B(.3,.08,.04),'#fff',0,-.2,0,0,0,-.5)])),runeMat);
-      const [rx,rz]=sw(t,x,z+.38);rs.position.set(rx,t.y+1.15,rz);rs.rotation.y=t.rot;SITEG.add(rs)}
-    {const fc=hexRGB(DTHEME[th].flame[0]),FL=[];for(const sd of[-1,1]){const [fx,fz]=sw(t,sd*2.25,6.1);FL.push({p:[fx,t.y+1.9,fz],s:.55,c:fc})}for(const fm of flameBatch(FL))SITEG.add(fm)}
+      const [rx,rz]=sw(t,x,z+.38);rs.position.set(rx,getH(rx,rz)+.85,rz);rs.rotation.y=t.rot;SITEG.add(rs)}
+    {const fc=hexRGB(DTHEME[th].flame[0]),FL=[];for(const sd of[-1,1]){const [fx,fz]=sw(t,sd*2.25,6.1);FL.push({p:[fx,getH(fx,fz)+1.9,fz],s:.55,c:fc})}for(const fm of flameBatch(FL))SITEG.add(fm)}
     {const mist=smokePoints(26,[0,.35,6.4],[2.6,.4,2.2],FROST?'#e4ecf2':'#c4c8cc',{sp:.035,rise:.3,wob:.9,size:2.4,a:.16,grow:1});mist.position.set(t.x,t.y,t.z);mist.rotation.y=t.rot;SITEG.add(mist)}
     siteCol(t,0,-1.2,5.8);siteCol(t,-3.7,2.4,2.3);siteCol(t,3.7,2.4,2.3);siteCol(t,-1.75,5,.6);siteCol(t,1.75,5,.6);siteCol(t,-2.25,6.1,.3);siteCol(t,2.25,6.1,.3);siteCol(t,-4.4,.6,1.6);siteCol(t,4.4,.6,1.6);
     const [ux,uz]=sw(t,0,7.3);t.ux=ux;t.uz=uz;DGS.push(Object.assign(genDungeon(7001+i*97),{site:t,i,ox:DZX+20+i*DGAP,oz:-56,name:t.name,g:null,chest:null,torches:[],flames:[],candles:[],pools:[],shafts:[],extra:[],xchest:0}));{const dd=DGS[DGS.length-1];dd.theme=t.theme;if(dd.theme==='drowned')caveify(dd,7001+i*97)}}}
@@ -2823,7 +2826,7 @@ function buildDungeon(d){if(d.g)return;if(!d.ship)return buildCrypt(d);const ps=
     for(let q=0;q<3;q++){const ux=x0+.8+r()*(w-1.6),uz=z0+.8+r()*(h-1.6);if(r()<.5)ps.push(part(Cy(.24,.18,.62,10),'#7a5234',ux,.31,uz),part(Cy(.12,.2,.14,10),'#6b4a2c',ux,.68,uz));else ps.push(part(Cy(.04,.04,.55,5),'#e6dccb',ux,.06,uz,PI/2,r()*3,0),part(Ico(.13),'#e6dccb',ux+.3,.12,uz+.1))}});
   {const [si,sj]=d.start,x=si*DT,z=sj*DT+DT/2;for(let k=0;k<7;k++)ps.push(part(B(.32,.31*(k+1),DT-.6),SH?plank():'#7a7d82',x+1.9-k*.27,.155*(k+1),z));if(SH)for(const sd of[-1,1]){const zz=z+sd*(DT/2-.4);ps.push(part(B(2.2,.06,.06),'#1e1e20',x+1.1,1.5,zz,0,0,-.85));for(let k=0;k<7;k++)ps.push(part(B(.04,1,.04),'#1e1e20',x+1.9-k*.27,.31*(k+1)+.5,zz))}ps.push(part(B(.2,.2,.2),'#e8c45a',x+.4,.1,z-1.4))}
   const m=new THREE.Mesh(merge(ps),MAT);m.position.set(d.ox,DY,d.oz);m.receiveShadow=SHD;scene.add(m);d.g=m;
-  {const [si,sj]=d.start,[bx,bz]=tileW(d,si,sj),beam=new THREE.Mesh(Cy(.9,1.6,5,8),new THREE.MeshBasicMaterial({color:0xfff2cf,transparent:true,opacity:.13,depthWrite:false,fog:false}));beam.position.set(bx-1.2,DY+2.4,bz);scene.add(beam)}
+  {const [si,sj]=d.start,[bx,bz]=tileW(d,si,sj),beam=new THREE.Mesh(Cy(.9,1.6,5,8),new THREE.MeshBasicMaterial({color:0xfff2cf,transparent:true,opacity:.13,depthWrite:false,fog:false}));beam.position.set(bx-1.2,DY+2.4,bz);scene.add(beam);d.extra.push(beam)}
   if(SH){if(d.pools.length){const pg=[];for(const [px,pz,pw,ph] of d.pools)pg.push(part(B(pw,.04,ph),'#1d4a44',px+pw/2,.24,pz+ph/2));const pm=new THREE.Mesh(merge(pg),new THREE.MeshStandardMaterial({vertexColors:true,color:0x88aaa0,roughness:.05,metalness:.3,transparent:true,opacity:.72}));pm.position.set(d.ox,DY,d.oz);scene.add(pm);d.extra.push(pm)}
     for(const [sx,sz] of d.shafts){const b=new THREE.Mesh(Cy(.8,2.2,4.8,10),new THREE.MeshBasicMaterial({color:0xcfe8e0,transparent:true,opacity:.09,depthWrite:false,fog:false}));b.position.set(sx,DY+2.4,sz);b.rotation.z=.15;scene.add(b);d.extra.push(b)}
     for(const [x,y,z] of d.candles){const f=new THREE.Group();f.add(new THREE.Mesh(flameGeo,flameMat),new THREE.Mesh(flameGeo2,flameMat2));f.position.set(x,y,z);f.scale.setScalar(.12);f.userData.c=1;scene.add(f);d.flames.push(f)}}
@@ -2996,7 +2999,7 @@ function wreckTick(dt){const on=inWZ(P.x,P.z);if(!on||P.dg)return;
   const n=creatures.filter(c=>c.type==='ghost'||c.type==='wraith').length;if(n>=6)return;
   for(let i=0;i<8;i++){const a=Math.random()*6.283,d=22+Math.random()*24,x=P.x+Math.sin(a)*d,z=P.z+Math.cos(a)*d,h=wreckH(x,z);if(h!=null&&h>-.5&&Math.abs(h-(P.y||0))<14){spawnCreature(Math.random()<.4?'wraith':'ghost',x,z);break}}}
 
-function dgShow(d){for(const q of DGS){const v=q===d;if(q.g)q.g.visible=v;for(const e of q.extra||[])e.visible=v;for(const f of q.flames||[])f.visible=v}}
+function dgShow(d){for(const q of DGS){const v=q===d;if(q.g)q.g.visible=v;for(const e of q.extra||[])e.visible=v;for(const f of q.flames||[])f.visible=v;for(const c of LOOT)if(c.key===q.name||c.key.startsWith(q.name+'~'))c.g.visible=v}if(!d&&updDungeon.dust)updDungeon.dust.visible=false}
 function enterDungeon(d){buildDungeon(d);dgShow(d);if(!d.ship&&d.mapTex){const u=dStone(d.theme).userData.u;u.uMap.value=d.mapTex;u.uOrig.value.set(d.ox,d.oz)}P.dg=d;const [sx,sz]=tileW(d,d.start[0],d.start[1]);P.x=sx+.6;P.z=sz;P.y=DY;P.vy=0;camYaw=-PI/2;for(const l of DLIGHTS)l.visible=true;
   for(const c of creatures.slice())if(!c.spec.boss)removeCreature(c);
   d.woke=new Set();if(d.chest.open)d.rooms.forEach((rm,k)=>{if(Math.random()<.6)d.woke.add(k)});
@@ -3454,7 +3457,7 @@ const hasCost=c=>DEV.creative||Object.keys(c).every(k=>(P.inv[k]||0)>=c[k]);
 const payCost=c=>{if(DEV.creative)return;for(const k in c){P.inv[k]-=c[k]}uiDirty=true};
 function equip(id){if(id==='hammer'&&P.equip==='hammer'&&!buildSel){openPanel('build');return}P.equip=P.equip===id?null:id;if(P.equip!=='hammer'&&buildSel)setBuild(null);refreshLook();uiDirty=true;if(P.equip==='hammer'&&started&&!panelOpen)openPanel('build')}
 /* the Homeward Stone: leave any tomb, ship or wreck and arrive at your bed (or where you woke) */
-function goHome(){if(panelOpen)closePanel();if(P.dg){const d=P.dg;P.dg=null;grassMesh.visible=pebMesh.visible=true;for(const c of creatures.slice())if(c.dg)removeCreature(c);for(const l of DLIGHTS)l.visible=false}
+function goHome(){if(panelOpen)closePanel();if(P.dg){const d=P.dg;P.dg=null;dgShow(null);grassMesh.visible=pebMesh.visible=true;for(const c of creatures.slice())if(c.dg)removeCreature(c);for(const l of DLIGHTS)l.visible=false}
   if(P.boat)leaveBoat();if(typeof leaveWreck==='function')leaveWreck();P.x=P.spawn.x;P.z=P.spawn.z;P.y=getH(P.x,P.z)+.2;P.vy=0;sfx('horn');toast('The Homeward Stone flares, and you are home.','big')}
 function useItem(id){const it=ITEMS[id];detailId=id;
   if(it.food){const f=P.foods.find(f=>f.id===id);if(f&&f.t>it.food.t*.5){toast('You are still full of '+it.n.toLowerCase()+'.')}else if(!f&&P.foods.length>=3){toast('You cannot eat another kind of food yet.')}
@@ -3586,7 +3589,7 @@ function hurtPlayer(d,raw,src){if(P.dead||!started||DEV.god)return;
         const cost=d*1.2*(1-.5*skF('block'));if(P.st>=cost){P.st-=cost;P.stCd=1;d*=.12;sfx('block');gainSk('block',1);burst(bx,P.y+1.2,bz,8)}
         else{P.st=0;P.stCd=1.5;d*=.55;P.block=false;P.guardBreak=.8;warn('Your guard breaks!')}}}}if(!raw){d*=1-armorVal()*.08;sfx('hurt');shakeT=Math.max(shakeT,.15)}P.hp-=d;hurtT=Math.max(hurtT,raw?.25:.6);
   if(P.hp<=0){P.hp=0;P.dead=true;P.deadT=3.5;{let lost=0;for(const k in SK){const b=skLvl(k);SK[k]*=.95;if(skCalc(k).l<b)lost++}toast(lost?'Death dulls your skills. '+lost+(lost>1?' skills':' skill')+' dropped a level.':'Death dulls your skills a little.')}$('dead').hidden=false;closePanel();setBuild(null);PM.g.rotation.x=-PI/2}}
-function respawn(){if(P.dg){P.dg=null;for(const c of creatures.slice())if(c.dg)removeCreature(c);for(const l of DLIGHTS)l.visible=false;grassMesh.visible=pebMesh.visible=true}if(P.boat)leaveBoat();P.dead=false;$('dead').hidden=true;P.x=P.spawn.x;P.z=P.spawn.z;P.y=getH(P.x,P.z);P.vy=0;P.hp=maxHp()*.5;P.st=maxSt();PM.g.rotation.x=0;
+function respawn(){if(P.dg){P.dg=null;dgShow(null);for(const c of creatures.slice())if(c.dg)removeCreature(c);for(const l of DLIGHTS)l.visible=false;grassMesh.visible=pebMesh.visible=true}if(P.boat)leaveBoat();P.dead=false;$('dead').hidden=true;P.x=P.spawn.x;P.z=P.spawn.z;P.y=getH(P.x,P.z);P.vy=0;P.hp=maxHp()*.5;P.st=maxSt();PM.g.rotation.x=0;
   for(const c of creatures.slice())if(!c.spec.boss&&Math.hypot(c.x-P.x,c.z-P.z)<40)removeCreature(c)}
 function killNode(n,silent){n.alive=false;remCol(n.col);
   const tree=n.kind==='birch'||n.kind==='pine';

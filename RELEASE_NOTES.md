@@ -1,3 +1,7 @@
+## 1.18.2 — Grounded tombs
+- Tomb entrances now settle into the land: on slopes the boulders reach down and bed into the ground, and the path stones, steps, torch posts and rune stones follow the terrain instead of hovering.
+- A tomb's halls, light beam and chests are always hidden once you're outside, however you leave (walking out, returning home or respawning), so nothing hangs in the eastern sky.
+
 ## 1.18.1 — The tombs, made real
 - Stonework has true surface depth: recessed mortar, worn and chipped block edges, and uneven, tilted flagstones with sunken grout.
 - Damp streaks run down the tomb walls with a wet sheen. Corners and the feet of walls fall into soft shadow.
