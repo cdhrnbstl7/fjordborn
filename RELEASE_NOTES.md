@@ -1,3 +1,6 @@
+## 1.18.3 — Rooted standing stones
+- The four standing stones before each tomb now stand rooted in the ground instead of hovering on a flat-cut base.
+
 ## 1.18.2 — Grounded tombs
 - Tomb entrances now settle into the land: on slopes the boulders reach down and bed into the ground, and the path stones, steps, torch posts and rune stones follow the terrain instead of hovering.
 - A tomb's halls, light beam and chests are always hidden once you're outside, however you leave (walking out, returning home or respawning), so nothing hangs in the eastern sky.
