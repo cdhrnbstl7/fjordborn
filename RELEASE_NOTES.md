@@ -1,3 +1,10 @@
+## 1.18.1 — The tombs, made real
+- Stonework has true surface depth: recessed mortar, worn and chipped block edges, and uneven, tilted flagstones with sunken grout.
+- Damp streaks run down the tomb walls with a wet sheen. Corners and the feet of walls fall into soft shadow.
+- Torches, braziers and candles now burn with living, flickering flames and a soft glow, instead of solid cones.
+- Fine dust drifts in the air of the tombs.
+- Entrance boulders are now split, angular rock with flat cleaved faces, sharp edges and moss on top (frost in the mountains). Cave rock, stalactites and columns are smooth natural stone.
+
 ## 1.18.0 — The tombs, rebuilt
 - New tomb entrances: a carved stone portal set into a heap of mossy boulders, with an iron-banded door standing ajar, glowing runes in the lintel, torch posts, standing stones along a flagstone path and mist at the threshold.
 - Every tomb has its own look inside:

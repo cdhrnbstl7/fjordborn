@@ -480,7 +480,7 @@ layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
 /* developer switches: all off in the public game; only the private developer edition has the menu that turns them on */
 const DEV={on:0,god:0,ghost:0,fly:0,clip:0,creative:0,speed:1,up:0,down:0};
-const GAME_VERSION='1.18.0';
+const GAME_VERSION='1.18.1';
 const EDITION='desktop';/* build_editions.py sets 'phone' or 'desktop' */
 /* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
 if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
@@ -2501,34 +2501,75 @@ function shipLoot(big){const got=[];const add=(id,n)=>{if(n>0){addItem(id,n);got
 function openLoot(c,quiet){c.open=true;c.lid.rotation.x=-1.9;if(quiet)return;c.loot();sfx('horn');save()}
 const SITEG=new THREE.Group();scene.add(SITEG);
 const TORCHHALO=new THREE.SphereGeometry(.9,12,8),TORCHHALOM=new THREE.MeshBasicMaterial({color:0xff8a30,transparent:true,opacity:.28,blending:THREE.AdditiveBlending,depthWrite:false,fog:false});
+/* smooth normals for displaced rocks, and merging that keeps each part's own normals */
+function smoothN(g){g=g.index?g.toNonIndexed():g;const p=g.attributes.position,n=p.count,acc=new Map(),N=new Float32Array(n*3),a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),e=new THREE.Vector3();
+  const key=i=>Math.round(p.getX(i)*1e3)+','+Math.round(p.getY(i)*1e3)+','+Math.round(p.getZ(i)*1e3);
+  for(let i=0;i<n;i+=3){a.fromBufferAttribute(p,i);b.fromBufferAttribute(p,i+1);c.fromBufferAttribute(p,i+2);c.sub(b);e.subVectors(a,b);c.cross(e);for(let q=0;q<3;q++){const k=key(i+q),v=acc.get(k)||[0,0,0];v[0]+=c.x;v[1]+=c.y;v[2]+=c.z;acc.set(k,v)}}
+  for(let i=0;i<n;i++){const v=acc.get(key(i)),l=Math.hypot(v[0],v[1],v[2])||1;N[i*3]=v[0]/l;N[i*3+1]=v[1]/l;N[i*3+2]=v[2]/l}g.setAttribute('normal',new THREE.BufferAttribute(N,3));return g}
+function creaseN(g,ang){g=g.index?g.toNonIndexed():g;const p=g.attributes.position,n=p.count,ct=Math.cos(ang||.7),F=[],by=new Map(),N=new Float32Array(n*3),a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),e=new THREE.Vector3();
+  const key=i=>Math.round(p.getX(i)*1e3)+','+Math.round(p.getY(i)*1e3)+','+Math.round(p.getZ(i)*1e3);
+  for(let i=0;i<n;i+=3){a.fromBufferAttribute(p,i);b.fromBufferAttribute(p,i+1);c.fromBufferAttribute(p,i+2);c.sub(b);e.subVectors(a,b);c.cross(e);const l=c.length()||1;F.push([c.x/l,c.y/l,c.z/l,l]);for(let q=0;q<3;q++){const k=key(i+q);(by.get(k)||by.set(k,[]).get(k)).push(i/3)}}
+  for(let i=0;i<n;i++){const f=F[(i/3)|0];let x=0,y=0,z=0;for(const o of by.get(key(i))){const h=F[o];if(h[0]*f[0]+h[1]*f[1]+h[2]*f[2]>ct){x+=h[0]*h[3];y+=h[1]*h[3];z+=h[2]*h[3]}}const l=Math.hypot(x,y,z)||1;N[i*3]=x/l;N[i*3+1]=y/l;N[i*3+2]=z/l}
+  g.setAttribute('normal',new THREE.BufferAttribute(N,3));return g}
+function mergeN(parts){let n=0;for(const p of parts)n+=p.g.attributes.position.count;const pos=new Float32Array(n*3),nor=new Float32Array(n*3),col=new Float32Array(n*3);let o=0;
+  for(const p of parts){const g=p.g,cnt=g.attributes.position.count;if(!g.attributes.normal)g.computeVertexNormals();pos.set(g.attributes.position.array,o*3);nor.set(g.attributes.normal.array,o*3);_c.set(p.col).convertSRGBToLinear();for(let i=0;i<cnt;i++){const j=(o+i)*3;col[j]=_c.r;col[j+1]=_c.g;col[j+2]=_c.b}o+=cnt}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('normal',new THREE.BufferAttribute(nor,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));return g}
+/* living flames: every flame in a place drawn as one batch of flickering billboards, each with a soft glow around it */
+function flameBatch(list){const n=list.length,P=new Float32Array(n*12),C=new Float32Array(n*8),A=new Float32Array(n*8),K=new Float32Array(n*12),I=[];
+  list.forEach((f,i)=>{const sd=Math.random();for(let q=0;q<4;q++){const v=i*4+q;P[v*3]=f.p[0];P[v*3+1]=f.p[1];P[v*3+2]=f.p[2];C[v*2]=q&1?1:-1;C[v*2+1]=q&2?1:0;A[v*2]=f.s;A[v*2+1]=sd;K[v*3]=f.c[0];K[v*3+1]=f.c[1];K[v*3+2]=f.c[2]}I.push(i*4,i*4+1,i*4+3,i*4,i*4+3,i*4+2)});
+  const geo=()=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(P,3));g.setAttribute('aC',new THREE.BufferAttribute(C,2));g.setAttribute('aA',new THREE.BufferAttribute(A,2));g.setAttribute('aCol',new THREE.BufferAttribute(K,3));g.setIndex(I);return g};
+  const K2=(POST_OK?1.7:1.15).toFixed(2),V='attribute vec2 aC,aA;attribute vec3 aCol;uniform float uT;varying vec2 vUv;varying float vSd;varying vec3 vCol;';
+  const fm=new THREE.Mesh(geo(),new THREE.ShaderMaterial({uniforms:{uT:SPU.uT},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    vertexShader:V+'void main(){vec4 mv=modelViewMatrix*vec4(position,1.);float s=aA.x,sw=sin(uT*7.+aA.y*40.)*.07+sin(uT*13.1+aA.y*17.)*.04;mv.x+=aC.x*s*.34+sw*aC.y*s;mv.y+=aC.y*s*1.2-s*.15;vUv=aC;vSd=aA.y;vCol=aCol;gl_Position=projectionMatrix*mv;}',
+    fragmentShader:'uniform float uT;varying vec2 vUv;varying float vSd;varying vec3 vCol;'+SPN+'void main(){float y=vUv.y,n=spN(vec2(vUv.x*2.5+vSd*9.,y*3.-uT*5.5))*.6+spN(vec2(vUv.x*6.,y*7.-uT*9.+vSd*3.))*.4;'
+      +'float yy=y*1.04+.04,wp=1.15*sqrt(max(yy*(1.-yy)*4.,0.))*(1.-yy*.3),d=abs(vUv.x+(n-.5)*.55*y)/max(wp,.001);float body=(1.-smoothstep(.5,1.,d))*(1.-smoothstep(.62,1.,y+(n-.5)*.4));'
+      +'float core=(1.-smoothstep(0.,.5,d))*(1.-smoothstep(.15,.55,y));vec3 col=mix(vCol*vec3(1.,.42,.12),vCol,body)*body+vec3(1.,.95,.82)*core*.85;gl_FragColor=vec4(col*'+K2+',1.);}'}));
+  const gm=new THREE.Mesh(geo(),new THREE.ShaderMaterial({uniforms:{uT:SPU.uT},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    vertexShader:V+'void main(){vec4 mv=modelViewMatrix*vec4(position,1.);float s=aA.x*3.4;mv.xy+=vec2(aC.x,aC.y*2.-1.)*s;mv.y+=aA.x*.35;vUv=vec2(aC.x,aC.y*2.-1.);vSd=aA.y;vCol=aCol;gl_Position=projectionMatrix*mv;}',
+    fragmentShader:'uniform float uT;varying vec2 vUv;varying float vSd;varying vec3 vCol;void main(){float d=dot(vUv,vUv),f=.82+.1*sin(uT*11.+vSd*30.)+.08*sin(uT*23.+vSd*11.);gl_FragColor=vec4(vCol*exp(-d*5.)*.2*f,1.);}'}));
+  fm.frustumCulled=gm.frustumCulled=false;fm.renderOrder=3;gm.renderOrder=2;fm.userData.fx=gm.userData.fx=1;return [fm,gm]}
+const hexRGB=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255];
 /* ===================== crypts: themed tombs with real stonework, vaults, arcades and the things left in the dark ===================== */
 const DTHEME={
   ember:{wall:'#86776a',floor:'#7a6e64',ceil:'#4c4239',trim:'#6a5c50',light:0xff9a50,flame:[0xffa238,0xffe27a,0xff8a30],fog:[.045,.03,.022],hemi:[.6,.46,.36],wet:.12},
   violet:{wall:'#64606c',floor:'#57535e',ceil:'#38343f',trim:'#504b59',light:0xb478ff,flame:[0xa452ff,0xeccaff,0x9a50ff],fog:[.03,.022,.046],hemi:[.5,.42,.72],wet:.85},
   frost:{wall:'#8794a1',floor:'#93a0ac',ceil:'#5c6773',trim:'#6f7b88',light:0x8ad4ff,flame:[0x5ac8ff,0xdaf4ff,0x5ab8ff],fog:[.035,.046,.062],hemi:[.55,.66,.86],frost:.85,wet:.2},
+  rock:{cave:1,moss:.75,out:1},block:{cave:.45,moss:.35,out:1},rockF:{cave:1,frost:.8,out:1},blockF:{cave:.45,frost:.6,out:1},
   drowned:{wall:'#6a6558',floor:'#5a5a50',ceil:'#3e3d36',trim:'#55554b',light:0xffa860,flame:[0xffa238,0xffe27a,0xff8a30],fog:[.016,.036,.042],hemi:[.35,.6,.62],moss:.85,wet:.55,cave:1}};
 const DSTONE={},DFLAME={};
-function dStone(th){if(DSTONE[th])return DSTONE[th];const T=DTHEME[th],m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0,side:THREE.DoubleSide});
-  m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,{uMoss:{value:T.moss||0},uFrost:{value:T.frost||0},uWet:{value:T.wet||0},uCave:{value:T.cave||0}});
+function dStone(th){if(DSTONE[th])return DSTONE[th];const T=DTHEME[th],m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9,metalness:0,side:T.out?THREE.FrontSide:THREE.DoubleSide});m.extensions={derivatives:true};
+  if(!dStone.blank){dStone.blank=new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1,THREE.RGBAFormat);dStone.blank.needsUpdate=true}
+  const U=m.userData.u={uMoss:{value:T.moss||0},uFrost:{value:T.frost||0},uWet:{value:T.wet||0},uCave:{value:T.cave||0},uOut:{value:T.out||0},uMap:{value:dStone.blank},uOrig:{value:new THREE.Vector2()}};
+  m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,U);
     sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP,vWN;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWP=(modelMatrix*vec4(transformed,1.)).xyz;vWN=normalize(mat3(modelMatrix)*objectNormal);');
-    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uMoss,uFrost,uWet,uCave;varying vec3 vWP,vWN;float dsPud=0.;\n'+SPN)
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nuniform float uMoss,uFrost,uWet,uCave,uOut;uniform sampler2D uMap;uniform vec2 uOrig;varying vec3 vWP,vWN;float dsPud=0.,dsH=0.,dsWet=0.;\n'+SPN+
+      'float dgW(vec2 c){if(c.x<0.||c.y<0.||c.x>63.||c.y>63.)return 0.;return texture2D(uMap,(c+.5)/64.).r;}\nfloat dgDist(vec2 p){vec2 c=floor(p/4.);float dm=9.;for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){vec2 cc=c+vec2(float(i),float(j));if(dgW(cc)<.5){vec2 mn=cc*4.,mx=mn+4.,q=max(max(mn-p,p-mx),0.);dm=min(dm,length(q));}}return dm;}\n')
       .replace('#include <color_fragment>',`#include <color_fragment>
-{vec3 N=normalize(vWN);float fl=step(.7,N.y),ce=step(N.y,-.7),wa=1.-fl-ce;vec3 base=diffuseColor.rgb;float hy=vWP.y-${DY}.;
- vec2 uv=abs(N.x)>abs(N.z)?vec2(vWP.z,vWP.y):vec2(vWP.x,vWP.y);
- float row=floor(uv.y/.55);vec2 q=vec2(uv.x/.95+mod(row,2.)*.5,uv.y/.55);vec2 cl=floor(q),f=fract(q);
- float e=min(min(f.x,1.-f.x)*.95,min(f.y,1.-f.y)*.55),mo=1.-smoothstep(.012,.035,e),bh=spH(cl+vec2(row*3.1,0.));
- vec3 wc=base*(.72+.5*bh)*(.8+.4*spN(uv*7.))*(1.-.15*spN(uv*1.3));wc*=1.+.2*(1.-smoothstep(.035,.09,e))*(1.-mo);wc=mix(wc,base*.28,mo);
- vec3 rc=base*(.6+.6*spN(vec2(uv.x*.5+spN(uv*.7)*2.,uv.y*4.5)))*(.8+.4*spN(uv*5.));wc=mix(wc,rc,uCave);
+{vec3 N=normalize(vWN);float fl=step(.7,N.y),ce=step(N.y,-.7),wa=1.-fl-ce;vec3 base=diffuseColor.rgb;float hy=uOut>.5?9.:vWP.y-${DY}.;
+ vec2 uv=abs(N.x)>abs(N.z)?vec2(vWP.z,vWP.y):vec2(vWP.x,vWP.y);if(uOut>.5)uv=abs(N.y)>.7?vWP.xz:uv;
+ float row=floor(uv.y/.55);vec2 q=vec2(uv.x/.95+mod(row,2.)*.5+spH(vec2(row,3.))*.3,uv.y/.55);vec2 cl=floor(q),f=fract(q);
+ float e=min(min(f.x,1.-f.x)*.95,min(f.y,1.-f.y)*.55)+(spN(uv*14.)-.5)*.02,mo=1.-smoothstep(.012,.035,e),bh=spH(cl+vec2(row*3.1,0.));
+ vec3 tintB=mix(vec3(1.06,1.,.93),vec3(.93,.98,1.05),spH(cl+7.3));
+ vec3 wc=base*tintB*(.74+.46*bh)*(.78+.44*spN(uv*7.))*(1.-.18*spN(uv*1.3));wc*=1.+.22*(1.-smoothstep(.035,.1,e))*(1.-mo);wc=mix(wc,base*.25,mo);
+ float hw=smoothstep(0.,.07,e)+(spN(uv*4.)-.5)*.35+(spN(uv*9.)-.5)*.12-smoothstep(.7,.8,spN(uv*5.+cl*3.))*.45*(1.-smoothstep(.06,.16,e));
+ float cs=spN(vec2(uv.x*.5+spN(uv*.7)*2.,uv.y*4.5));vec3 rc=base*(.58+.62*cs)*(.78+.44*spN(uv*5.))*(.9+.2*spN(uv*23.));float hc=cs*.8+spN(uv*3.)*.4+spN(uv*7.)*.12;
+ wc=mix(wc,rc,uCave);hw=mix(hw,hc,uCave);
  vec2 p=vWP.xz/1.15,ip=floor(p),fp=fract(p);float d1=9.,d2=9.;vec2 id=ip;
  for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){vec2 o=vec2(float(i),float(j)),rr=o+.15+.7*vec2(spH(ip+o),spH(ip+o+vec2(17.,9.)))-fp;float dd=dot(rr,rr);if(dd<d1){d2=d1;d1=dd;id=ip+o;}else if(dd<d2)d2=dd;}
- float gr=1.-smoothstep(.03,.1,sqrt(d2)-sqrt(d1));vec3 fc=base*(.7+.5*spH(id))*(.82+.36*spN(p*6.));fc=mix(fc,base*.3,gr*(1.-uCave*.75));
- vec3 c=wc*wa+fc*fl+base*.6*(.75+.5*spN(vWP.xz*.7))*ce;
- c*=mix(.55,1.,smoothstep(0.,1.4,hy));
- float mz=uMoss*smoothstep(.35,.75,spN(vWP.xz*.6+vWP.y*.4))*(fl*.7+wa*(1.-smoothstep(0.,2.8,hy)));c=mix(c,vec3(.05,.1,.035)*(.7+.6*spN(vWP.xz*9.+vWP.y*3.)),mz*.85);
+ float ge=sqrt(d2)-sqrt(d1),gr=1.-smoothstep(.03,.1,ge);vec3 fc=base*mix(vec3(1.05,1.,.94),vec3(.94,.98,1.04),spH(id+5.))*(.7+.5*spH(id))*(.8+.4*spN(p*6.))*(1.-.15*smoothstep(.6,.9,spN(p*2.3+id)));fc=mix(fc,base*.26,gr*(1.-uCave*.75));
+ float hf=smoothstep(0.,.12,ge)*(1.-uCave*.7)+dot(fp-.5,vec2(spH(id+3.)-.5,spH(id+7.)-.5))*.7+(spN(p*4.)-.5)*.25;
+ if(uOut>.5){fc=rc;hf=hc;}
+ vec3 c=wc*wa+fc*fl+base*.6*(.75+.5*spN(vWP.xz*.7))*ce;dsH=hw*wa+hf*fl+spN(vWP.xz*3.)*ce;
+ c*=mix(.5,1.,smoothstep(0.,1.5,hy));
+ float stk=wa*(1.-uOut)*smoothstep(.58,.85,spN(vec2(uv.x*2.2+spN(vec2(uv.y*.4,uv.x))*.7,uv.y*.16)));c*=1.-.38*stk;c=mix(c,c*vec3(.9,.95,.85),stk*uMoss);dsWet=stk*.8;
+ float mz=uMoss*smoothstep(.35,.75,spN(vWP.xz*.6+vWP.y*.4))*(uOut>.5?smoothstep(.35,.85,N.y):fl*.7+wa*(1.-smoothstep(0.,2.8,hy)));c=mix(c,vec3(.05,.1,.035)*(.7+.6*spN(vWP.xz*9.+vWP.y*3.)),mz*.85);dsH+=mz*.15;
  float fz=uFrost*smoothstep(.15,.8,N.y+.35*spN(vWP.xz*3.+vWP.y))*(.7+.3*spN(vWP.xz*8.));c=mix(c,vec3(.72,.8,.9),fz);
- dsPud=uWet*fl*smoothstep(.55,.65,spN(vWP.xz*.32))*(1.-gr*.5);c*=1.-.45*dsPud;diffuseColor.rgb=c;}`)
-      .replace('#include <roughnessmap_fragment>','float roughnessFactor=mix(roughness,.05,dsPud);')};
-  m.customProgramCacheKey=()=>'dstone1';return DSTONE[th]=m}
+ dsPud=uWet*fl*smoothstep(.55,.65,spN(vWP.xz*.32))*(1.-gr*.5);c*=1.-.45*dsPud;
+ if(uOut<.5){vec2 lp=vWP.xz-uOrig;float ao=fl>.5?.38+.62*smoothstep(0.,1.7,dgDist(lp)):wa>.5?.42+.58*smoothstep(0.,.75,dgDist(lp+N.xz*.75)):.5+.5*smoothstep(0.,1.4,dgDist(lp));c*=ao;}
+ diffuseColor.rgb=c;}`)
+      .replace('#include <roughnessmap_fragment>','float roughnessFactor=mix(mix(roughness,.62,dsWet),.08,dsPud);')
+      .replace('#include <normal_fragment_maps>','#include <normal_fragment_maps>\n{float hs=dsH*.022;vec3 sX=dFdx(-vViewPosition),sY=dFdy(-vViewPosition);float hX=dFdx(hs),hY=dFdy(hs);vec3 R1=cross(sY,normal),R2=cross(normal,sX);float det=dot(sX,R1);vec3 gr=sign(det)*(hX*R1+hY*R2);normal=normalize(abs(det)*normal-gr);}')};
+  m.customProgramCacheKey=()=>'dstone2';return DSTONE[th]=m}
 function dFlames(th){if(DFLAME[th])return DFLAME[th];const f=DTHEME[th].flame;return DFLAME[th]={m1:new THREE.MeshBasicMaterial({color:f[0]}),m2:new THREE.MeshBasicMaterial({color:f[1]}),halo:new THREE.MeshBasicMaterial({color:f[2],transparent:true,opacity:.28,blending:THREE.AdditiveBlending,depthWrite:false,fog:false})}}
 let WEBTEX=null;function webTex(){if(WEBTEX)return WEBTEX;const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.strokeStyle='rgba(255,255,255,.85)';g.lineWidth=1.3;
   const sp=[];for(let k=0;k<=9;k++)sp.push(k/9*PI/2);for(const a of sp){g.beginPath();g.moveTo(0,0);g.lineTo(Math.cos(a)*256,Math.sin(a)*256);g.stroke()}
@@ -2547,7 +2588,7 @@ function buildCrypt(d){const th=d.theme||'ember',T=DTHEME[th],ps=[],S=[],GL=[],w
   const candles=(x,z,n)=>{for(let q=0;q<n;q++){const a=r()*6.283,rr=r()*.38,h=.12+r()*.5,rad=.035+r()*.035,X=x+Math.cos(a)*rr,Z=z+Math.sin(a)*rr;ps.push(part(Cy(rad,rad*1.12,h,7),r()<.3?'#d8c8a4':'#ece2c8',X,h/2,Z),part(Cy(rad*1.9,rad*2.3,.03,8),'#e2d6b8',X,.015,Z));if(q<3||r()<.4)d.candles.push([d.ox+X,DY+h+.07,d.oz+Z])}d.torches.push([d.ox+x,DY+.9,d.oz+z,null,.55])};
   const chain=(x,z,top,len)=>{const n=Math.floor(len/.13);for(let q=0;q<n;q++)ps.push(part(new THREE.TorusGeometry(.065,.017,4,8),'#2c2b30',x,top-q*.13,z,0,q%2?PI/2:0,0));if(r()<.4)ps.push(part(new THREE.TorusGeometry(.12,.025,4,10,PI*1.4),'#2c2b30',x,top-n*.13-.1,z,0,0,PI*.8))};
   const skull=(x,z,y)=>{ps.push(part(Ico(.11,1),'#d6ccb4',x,(y||0)+.1,z,0,r()*6,0,1,.9,1.15),part(B(.12,.04,.08),'#c8bea6',x,(y||0)+.03,z+.06))};
-  const rubble=(x,z,n)=>{for(let q=0;q<n;q++){const s=.12+r()*.32;S.push(part(lumpy(Ico(1,0),.3,2,r()*40),tint(T.wall,.75+r()*.3),x+(r()-.5)*1.4,s*.4,z+(r()-.5)*1.4,r(),r(),r(),s,s*.7,s))}};
+  const rubble=(x,z,n)=>{for(let q=0;q<n;q++){const s=.12+r()*.32;S.push(part(smoothN(lumpy(Ico(1,0),.3,2,r()*40)),tint(T.wall,.75+r()*.3),x+(r()-.5)*1.4,s*.4,z+(r()-.5)*1.4,r(),r(),r(),s,s*.7,s))}};
   const urn=(x,z)=>{const c=['#7a5636','#6a4a30','#5c5048'][Math.floor(r()*3)];ps.push(part(Cy(.17,.12,.12,10),c,x,.06,z),part(Cy(.22,.17,.34,10),c,x,.29,z),part(Cy(.12,.22,.16,10),c,x,.54,z),part(Cy(.13,.1,.08,10),c,x,.66,z))};
   const flameAt=(x,y,z,big)=>{const f=new THREE.Group();f.add(new THREE.Mesh(flameGeo,FR.m1),new THREE.Mesh(flameGeo2,FR.m2));if(big)f.add(new THREE.Mesh(TORCHHALO,FR.halo));f.position.set(x,y,z);f.scale.setScalar(big?.3:.12);if(!big)f.userData.c=1;scene.add(f);d.flames.push(f)};
   /* floors, walls, vaults and doorways, tile by tile */
@@ -2559,15 +2600,15 @@ function buildCrypt(d){const th=d.theme||'ember',T=DTHEME[th],ps=[],S=[],GL=[],w
       S.push(part(new THREE.TorusGeometry(R-.06,.17,6,16,PI),tint(T.trim,1),cZ?x:x-DT/2,sp,cZ?z-DT/2:z,0,cZ?0:PI/2,0),part(B(DT,.6,DT),tint(T.ceil,.8),x,H+.3,z));
       if(T.frost&&r()<.7)icicles(x,H-.15,z,4,cZ?[2.6,.3]:[.3,2.6],.9)}
     else{S.push(part(B(DT,.4,DT),tint(T.ceil,.85+r()*.2),x,H+.2-(CAVE?r()*.8:0),z));
-      if(CAVE&&r()<.42){const n=1+Math.floor(r()*3);for(let q=0;q<n;q++){const l=.5+r()*2.2,rad=.12+r()*.38;S.push(part(lumpy(Co(rad,l,6),.15,3,r()*30),tint(T.wall,.8+r()*.35),x+(r()-.5)*3,H-l/2-.2,z+(r()-.5)*3,PI,r()*3,0))}}
+      if(CAVE&&r()<.42){const n=1+Math.floor(r()*3);for(let q=0;q<n;q++){const l=.5+r()*2.2,rad=.12+r()*.38;S.push(part(smoothN(lumpy(Co(rad,l,6),.15,3,r()*30)),tint(T.wall,.8+r()*.35),x+(r()-.5)*3,H-l/2-.2,z+(r()-.5)*3,PI,r()*3,0))}}
       if(T.frost&&k>=0&&r()<.25)icicles(x,H,z,5,[3,3],1.3)}
-    if(CAVE&&!start&&r()<.12&&(wx1||wx0||wz1||wz0)){const ox=(wx1?1.2:wx0?-1.2:0)+(r()-.5)*.6,oz=(wz1?1.2:wz0?-1.2:0)+(r()-.5)*.6,l=.6+r()*1.6,rad=.25+r()*.35;S.push(part(lumpy(Co(rad,l,6),.15,3,r()*30),tint(T.wall,.8+r()*.3),x+ox,l/2-.05,z+oz));if(rad>.35)addCol({x:d.ox+x+ox,z:d.oz+z+oz,r:rad*.9})}
+    if(CAVE&&!start&&r()<.12&&(wx1||wx0||wz1||wz0)){const ox=(wx1?1.2:wx0?-1.2:0)+(r()-.5)*.6,oz=(wz1?1.2:wz0?-1.2:0)+(r()-.5)*.6,l=.6+r()*1.6,rad=.25+r()*.35;S.push(part(smoothN(lumpy(Co(rad,l,6),.15,3,r()*30)),tint(T.wall,.8+r()*.3),x+ox,l/2-.05,z+oz));if(rad>.35)addCol({x:d.ox+x+ox,z:d.oz+z+oz,r:rad*.9})}
     /* inner corners collect cobwebs */
     for(const [a,b] of[[1,1],[1,-1],[-1,1],[-1,-1]])if(!isT(i+a,j)&&!isT(i,j+b)&&r()<(CAVE?.18:.32)){const Lw=1+r()*.9,yy=(cZ||cX)?H-DT/2+.3:H,C=[x+a*(DT/2-.02),yy-.02,z+b*(DT/2-.02)];webs.push([C,[C[0]-a*Lw,C[1],C[2]],[C[0]-a*Lw*.55,C[1]-Lw*.8,C[2]-b*Lw*.55],[C[0],C[1],C[2]-b*Lw]])}
     for(const [dx,dz] of[[1,0],[-1,0],[0,1],[0,-1]]){const ni=i+dx,nj=j+dz,px=dz?1:0,pz=dx?1:0,fx=x+dx*DT/2,fz=z+dz*DT/2;
       if(!isT(ni,nj)){const wx=x+dx*(DT/2+.35),wz=z+dz*(DT/2+.35),sx=dx?.7:DT+.7,sz=dz?.7:DT+.7;
         S.push(part(B(sx,H+.4,sz),tint(T.wall,.9+r()*.2),wx,(H+.4)/2,wz));
-        if(CAVE){for(let q=0;q<4;q++){const o=(q%2-.5)*2.2+(r()-.5)*.8,yy=q<2?.6+r()*1.2:2.4+r()*(H-3),s=.85+r()*.7;S.push(part(lumpy(Ico(1,1),.3,1.3,r()*50),tint(T.wall,.75+r()*.35),fx+dx*.55+px*o,yy,fz+dz*.55+pz*o,r(),r(),r(),dx?s*.75:s*1.3,s*1.2,dz?s*.75:s*1.3))}}
+        if(CAVE){for(let q=0;q<4;q++){const o=(q%2-.5)*2.2+(r()-.5)*.8,yy=q<2?.6+r()*1.2:2.4+r()*(H-3),s=.85+r()*.7;S.push(part(smoothN(lumpy(Ico(1,1),.3,1.3,r()*50)),tint(T.wall,.75+r()*.35),fx+dx*.55+px*o,yy,fz+dz*.55+pz*o,r(),r(),r(),dx?s*.75:s*1.3,s*1.2,dz?s*.75:s*1.3))}}
         else S.push(part(B(sx+.1,.5,sz+.1),tint(T.trim,.85),wx-dx*.05,.25,wz-dz*.05),part(B(sx+.14,.24,sz+.14),tint(T.trim,1),wx-dx*.07,H-.15,wz-dz*.07),part(B(sx+.1,.16,sz+.1),tint(T.trim,.9),wx-dx*.05,2.6,wz-dz*.05));
         if(start)continue;
         const ro=r();
@@ -2599,7 +2640,7 @@ function buildCrypt(d){const th=d.theme||'ember',T=DTHEME[th],ps=[],S=[],GL=[],w
       if(hall){const has=(a,b)=>PIL.some(p=>p[0]===a&&p[1]===b);for(const [a,b] of PIL){const px=x0+a*DT,pz=z0+b*DT;
         if(has(a+2,b))S.push(part(new THREE.TorusGeometry(3.47,.32,6,18,PI),tint(T.trim,1),px+DT,top-.05,pz),part(B(DT*2-1.6,.5,.7),tint(T.trim,.9),px+DT,top+3.75,pz));
         if(has(a,b+2))S.push(part(new THREE.TorusGeometry(3.47,.32,6,18,PI),tint(T.trim,1),px,top-.05,pz+DT,0,PI/2,0),part(B(.7,.5,DT*2-1.6),tint(T.trim,.9),px,top+3.75,pz+DT))}}}
-    else if(hall)for(let q=0;q<4;q++){const px=x0+DT+r()*(w-2*DT),pz=z0+DT+r()*(h-2*DT),rad=.5+r()*.5;S.push(part(lumpy(Cy(rad*.7,rad*1.4,H,8,1),.18,1.5,r()*30),tint(T.wall,.85+r()*.2),px,H/2,pz));addCol({x:d.ox+px,z:d.oz+pz,r:rad})}  /* natural columns where stalactite met stalagmite */
+    else if(hall)for(let q=0;q<4;q++){const px=x0+DT+r()*(w-2*DT),pz=z0+DT+r()*(h-2*DT),rad=.5+r()*.5;S.push(part(smoothN(lumpy(Cy(rad*.7,rad*1.4,H,8,1),.18,1.5,r()*30)),tint(T.wall,.85+r()*.2),px,H/2,pz));addCol({x:d.ox+px,z:d.oz+pz,r:rad})}  /* natural columns where stalactite met stalagmite */
     if(!k)return;
     const nCh=th==='violet'?3+Math.floor(r()*4):hall?2:Math.floor(r()*2);for(let q=0;q<nCh;q++)chain(x0+.8+r()*(w-1.6),z0+.8+r()*(h-1.6),H,1+r()*Math.min(H-2.4,4));
     for(let q=0;q<2+Math.floor(r()*4);q++)skull(x0+.6+r()*(w-1.2),z0+.6+r()*(h-1.2));
@@ -2613,7 +2654,7 @@ function buildCrypt(d){const th=d.theme||'ember',T=DTHEME[th],ps=[],S=[],GL=[],w
   /* the drowned pool: still turquoise water glowing in the largest cavern */
   if(CAVE){let best=null,ba=0;d.rooms.forEach((rm,k)=>{if(k&&!rm.big&&rm.w*rm.h>ba){ba=rm.w*rm.h;best=rm}});
     if(best){const cx=(best.x0+best.w/2)*DT,cz=(best.z0+best.h/2)*DT,pr=Math.min(best.w,best.h)*DT/2-1.6;d.pool=[cx,cz,pr];
-      for(let q=0;q<26;q++){const a=q/26*6.283,s=.35+r()*.35;S.push(part(lumpy(Ico(1,0),.25,2,r()*40),tint(T.wall,.8+r()*.3),cx+Math.cos(a)*(pr+.2),s*.25,cz+Math.sin(a)*(pr+.2),r(),r(),r(),s*1.3,s*.6,s))}
+      for(let q=0;q<26;q++){const a=q/26*6.283,s=.35+r()*.35;S.push(part(smoothN(lumpy(Ico(1,0),.25,2,r()*40)),tint(T.wall,.8+r()*.3),cx+Math.cos(a)*(pr+.2),s*.25,cz+Math.sin(a)*(pr+.2),r(),r(),r(),s*1.3,s*.6,s))}
       for(let q=0;q<5;q++){const a=r()*6.283,X=cx+Math.cos(a)*(pr+.9),Z=cz+Math.sin(a)*(pr+.9);for(let c=0;c<5;c++){const l=.4+r()*1.1;GL.push(part(Co(.1+r()*.1,l,5),'#5af2ff',X+(r()-.5)*.7,l/2,Z+(r()-.5)*.7,(r()-.5)*.7,0,(r()-.5)*.7))}}
       d.torches.push([d.ox+cx,DY+1.4,d.oz+cz,0x40ffe0,1.5,1])}}
   /* the treasure hall: steps up to a dais, a stone throne under a carved sun, braziers either side */
@@ -2633,7 +2674,7 @@ function buildCrypt(d){const th=d.theme||'ember',T=DTHEME[th],ps=[],S=[],GL=[],w
     const [cxx,czz]=L(0,2.9);chestAt=[d.ox+cxx,d.oz+czz,ry,.22]}
   /* the stair down from the barrow door */
   {const x=si*DT,z=sj*DT+DT/2;for(let k=0;k<7;k++)S.push(part(B(.32,.31*(k+1),DT-.6),tint(T.trim,1),x+1.9-k*.27,.155*(k+1),z));ps.push(part(B(.2,.2,.2),'#e8c45a',x+.4,.1,z-1.4))}
-  const m=new THREE.Mesh(merge(S),dStone(th));m.position.set(d.ox,DY,d.oz);m.receiveShadow=SHD;scene.add(m);d.g=m;
+  const m=new THREE.Mesh(mergeN(S),dStone(th));{const D=new Uint8Array(W*W*4);for(let q=0;q<W*W;q++){D[q*4]=d.M[q]?255:0;D[q*4+3]=255}d.mapTex=new THREE.DataTexture(D,W,W,THREE.RGBAFormat);d.mapTex.needsUpdate=true}m.position.set(d.ox,DY,d.oz);m.receiveShadow=SHD;scene.add(m);d.g=m;
   if(ps.length){const pm=new THREE.Mesh(merge(ps),MAT);pm.position.copy(m.position);scene.add(pm);d.extra.push(pm)}
   if(GL.length){const gm=new THREE.Mesh(merge(GL),new THREE.MeshBasicMaterial({vertexColors:true,toneMapped:false}));gm.position.copy(m.position);scene.add(gm);d.extra.push(gm)}
   if(webs.length){const P=[],U=[];for(const [a,b,c,e] of webs){P.push(...a,...b,...c,...a,...c,...e);U.push(0,0,1,0,.72,.72,0,0,.72,.72,0,1)}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));
@@ -2646,8 +2687,7 @@ function buildCrypt(d){const th=d.theme||'ember',T=DTHEME[th],ps=[],S=[],GL=[],w
       vertexShader:'varying vec2 vP;void main(){vP=position.xy;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
       fragmentShader:'uniform float uT;varying vec2 vP;'+SPN+'void main(){vec2 p=vP*1.6;float c=spN(p+vec2(uT*.3,uT*.2))+spN(p*1.7-vec2(uT*.25,-uT*.3));c=pow(1.-abs(c-1.),6.);float r=length(vP)/'+pr.toFixed(2)+';vec3 deep=vec3(.0,.18,.22),hi=vec3(.25,1.,.95);vec3 col=mix(deep,hi,.35+.65*c)*mix(1.,.55,r);gl_FragColor=vec4(col*1.25,.88);}'}));
     pm.rotation.x=-PI/2;pm.position.set(d.ox+cx,DY+.05,d.oz+cz);scene.add(pm);d.extra.push(pm)}
-  for(const [x,y,z] of d.candles)flameAt(x,y,z,false);
-  for(const t of d.torches)if((!t[4]||t[4]>=1)&&!t[5])flameAt(t[0],t[1]-.1,t[2],true);
+  {const fc=hexRGB(T.flame[0]),FL=[];for(const [x,y,z] of d.candles)FL.push({p:[x,y-.02,z],s:.13,c:fc});for(const t of d.torches)if((!t[4]||t[4]>=1)&&!t[5])FL.push({p:[t[0],t[1]-.25,t[2]],s:(t[4]||1)>1?.75:.5,c:fc});if(FL.length)for(const fm of flameBatch(FL)){scene.add(fm);d.extra.push(fm)}}
   const [ex,ez,ery,ey]=chestAt;d.chest=LOOT.find(c=>c.key===d.name)||lootChest(d.name,ex,ez,ery,DY+ey,()=>{addItem('silver',20+d.i*8);addItem('shard',4);addItem('ingot',2);addItem('core',1);addItem(['rimeiron','fang','cake'][d.i%3],2);toast('The grave goods of '+d.name+' are yours.','big')});
   if(LOOTOPEN.has(d.name)&&!d.chest.open)openLoot(d.chest,true)}
 const stoneC=k=>['#8a8d92','#7a7d82','#6f7378','#83868b'][k&3];
@@ -2687,37 +2727,37 @@ for(const t of SITES){const r=lcg(Math.floor(t.x*31+t.z*17)+999),ps=[];
     for(let k=-5;k<=6;k+=2.2)siteCol(t,0,k,1.6);siteMesh(t,ps).rotation.z=.18;const [cx,cz]=sw(t,3.6,4);
     t.chest=lootChest('wreck',cx,cz,t.rot+.6,null,()=>{addItem('silver',18);addItem('rimeiron',2);addItem('resin',4);addItem('mead',2);toast('The Sea-Wolf’s strongbox: 18 silver, rime iron and mead.','big')})}
   else if(t.kind==='barrow'){const i=SITES.filter(s=>s.kind==='barrow').indexOf(t),th=t.name==='Deepfall Caves'?'drowned':biome(t.x,t.z)===3?'frost':['ember','drowned','violet'][i%3];t.theme=th;
-    const rk=k=>['#6e6a64','#7a7670','#635f5a','#85817a','#58554f'][k%5],st=k=>['#7d7f84','#74767b','#86888d','#6f7176'][k&3],FROST=th==='frost',moss=FROST?'#e8eef2':'#4f6a2e',moss2=FROST?'#d8e4ec':'#5f7c36',wood=k=>['#4a3424','#553c28','#3f2c1e'][k%3];
+    const R=[],K=[],RK=(g,a2)=>{g=lumpy(lumpy(g,a2*1.3,.9,r()*60),.07,2.6,r()*60);const P2=g.attributes.position,v=new THREE.Vector3();const cuts=[[0,-1,0,.38+r()*.25]];for(let c=0;c<3;c++){const nx=r()-.5,ny=r()*.9-.2,nz=r()-.5,l=Math.hypot(nx,ny,nz);cuts.push([nx/l,ny/l,nz/l,.5+r()*.25])}for(let k=0;k<P2.count;k++){v.fromBufferAttribute(P2,k);for(const [nx,ny,nz,o] of cuts){const dd=v.x*nx+v.y*ny+v.z*nz;if(dd>o){const t2=(dd-o)*.93;v.x-=nx*t2;v.y-=ny*t2;v.z-=nz*t2}}P2.setXYZ(k,v.x,v.y,v.z)}return creaseN(g,.62)},rk=k=>['#6e6a64','#7a7670','#635f5a','#85817a','#58554f'][k%5],st=k=>['#7d7f84','#74767b','#86888d','#6f7176'][k&3],FROST=th==='frost',moss=FROST?'#e8eef2':'#4f6a2e',moss2=FROST?'#d8e4ec':'#5f7c36',wood=k=>['#4a3424','#553c28','#3f2c1e'][k%3];
     /* the hill: a heap of great angular boulders with moss on their shoulders */
-    ps.push(part(lumpy(new THREE.SphereGeometry(7,18,10,0,PI*2,0,PI/2),.1,1.1,i),rk(0),0,-.5,-1.2,0,0,0,1,.72,.95));
+    R.push(part(smoothN(lumpy(new THREE.SphereGeometry(7,30,14,0,PI*2,0,PI/2),.1,1.1,i)),rk(0),0,-.5,-1.2,0,0,0,1,.72,.95));
     for(let q=0;q<46;q++){const ph=r()*6.283,el=r()*1.05,px=Math.sin(ph)*Math.cos(el)*6.3,pz=Math.cos(ph)*Math.cos(el)*6-1.2,py=Math.sin(el)*4.9;if(pz>2.2&&Math.abs(px)<2.7&&py<5)continue;const s=1+r()*1.8;
-      ps.push(part(lumpy(Ico(1,0),.22,1.2,r()*60),rk(q),px,py,pz,r()*3,r()*3,r()*3,s*(.9+r()*.5),s*(.65+r()*.4),s*(.9+r()*.4)));if(r()<.55)ps.push(part(lumpy(Ico(1,0),.3,2,r()*60),r()<.5?moss:moss2,px,py+s*.5,pz,0,r()*3,0,s*.75,s*.2,s*.7))}
+      R.push(part(RK(Ico(1,2),.24),rk(q),px,py,pz,r()*3,r()*3,r()*3,s*(.9+r()*.5),s*(.65+r()*.4),s*(.9+r()*.4)))}
     for(const [x,y,z,s] of[[3.2,1.1,4.6,1.7],[-3.2,1.1,4.6,1.8],[3.7,3,3.7,1.6],[-3.7,3,3.7,1.5],[2.7,4.7,3.4,1.4],[-2.7,4.7,3.3,1.5],[0,5.4,3.5,1.6],[1.6,6,2.4,1.3],[-1.6,6.1,2.3,1.2],[4.3,.8,2.6,1.6],[-4.3,.8,2.6,1.7]]){
-      ps.push(part(lumpy(Ico(1,0),.2,1.2,x*7+y),rk(Math.round(x+y)&7),x,y,z,r()*3,r()*3,r()*3,s*1.1,s*.85,s));ps.push(part(lumpy(Ico(1,0),.3,2,x+y*5),moss,x,y+s*.6,z,0,r()*3,0,s*.8,s*.18,s*.75))}
+      R.push(part(RK(Ico(1,2),.22),rk(Math.round(x+y)&7),x,y,z,r()*3,r()*3,r()*3,s*1.1,s*.85,s))}
     /* the portal: stacked quoins, an arch, a carved lintel set with glowing runes */
-    for(let b=0;b<5;b++){const y=.35+b*.72,wd=b%2?.95:.75;for(const sd of[-1,1])ps.push(part(B(wd,.68,1.15),st(b+(sd>0?1:0)),sd*(1.58+(b%2?.1:0)),y,5))}
-    ps.push(part(B(4.4,.95,1.3),st(1),0,4.02,5),part(B(3.6,.3,.06),'#4a4c50',0,4.02,5.66),part(B(4.7,.26,1.45),st(2),0,4.62,5),part(B(1.1,.5,1.2),st(3),0,5.0,5));
-    ps.push(part(new THREE.TorusGeometry(1.16,.2,6,14,PI),st(0),0,2.66,5.5),part(B(.5,1.2,.9),st(1),1.08,3.3,5.05),part(B(.5,1.2,.9),st(2),-1.08,3.3,5.05));
+    for(let b=0;b<5;b++){const y=.35+b*.72,wd=b%2?.95:.75;for(const sd of[-1,1])K.push(part(B(wd,.68,1.15),st(b+(sd>0?1:0)),sd*(1.58+(b%2?.1:0)),y,5))}
+    K.push(part(B(4.4,.95,1.3),st(1),0,4.02,5),part(B(3.6,.3,.06),'#4a4c50',0,4.02,5.66),part(B(4.7,.26,1.45),st(2),0,4.62,5),part(B(1.1,.5,1.2),st(3),0,5.0,5));
+    K.push(part(new THREE.TorusGeometry(1.16,.2,8,18,PI),st(0),0,2.66,5.5),part(B(.5,1.2,.9),st(1),1.08,3.3,5.05),part(B(.5,1.2,.9),st(2),-1.08,3.3,5.05));
     ps.push(part(B(2.4,3.9,.1),'#050403',0,1.9,4.5),part(new THREE.CircleGeometry(1.15,16,0,PI),wood(0),0,2.65,4.76));
     for(let q=0;q<3;q++)ps.push(part(B(.37,2.65,.12),wood(q),-.95+q*.38,1.33,4.75));
     for(const y of[.7,2.0]){ps.push(part(B(1.16,.12,.05),'#26262a',-.58,y,4.83));for(let q=0;q<4;q++)ps.push(part(B(.06,.06,.05),'#3a3a40',-1.05+q*.32,y,4.86))}
     ps.push(part(new THREE.TorusGeometry(.1,.02,4,10),'#3a3a40',-.16,1.4,4.86));
     {const a=.8;for(let q=0;q<3;q++){const dd=.19+q*.38;ps.push(part(B(.37,2.65,.12),wood(q+1),1.15-Math.cos(a)*dd,1.33,4.75-Math.sin(a)*dd,0,-a,0))}for(const y of[.7,2.0])ps.push(part(B(1.16,.12,.05),'#26262a',1.15-Math.cos(a)*.58,y,4.81-Math.sin(a)*.58,0,-a,0))}
-    ps.push(part(B(3.4,.18,.9),st(0),0,.09,5.95),part(B(2.5,.1,.5),st(3),0,.05,5.2));
-    for(let k=0;k<9;k++){const z=6.8+k*.72;for(const sd of[-1,1])ps.push(part(lumpy(Ico(1,0),.18,2,k*3+sd),st(k+sd),sd*.55+(r()-.5)*.25,.02,z+(r()-.5)*.2,0,r()*3,0,.48+r()*.15,.07,.38))}
+    K.push(part(B(3.4,.18,.9),st(0),0,.09,5.95),part(B(2.5,.1,.5),st(3),0,.05,5.2));
+    for(let k=0;k<9;k++){const z=6.8+k*.72;for(const sd of[-1,1])K.push(part(smoothN(lumpy(Ico(1,1),.18,2,k*3+sd)),st(k+sd),sd*.55+(r()-.5)*.25,.02,z+(r()-.5)*.2,0,r()*3,0,.48+r()*.15,.07,.38))}
     /* standing stones along the path */
-    const SS=[[2.9,7.7,2.3],[-2.9,7.6,2.0],[3.2,10.3,1.8],[-3.3,10.4,2.5]];for(const [x,z,h] of SS){ps.push(part(lumpy(Ico(1,1),.1,1.6,x*z),'#77797e',x,h/2-.25,z,(r()-.5)*.12,r()*3,(r()-.5)*.12,.45,h/2,.36));siteCol(t,x,z,.5)}
+    const SS=[[2.9,7.7,2.3],[-2.9,7.6,2.0],[3.2,10.3,1.8],[-3.3,10.4,2.5]];for(const [x,z,h] of SS){R.push(part(RK(Ico(1,2),.1),'#77797e',x,h/2-.25,z,(r()-.5)*.12,r()*3,(r()-.5)*.12,.45,h/2,.36));siteCol(t,x,z,.5)}
     /* torch posts by the door */
     for(const sd of[-1,1])ps.push(part(Cy(.09,.12,1.6,6),wood(sd+1),sd*2.25,.8,6.1),part(Cy(.22,.14,.32,8),'#2a2a2e',sd*2.25,1.72,6.1),part(Ico(.16,0),'#ff7a2a',sd*2.25,1.86,6.1));
     if(th==='drowned')for(let q=0;q<18;q++){const x=(r()-.5)*4.6,l=.5+r()*1.8;ps.push(part(B(.05,l,.05),r()<.5?'#3f6a2c':'#2f5222',x,4.5-l/2,5.72+r()*.1,0,0,(r()-.5)*.2))}
     if(FROST){ps.push(part(lumpy(Ico(1,0),.2,2,3),'#eef3f6',0,4.82,5,0,0,0,2.5,.18,.8));for(let q=0;q<14;q++){const l=.25+r()*.7;ps.push(part(Co(.05+r()*.05,l,5),'#cfe6f4',(r()-.5)*4.2,3.55-l/2,5.62,PI,0,0))}}
     if(th==='violet')for(const sd of[-1,1])for(let q=0;q<10;q++)ps.push(part(new THREE.TorusGeometry(.06,.016,4,8),'#2c2b30',sd*2.05,3.6-q*.13,5.62,0,q%2?PI/2:0,0));
-    siteMesh(t,ps);
+    siteMesh(t,ps);{const mk=(arr,mat)=>{const m=new THREE.Mesh(mergeN(arr),mat);m.position.set(t.x,t.y,t.z);m.rotation.y=t.rot;m.castShadow=m.receiveShadow=SHD;SITEG.add(m)};mk(R,dStone(FROST?'rockF':'rock'));mk(K,dStone(FROST?'blockF':'block'))}
     const glyph=new THREE.Mesh(G('barrowGlyph',()=>merge([part(B(.12,.38,.03),'#fff',-1.05,0,0),part(B(.12,.38,.03),'#fff',1.05,0,0),part(B(.08,.3,.03),'#fff',0,0,0),part(B(.24,.06,.03),'#fff',0,.08,0,0,0,.6)])),runeMat);
     {const [gx,gz]=sw(t,0,5.68);glyph.position.set(gx,t.y+4.02,gz);glyph.rotation.y=t.rot;SITEG.add(glyph)}
     for(const [x,z] of[[2.9,7.7],[-2.9,7.6]]){const rs=new THREE.Mesh(G('barrowRune',()=>merge([part(B(.08,.9,.04),'#fff',0,0,0),part(B(.4,.08,.04),'#fff',0,.2,0,0,0,.5),part(B(.3,.08,.04),'#fff',0,-.2,0,0,0,-.5)])),runeMat);
       const [rx,rz]=sw(t,x,z+.38);rs.position.set(rx,t.y+1.15,rz);rs.rotation.y=t.rot;SITEG.add(rs)}
-    {const FR=dFlames(th);for(const sd of[-1,1]){const f=new THREE.Group();f.add(new THREE.Mesh(flameGeo,FR.m1),new THREE.Mesh(flameGeo2,FR.m2),new THREE.Mesh(TORCHHALO,FR.halo));const [fx,fz]=sw(t,sd*2.25,6.1);f.position.set(fx,t.y+2.05,fz);f.scale.setScalar(.3);SITEG.add(f);SITEFL.push(f)}}
+    {const fc=hexRGB(DTHEME[th].flame[0]),FL=[];for(const sd of[-1,1]){const [fx,fz]=sw(t,sd*2.25,6.1);FL.push({p:[fx,t.y+1.9,fz],s:.55,c:fc})}for(const fm of flameBatch(FL))SITEG.add(fm)}
     {const mist=smokePoints(26,[0,.35,6.4],[2.6,.4,2.2],FROST?'#e4ecf2':'#c4c8cc',{sp:.035,rise:.3,wob:.9,size:2.4,a:.16,grow:1});mist.position.set(t.x,t.y,t.z);mist.rotation.y=t.rot;SITEG.add(mist)}
     siteCol(t,0,-1.2,5.8);siteCol(t,-3.7,2.4,2.3);siteCol(t,3.7,2.4,2.3);siteCol(t,-1.75,5,.6);siteCol(t,1.75,5,.6);siteCol(t,-2.25,6.1,.3);siteCol(t,2.25,6.1,.3);siteCol(t,-4.4,.6,1.6);siteCol(t,4.4,.6,1.6);
     const [ux,uz]=sw(t,0,7.3);t.ux=ux;t.uz=uz;DGS.push(Object.assign(genDungeon(7001+i*97),{site:t,i,ox:DZX+20+i*DGAP,oz:-56,name:t.name,g:null,chest:null,torches:[],flames:[],candles:[],pools:[],shafts:[],extra:[],xchest:0}));{const dd=DGS[DGS.length-1];dd.theme=t.theme;if(dd.theme==='drowned')caveify(dd,7001+i*97)}}}
@@ -2957,13 +2997,13 @@ function wreckTick(dt){const on=inWZ(P.x,P.z);if(!on||P.dg)return;
   for(let i=0;i<8;i++){const a=Math.random()*6.283,d=22+Math.random()*24,x=P.x+Math.sin(a)*d,z=P.z+Math.cos(a)*d,h=wreckH(x,z);if(h!=null&&h>-.5&&Math.abs(h-(P.y||0))<14){spawnCreature(Math.random()<.4?'wraith':'ghost',x,z);break}}}
 
 function dgShow(d){for(const q of DGS){const v=q===d;if(q.g)q.g.visible=v;for(const e of q.extra||[])e.visible=v;for(const f of q.flames||[])f.visible=v}}
-function enterDungeon(d){buildDungeon(d);dgShow(d);P.dg=d;const [sx,sz]=tileW(d,d.start[0],d.start[1]);P.x=sx+.6;P.z=sz;P.y=DY;P.vy=0;camYaw=-PI/2;for(const l of DLIGHTS)l.visible=true;
+function enterDungeon(d){buildDungeon(d);dgShow(d);if(!d.ship&&d.mapTex){const u=dStone(d.theme).userData.u;u.uMap.value=d.mapTex;u.uOrig.value.set(d.ox,d.oz)}P.dg=d;const [sx,sz]=tileW(d,d.start[0],d.start[1]);P.x=sx+.6;P.z=sz;P.y=DY;P.vy=0;camYaw=-PI/2;for(const l of DLIGHTS)l.visible=true;
   for(const c of creatures.slice())if(!c.spec.boss)removeCreature(c);
   d.woke=new Set();if(d.chest.open)d.rooms.forEach((rm,k)=>{if(Math.random()<.6)d.woke.add(k)});
   toast(d.name+(d.chest.open?'. The dead lie still here now.':'. Something stirs in the dark.'),'big');sfx('horn')}
-function leaveDungeon(){const d=P.dg;if(!d)return;P.dg=null;dgShow(null);grassMesh.visible=pebMesh.visible=true;for(const c of creatures.slice())if(c.dg)removeCreature(c);for(const l of DLIGHTS)l.visible=false;
+function leaveDungeon(){const d=P.dg;if(!d)return;P.dg=null;dgShow(null);if(updDungeon.dust)updDungeon.dust.visible=false;grassMesh.visible=pebMesh.visible=true;for(const c of creatures.slice())if(c.dg)removeCreature(c);for(const l of DLIGHTS)l.visible=false;
   P.x=d.site.ux;P.z=d.site.uz;P.y=getH(P.x,P.z);P.vy=0;camYaw=d.site.rot;toast('You climb back into the daylight.')}
-function updDungeon(dt){const d=P.dg;if(!d)return;if(!d.ship)dgMapMark(d);
+function updDungeon(dt){const d=P.dg;if(!d)return;if(!updDungeon.dust){updDungeon.dust=smokePoints(90,[0,2.2,0],[9,4,9],'#ffe8c8',{sp:.012,rise:.4,wob:.6,size:.035,a:.45,add:1});scene.add(updDungeon.dust)}updDungeon.dust.visible=!d.ship;updDungeon.dust.position.set(Math.round(P.x/6)*6,DY,Math.round(P.z/6)*6);if(!d.ship)dgMapMark(d);
   // rooms wake as you come near: a few draugr in chambers, a war band in the halls
   d.rooms.forEach((rm,k)=>{if(!k||d.woke.has(k))return;const [cx,cz]=tileW(d,rm.x0+rm.w/2,rm.z0+rm.h/2);if(Math.hypot(cx-P.x,cz-P.z)>34)return;d.woke.add(k);
     const n=rm.big?6:rm.kind==='hall'?3+Math.floor(Math.random()*3):Math.random()<.35?0:1+Math.floor(Math.random()*2);
