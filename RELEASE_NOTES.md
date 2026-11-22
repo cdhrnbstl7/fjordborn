@@ -1,3 +1,8 @@
+## 1.17.1 — Spirits, second pass
+- Hooded wraiths are slimmer and more draped, with hanging folds in the robe, thinner sleeves and long wispy strands running from the chest to the ground.
+- The bone wraith's shoulder pads are now a thin torn cloak, its hair hangs longer over the shoulders, and the smoke beneath it is a thin trailing wisp.
+- The drowned ghost's eyes and mouth stay dark and solid so its face reads from a distance, with brighter pupils.
+
 ## 1.17.0 — Wraiths and the drowned ghost, sculpted
 - Wraiths are rebuilt from the ground up: a hooded wraith with a hollow void under the cowl and bone-thin claws, its robe shredding into rags that fray, tear and fall apart into smoke. It comes in three kinds: the bare-clawed dread, the reaper with a chained scythe, and the sworn with a rusted sword and a green light under the hood.
 - New bone wraith: a skull with stringy hair, open ribcage and spine, a rotted mantle and long skeletal arms, with smoke where its legs should be.

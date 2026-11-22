@@ -436,10 +436,12 @@ def claws(d,w,n=4,L=.13,r=.014,spread=.035,down=.6):
 def wraith():
     P=[]
     P+=[ell((0,2.36,-.06),(.27,.33,.3)),ell((0,2.6,-.12),(.15,.2,.18),(-25,0,0)),ell((0,2.74,-.2),(.06,.1,.08),(-40,0,0)),ell((0,2.38,.14),(.26,.34,.16),(12,0,0)),neg((0,2.26,.22),(.17,.25,.26))]   # hood, peak, cowl rim, the void
-    P+=[ell((0,2.06,-.02),(.42,.17,.3))]+sym(lambda d:ell((d*.37,2.0,-.02),(.19,.17,.2)))
-    P+=[ell((0,1.74,0),(.4,.34,.28)),ell((0,1.38,-.01),(.32,.34,.24)),ell((0,1.04,-.02),(.28,.32,.22)),ell((0,.78,-.03),(.22,.2,.18))]+sym(lambda d:ell((d*.2,1.3,-.12),(.14,.5,.1),(0,0,d*6)))          # robe to a flared hem
+    P+=[ell((0,2.06,-.03),(.33,.14,.25))]+sym(lambda d:ell((d*.33,1.98,-.03),(.13,.12,.15),(0,0,d*-25)))
+    P+=[ell((0,1.74,-.01),(.32,.32,.23)),ell((0,1.38,-.02),(.27,.33,.2)),ell((0,1.04,-.02),(.24,.32,.19)),ell((0,.78,-.03),(.2,.2,.16))]
+    for k in range(12):
+        a=k/12*6.283+.2;P.append(ell((math.sin(a)*.25,1.32,math.cos(a)*.2-.02),(.045,.55,.045),(math.cos(a)*-4,0,math.sin(a)*4)))   # hanging folds          # robe to a flared hem
     for d in (1,-1):
-        P.append(cap([(d*.38,2.0,0),(d*.56,1.66,.08),(d*.67,1.36,.24)],[.1,.11,.18],sub=2));P.append(ell((d*.68,1.2,.1),(.08,.2,.05),(25,0,0)))          # bell sleeve widening to the cuff
+        P.append(cap([(d*.36,1.99,0),(d*.56,1.66,.08),(d*.67,1.36,.24)],[.075,.085,.15],sub=2))          # bell sleeve widening to the cuff
         P.append(mcap((d*.62,1.44,.18),(d*.7,1.24,.36),.03))                                            # bone forearm out of the cuff
         P.append(ell((d*.71,1.2,.4),(.045,.035,.055)))
         P+=claws(d,(.71,1.19,.42),L=.12,r=.013)
@@ -470,7 +472,7 @@ def bonewraith():
         P+=sym(lambda d:horn([(d*.03,y,-.1),(d*w*.85,y,-.07),(d*w,y-.05,.05),(d*w*.7,y-.1,.16),(d*.05,y-.12,.2 if k<4 else .15)],[.02,.019,.018,.016,.012]))
     P+=[ell((0,1.68,.2),(.03,.16,.022))]
     P+=sym(lambda d:horn([(d*.02,1.94,.14),(d*.16,1.98,.08),(d*.3,1.98,-.01)],[.022,.02,.02]))
-    P+=[ell((0,1.99,-.19),(.4,.12,.15)),ell((0,1.6,-.25),(.27,.38,.05),(8,0,0))]+sym(lambda d:ell((d*.34,1.97,-.06),(.13,.12,.13)))   # mantle and back drape
+    P+=[ell((0,1.98,-.2),(.3,.07,.1)),ell((0,1.6,-.24),(.22,.36,.035),(8,0,0))]+sym(lambda d:ell((d*.3,1.98,-.08),(.09,.05,.1),(0,0,d*-20)))   # mantle and back drape
     for d in (1,-1):
         P.append(mcap((d*.32,1.95,0),(d*.56,1.66,.14),.035));P.append(ell((d*.56,1.66,.14),(.045,.045,.045)))
         P.append(mcap((d*.555,1.66,.13),(d*.72,1.46,.38),.022));P.append(mcap((d*.575,1.64,.15),(d*.745,1.44,.36),.018))
@@ -481,7 +483,7 @@ def bonewraith():
 def bone_color(g,n):
     x,y,z=g;c=(.6,.54,.43)
     c=mix(c,(.32,.27,.2),sm(.2,-.7,n[1])*.6+sm(.55,.85,fbm(x*14,y*14,z*14))*.35)      # aged, stained bone
-    if (z<-.15 and y>1.15) or (y>1.84 and abs(x)>.18 and abs(x)<.5 and z<.12) :c=mix((.07,.065,.07),(.14,.13,.13),fbm(x*6,y*4,z*6))   # mantle cloth
+    if (z<-.17 and y>1.15) or (y>1.9 and abs(x)>.2 and abs(x)<.42 and z<-.0) :c=mix((.07,.065,.07),(.14,.13,.13),fbm(x*6,y*4,z*6))   # mantle cloth
     if y>2.15 and abs(x)<.1 and z>.2 and n[2]>.2 and abs(x)>.02 and y<2.31:c=mix(c,(.05,.04,.03),sm(2.2,2.25,y)*sm(.0,.04,abs(x)))   # sockets darken
     return gtone(c,g,.08,40)
 SPECS['bonewraith']={'name':'bonewraith','parts':bonewraith()[0],'bones':bonewraith()[1],'color':bone_color,'iface':dict(FLOAT_IF,mat='cloth'),'view':3.0,'voxel':.007,'tris':9000}
@@ -491,8 +493,8 @@ def ghost():
     P=[]
     P+=[ell((0,2.0,0),(.5,.5,.45)),ell((0,1.56,-.03),(.42,.4,.35)),ell((0,1.18,-.1),(.3,.32,.27))]
     P.append(cap([(0,1.0,-.16),(0,.72,-.3),(0,.52,-.5),(0,.46,-.74),(0,.56,-.92)],[.25,.19,.13,.07,.02],sub=2))
-    P+=[ell((0,2.14,.33),(.38,.09,.12),(-10,0,0))]+sym(lambda d:ell((d*.27,1.88,.3),(.14,.11,.12)))+[ell((0,1.42,.24),(.2,.1,.12))]   # brow, cheeks, sagging chin
-    P+=sym(lambda d:neg((d*.17,2.0,.44),(.1,.085,.09)))+[neg((0,1.64,.4),(.15,.17,.22))]                                                 # sunken eyes, wailing mouth
+    P+=[ell((0,2.14,.33),(.34,.07,.1),(-10,0,0))]+sym(lambda d:ell((d*.27,1.88,.3),(.14,.11,.12)))+[ell((0,1.42,.24),(.2,.1,.12))]   # brow, cheeks, sagging chin
+    P+=sym(lambda d:neg((d*.17,2.0,.43),(.11,.1,.12)))+[neg((0,1.64,.4),(.15,.17,.22))]                                                 # sunken eyes, wailing mouth
     P+=sym(lambda d:neg((d*.03,1.84,.47),(.015,.025,.03)))
     for d in (1,-1):
         P.append(cap([(d*.4,1.72,0),(d*.7,1.45,.16),(d*.82,1.2,.42)],[.14,.1,.075],sub=2))
@@ -506,6 +508,6 @@ def ghost():
 def ghost_color(g,n):
     x,y,z=g;c=(.62,1.0,.7)
     c=mix(c,(.25,.75,.42),sm(1.3,.5,y))                                                            # deeper green toward the tail
-    if z>.3 and ((abs(abs(x)-.17)<.1 and 1.9<y<2.09) or (abs(x)<.15 and 1.48<y<1.8)) and n[2]<.6:c=(.02,.12,.06)   # hollow eyes and throat
+    if z>.3 and ((abs(abs(x)-.17)<.11 and 1.89<y<2.11) or (abs(x)<.15 and 1.48<y<1.8)) and n[2]<.6:c=(.02,.12,.06)   # hollow eyes and throat
     return c
 SPECS['ghost']={'name':'ghost','parts':ghost()[0],'bones':ghost()[1],'color':ghost_color,'iface':dict(FLOAT_IF,mat='ghost',flutter=['tail0','tail1','tail2','tail3']),'view':2.8,'voxel':.012,'tris':6000}
