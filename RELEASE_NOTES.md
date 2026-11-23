@@ -1,3 +1,8 @@
+## 1.22.3 — Carried at rest, smoother on phones
+- The Barrow Knight now carries its swords lowered like a knight at rest, angled forward and down with the edge to the ground and the flat of the blade showing. Each grip runs crosswise through a closed plated gauntlet, with the fingers wrapped around it, the thumb locked over them, and the back of the hand turned outward. The full-length greatsword is back.
+- Phones: looking around by dragging is now smoother. On a slow frame, touch input arrives in bursts. The camera now eases through each burst over a few frames instead of jumping, so it no longer feels like it hangs and then lurches.
+- Phones and tablets: when a heavy view slows the frame rate, the render resolution steps down slightly, and it climbs back once things run smoothly again.
+
 ## 1.22.2 — A proper grip
 - The Barrow Knight holds its swords properly now. Each fist closes around the middle of the grip, with plated fingers stacked down the handle and the thumb locked over the top.
 - Both blades hang vertically in line with the forearm instead of jutting forward, edge forward with the guard running front to back, so they stay vertical through the swing. The greatsword is now a long blade so it clears the ground when held this way.

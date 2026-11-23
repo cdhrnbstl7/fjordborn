@@ -464,7 +464,7 @@ layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
 /* developer switches: all off in the public game; only the private developer edition has the menu that turns them on */
 const DEV={on:0,god:0,ghost:0,fly:0,clip:0,creative:0,speed:1,up:0,down:0};
-const GAME_VERSION='1.22.2';
+const GAME_VERSION='1.22.3';
 const EDITION='desktop';/* build_editions.py sets 'phone' or 'desktop' */
 /* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
 if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
@@ -2364,13 +2364,7 @@ function knightHarness(r,b){const M=armourMats(),H=r.H,buckets={},Y=new THREE.Ve
     lat(F,'steel',[d*.458,1.51,.088],[d*.481,1.29,.15],[[.08,0],[.086,.22],[.08,.6],[.068,.92],[.066,1]],[1,1,.86]);
     S(F,'bronze',new THREE.BoxGeometry(.012,.2,.012),d*.538,1.4,.115,[.28,0,d*-.08]);S(F,'bronze',ring(.084,.008),d*.458,1.505,.088,[PI/2+.28,0,0],[1,.86,1]);
     lat(F,'steel',[d*.482,1.3,.152],[d*.49,1.18,.19],[[.098,0],[.094,.15],[.075,.65],[.063,1]],[1,1,.9]);S(F,'bronze',ring(.098,.009),d*.482,1.3,.152,[PI/2+.3,0,0],[1,.9,1]);
-    /* the fist closed round an upright grip: back-of-hand lames on the outside, four fingers stacked down the grip wrapping in front, the thumb locked over the top */
-    const gx=d*.49,gy=1.12,gz=.22;
-    for(let k=0;k<3;k++)S(F,'steel',new THREE.BoxGeometry(.022,.05,.075),gx+d*(.05-k*.004),gy+.05-k*.042,gz-.012,[0,0,d*.06]);
-    S(F,'bronze',new THREE.BoxGeometry(.008,.13,.012),gx+d*.062,gy+.005,gz+.026);
-    for(let f=0;f<4;f++){const fy=gy+.045-f*.028;
-      S(F,'steel',new THREE.BoxGeometry(.028,.024,.026),gx+d*.033,fy,gz+.03,[0,d*.5,0]);S(F,'dark',new THREE.BoxGeometry(.03,.023,.024),gx+d*.004,fy,gz+.043);S(F,'dark',new THREE.BoxGeometry(.024,.022,.024),gx-d*.026,fy,gz+.028,[0,d*-.6,0])}
-    S(F,'steel',new THREE.BoxGeometry(.03,.026,.06),gx-d*.01,gy+.075,gz+.012,[0,0,d*.25]);S(F,'dark',new THREE.BoxGeometry(.04,.04,.07),gx+d*.012,gy+.02,gz-.02);S(F,'strap',new THREE.BoxGeometry(.06,.05,.05),gx+d*.02,gy+.1,gz-.01)}
+    S(F,'steel',new THREE.BoxGeometry(.1,.035,.075),d*.492,1.18,.19,[.3,0,0]);S(F,'strap',new THREE.BoxGeometry(.08,.05,.06),d*.49,1.16,.2,[.3,0,0])}
   /* legs: lamed cuisses, domed poleyns with heart-shaped wings, calf-swelling greaves with a ridge, sabatons of overlapping lames */
   for(const d of[1,-1]){const t=d>0?'L':'R',L='leg'+t,Sh='shin'+t,kn=[d*.165,.7,.08],an=[d*.15,.12,-.01];
     for(let k=0;k<2;k++){S(L,'steel',shell(.15,.162,.12,-PI*.42+d*.1,PI*.84,12),d*.15,1.3-k*.11,.025,[-.12,0,d*.06]);S(L,'bronze',ring(.162,.008,PI*.84),d*.15,1.24-k*.11,.025,[PI/2-.12,0,PI*.42+PI])}
@@ -2503,8 +2497,12 @@ const PROPS={
     const blade=(L,w,t,fl)=>{const g=new THREE.LatheGeometry([[0,0],[1,.015],[1,.72],[.82,.86],[0,1]].map(p=>new THREE.Vector2(p[0],p[1]*L)),4);g.rotateY(PI/4);g.scale(w*.71,1,t*.71);return g};
     const d0=v=>v;const sword=(par0,L,w,gw,grip)=>{const par=new THREE.Group();par.position.y=-grip*.5+.02;par0.add(par);cadd(par,cC(.022,.024,grip,8),M.strap,0,grip/2-.02,0);cadd(par,cS(.04,10,8),M.bronze,0,-.04,0);cadd(par,new THREE.BoxGeometry(gw,.04,.05),M.bronze,0,grip,0);for(const sd of[-1,1])cadd(par,cS(.03,8,6),M.bronze,sd*gw/2,grip,0);
       cadd(par,new THREE.BoxGeometry(w*.9,.08,.04),M.dark,0,grip+.06,0);cadd(par,blade(L,w,.035),M.steel,0,grip+.04,0);cadd(par,new THREE.BoxGeometry(.012,L*.6,.04),M.dark,0,grip+.04+L*.32,0)};
-    const FR=r.H.foreR,g=pivot(b.foreR,-.49-FR[0],1.12-FR[1],.22-FR[2]);g.rotation.set(2.86,0,d0(-.04));sword(g,.86,.115,.36,.34);
-    const FL=r.H.foreL,l=pivot(b.foreL,.49-FL[0],1.12-FL[1],.22-FL[2]);l.rotation.set(2.86,0,d0(.04));sword(l,.72,.07,.26,.22);
+    /* carried lowered like a knight at rest: the grip runs crosswise through a closed gauntlet, the blade angled forward and down, edge to the ground */
+    const fist=(par,d)=>{for(let f=0;f<4;f++){const y=.045-f*.03;const t=new THREE.Mesh(new THREE.TorusGeometry(.034,.013,5,10,PI*1.55),f===0?M.steel:M.dark);t.rotation.set(PI/2,0,d>0?PI*.95:-PI*.5);t.position.y=y;par.add(t)}
+      cadd(par,new THREE.BoxGeometry(.025,.13,.075),M.steel,d*.04,0,0);cadd(par,new THREE.BoxGeometry(.008,.12,.08),M.bronze,d*.054,0,0);
+      const th=new THREE.Mesh(new THREE.TorusGeometry(.03,.013,5,8,PI),M.steel);th.rotation.set(PI/2,0,d>0?-PI*.3:PI*.7);th.position.y=.075;par.add(th)};
+    const hold=(bone,H,p,dir,d,L,w,gw,grip)=>{const g=pivot(bone,p[0]-H[0],p[1]-H[1],p[2]-H[2]);g.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(...dir).normalize());fist(g,d);const sg=new THREE.Group();sg.rotation.y=PI/2;g.add(sg);sword(sg,L,w,gw,grip)};
+    hold(b.foreR,r.H.foreR,[-.49,1.12,.22],[.14,-.6,.8],-1,1.25,.12,.38,.36);hold(b.foreL,r.H.foreL,[.49,1.12,.22],[-.14,-.66,.74],1,.85,.075,.26,.24);
     addRags(r,'root',ragRing([],7,[0,1.36,.17],[.12,.03,.05],.7,1.0,.1,.16,-.5,.5,.05),'#121013');
     addRags(r,'spine',ragRing([],16,[0,2.04,-.14],[.34,.04,.12],1.4,1.95,.15,.24,PI*.42,PI*1.58,.12),'#0e0c0f')},
   /* ghoul: violet eyes deep in the sockets, lank black hair, a rag at the waist */
@@ -4032,7 +4030,7 @@ window.addEventListener('keyup',e=>{if(ka(e,'roll')&&keys[e.code]&&started&&!pau
 window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
 let drag=null;
 canvas.addEventListener('pointerdown',e=>{if(mouseLookDown(e))return;if(drag)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,t:performance.now(),mouse:e.pointerType==='mouse'};try{canvas.setPointerCapture(e.pointerId)}catch(_){}});
-canvas.addEventListener('pointermove',e=>{if(!drag){hoverLook(e);return}if(e.pointerId!==drag.id||paused)return;const dd=rotD(e.clientX-drag.x,e.clientY-drag.y);camYaw-=dd[0]*.006*CAMO.sens;camPitch=clamp(camPitch+dd[1]*.005*CAMO.sens*(CAMO.inv?-1:1),-.95,1.35);drag.x=e.clientX;drag.y=e.clientY});
+canvas.addEventListener('pointermove',e=>{if(!drag){hoverLook(e);return}if(e.pointerId!==drag.id||paused)return;const dd=rotD(e.clientX-drag.x,e.clientY-drag.y),qy=-dd[0]*.006*CAMO.sens,qp=dd[1]*.005*CAMO.sens*(CAMO.inv?-1:1);if(drag.mouse){camYaw+=qy;camPitch=clamp(camPitch+qp,-.95,1.35)}else{LOOKQ[0]+=qy;LOOKQ[1]+=qp}drag.x=e.clientX;drag.y=e.clientY});
 const endDrag=e=>{if(!drag||e.pointerId!==drag.id)return;if(drag.mouse&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<6&&performance.now()-drag.t<350)startAttack();drag=null};
 canvas.addEventListener('pointerup',endDrag);canvas.addEventListener('pointercancel',endDrag);
 canvas.addEventListener('wheel',e=>{camDist=clamp(camDist+Math.sign(e.deltaY)*1,4,18);e.preventDefault()},{passive:false});
@@ -4061,6 +4059,12 @@ document.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect()
 document.addEventListener('mouseout',e=>{if(e.relatedTarget)return;edgeX=lastMX>=0&&lastMX<.25?0:lastMX>.75?1:-1});
 document.addEventListener('mouseover',e=>{if(!e.relatedTarget)edgeX=-1});
 window.addEventListener('blur',()=>{edgeX=-1});
+/* touch look is eased in over a few frames, so input that arrives in bursts on a slow frame glides instead of jumping */
+const LOOKQ=[0,0];function lookEase(dt){if(!LOOKQ[0]&&!LOOKQ[1])return;const k=1-Math.exp(-dt*28),y=LOOKQ[0]*k,p=LOOKQ[1]*k;camYaw+=y;camPitch=clamp(camPitch+p,-.95,1.35);LOOKQ[0]-=y;LOOKQ[1]-=p;if(Math.abs(LOOKQ[0])<1e-4&&Math.abs(LOOKQ[1])<1e-4)LOOKQ[0]=LOOKQ[1]=0}
+/* on touch devices the render resolution follows the frame time: it steps down in heavy views and recovers when things are smooth */
+const ARES={on:isTouch(),f:1,acc:0,n:0,t:0,cool:0};function autoRes(raw,dt){if(!ARES.on||!started||paused)return;ARES.acc+=Math.min(raw,120);ARES.n++;ARES.t+=dt;ARES.cool-=dt;if(ARES.t<1)return;
+  const avg=ARES.acc/ARES.n;ARES.acc=ARES.n=ARES.t=0;if(ARES.cool>0)return;const top=Math.min(window.devicePixelRatio||1,GFX.res);let f=ARES.f;
+  if(avg>30&&top*f>.75)f=Math.max(.75/top,f-.12);else if(avg<19&&f<1)f=Math.min(1,f+.06);if(f!==ARES.f){const down=f<ARES.f;ARES.f=f;renderer.setPixelRatio(top*f);layout();ARES.cool=down?1.5:3}}
 function edgeTurn(dt){if(edgeX<0||!hoverOn||locked()||!mouseLookActive()||!started||paused||panelOpen||drag)return;
   const z=.07,sx=edgeX<z?(z-edgeX)/z:edgeX>1-z?-(edgeX-(1-z))/z:0;
   if(sx)camYaw+=sx*2.2*dt}
@@ -4159,7 +4163,7 @@ const GROWS=[['preset','Preset',[['Low',0],['Medium',1],['High',2],['Ultra',3]]]
 let gfxAutoPaused=false;
 const gfxPending=()=>GROWS.some(r=>r[3]&&GFX[r[0]]!==GRUN[r[0]]);
 function gfxSave(){try{localStorage.setItem('fjordborn-gfx2',JSON.stringify(GFX))}catch(e){}}
-function gfxLive(){renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,GFX.res));layout();cullT=0;BCX=1e9;fpsEl.hidden=!GFX.fps}
+function gfxLive(){ARES.f=1;renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,GFX.res));layout();cullT=0;BCX=1e9;fpsEl.hidden=!GFX.fps}
 function renderGfx(){const pr=gfxPreset();$('gfxRows').innerHTML=GROWS.map(([k,lab,opts,rl])=>'<div class="lrow"><span>'+lab+(rl?' <i>reload</i>':'')+'</span><div class="lopts">'+opts.map(([t,v])=>{const on=(k==='preset'?pr===v:GFX[k]===v)?' on':'';return '<button type="button" class="btn lt'+on+'" data-k="'+k+'" data-v="'+v+'">'+t+'</button>'}).join('')+'</div></div>').join('');
   const pend=gfxPending();$('gfxApply').hidden=!pend;$('gfxNote').textContent=pend?'Some changes need a quick reload. Your game is saved first.':pr<0?'Custom settings.':'Changes without a reload mark apply right away.'}
 function openGfx(){if(started&&!paused&&typeof setPause==='function'){setPause(true);gfxAutoPaused=true}if(panelOpen)closePanel();if(typeof unlockMouse==='function')unlockMouse();$('gfxP').hidden=false;$('title').hidden=true;$('pause').hidden=true;renderGfx()}
@@ -4371,7 +4375,7 @@ function update(dt){T+=dt;SPU.uT.value=T;SPU.uPx.value=renderer.domElement.heigh
   if(!started){if(!CUST)camYaw+=dt*.07;updCamera(dt);updSky();PM.g.position.set(P.x,P.y,P.z);PM.g.rotation.y=P.yaw;PM.shadow.position.set(P.x,P.y+.06,P.z);return}
   if(askTurn&&!paused)setPause(true);
   if(paused){updCamera(0);updSky();return}
-  edgeTurn(dt);
+  edgeTurn(dt);lookEase(dt);
   time+=dt/720;if(time>=1){time-=1;day++}
   updBoats(dt);if(P.boat)sailPlayer(dt);else updPlayer(dt);musicTick();ambTick(dt);
   for(const c of creatures.slice())updCreature(c,dt);
@@ -4607,7 +4611,7 @@ let PREV=null;window.FJ_PREVIEW=(list,camPos,look,sky)=>{const sc=new THREE.Scen
     const geo=GEO[it.g],mat=it.m==='leaf'?leafMat(it.t==='P'?TEX.leafP:it.t==='C'?TEX.leafC:TEX.leafB,false):it.m==='flower'?flowerMat:it.m==='trunk'?ITEMMAT:it.m==='rock'?ROCKMAT:MAT;
     const m=new THREE.InstancedMesh(geo,mat,1);D.position.set(it.x||0,it.y||0,it.z||0);D.quaternion.setFromAxisAngle(UP,it.r||0);D.scale.setScalar(it.s||1);D.updateMatrix();m.setMatrixAt(0,D.matrix);const tt=it.tint||[1,1,1];m.setColorAt(0,_c.setRGB(tt[0],tt[1],tt[2]));m.instanceColor.needsUpdate=true;m.frustumCulled=false;sc.add(m)}
   const cam=new THREE.PerspectiveCamera(40,innerWidth/innerHeight,.02,200);cam.position.set(...camPos);cam.lookAt(...look);PREV={sc,cam};$('title').style.visibility='hidden';return'preview '+list.length};
-function frame(t){requestAnimationFrame(frame);if(PREV){GU.value=t/1000;renderer.setRenderTarget(null);renderer.render(PREV.sc,PREV.cam);return}if(GFX.fps){fpsN++;if(t-fpsT>500){fpsEl.textContent=Math.round(fpsN*1000/(t-fpsT))+' fps';fpsN=0;fpsT=t}}const raw=t-last,dt=Math.min(.05,(t-last)/1000||0);last=t;
+function frame(t){requestAnimationFrame(frame);if(PREV){GU.value=t/1000;renderer.setRenderTarget(null);renderer.render(PREV.sc,PREV.cam);return}if(GFX.fps){fpsN++;if(t-fpsT>500){fpsEl.textContent=Math.round(fpsN*1000/(t-fpsT))+' fps';fpsN=0;fpsT=t}}const raw=t-last,dt=Math.min(.05,(t-last)/1000||0);last=t;autoRes(raw,dt);
   if(PERF){if(!PERF.t0)PERF.t0=t;else{PERF.f.push(raw);camYaw+=dt*1.6;P.x+=dt*5}}
   const t1=performance.now();try{update(dt)}catch(e){renderErr=renderErr||('update: '+e.message+'\n'+String(e.stack).slice(0,500))}
   if(!P.dg)try{applyView()}catch(e){}
@@ -4617,7 +4621,7 @@ function frame(t){requestAnimationFrame(frame);if(PREV){GU.value=t/1000;renderer
   if(dbgEl){if(renderErr)dbgEl.textContent='build 11\n'+renderErr;else dbgTick(dt)}}
 refreshLook();renderHotbar();
 
-window.__fjordborn={scene,renderer,updCreature,enemyTick,craftId:id=>craft(RECIPES.find(r=>r.id===id)),KNOWN,addItem:(i,n)=>addItem(i,n),recKnown:id=>recKnown(RECIPES.find(r=>r.id===id)),musicState:()=>JSON.stringify({next:MUS.next,mood:MUS.mood,ac:!!AC,bus:!!BUS.master}),setCamPitch:v=>{camPitch=v},openMap:()=>openMap(),doHit:()=>doHit(),creatures,groundH:(x,z)=>getH(x,z),addStruct:(...a)=>addStruct(...a),WR:()=>WRECK,wreckH:(x,z)=>wreckH(x,z),spawnCreature:(t,x,z)=>spawnCreature(t,x,z),DGS,enterDungeon:d=>enterDungeon(d),tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,setCamYaw:v=>{camYaw=v},GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
+window.__fjordborn={lookq:LOOKQ,cy:()=>camYaw,st:()=>[started,paused,askTurn,panelOpen].join(),scene,renderer,updCreature,enemyTick,craftId:id=>craft(RECIPES.find(r=>r.id===id)),KNOWN,addItem:(i,n)=>addItem(i,n),recKnown:id=>recKnown(RECIPES.find(r=>r.id===id)),musicState:()=>JSON.stringify({next:MUS.next,mood:MUS.mood,ac:!!AC,bus:!!BUS.master}),setCamPitch:v=>{camPitch=v},openMap:()=>openMap(),doHit:()=>doHit(),creatures,groundH:(x,z)=>getH(x,z),addStruct:(...a)=>addStruct(...a),WR:()=>WRECK,wreckH:(x,z)=>wreckH(x,z),spawnCreature:(t,x,z)=>spawnCreature(t,x,z),DGS,enterDungeon:d=>enterDungeon(d),tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,setCamYaw:v=>{camYaw=v},GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
 if(/peekfirst/.test(location.hash)){try{peek()}catch(e){console.error('peek '+e)}}
 {const pm=location.hash.match(/preview:(.*)$/);if(pm){try{const a=JSON.parse(decodeURIComponent(pm[1]));FJ_PREVIEW(...a)}catch(e){console.error('preview '+e)}}}
 requestAnimationFrame(frame);
