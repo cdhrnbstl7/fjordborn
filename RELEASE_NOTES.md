@@ -1,3 +1,7 @@
+## 1.22.2 — A proper grip
+- The Barrow Knight holds its swords properly now. Each fist closes around the middle of the grip, with plated fingers stacked down the handle and the thumb locked over the top.
+- Both blades hang vertically in line with the forearm instead of jutting forward, edge forward with the guard running front to back, so they stay vertical through the swing. The greatsword is now a long blade so it clears the ground when held this way.
+
 ## 1.22.1 — The knight's limbs
 - The Barrow Knight's arms and legs are rebuilt as heavy articulated plate to match its chest and shoulders. The arms have three overlapping upper-arm lames, a domed elbow cop with a round fan wing, a vambrace that swells over the forearm with a bronze ridge, and a belled gauntlet cuff over plated hands with jointed fingers.
 - The legs have a swelling, lamed thigh plate with a bronze ridge, a large pointed knee cop with a heart-shaped side wing and lames above and below, a greave that swells at the calf with a medial ridge and bronze rims, ankle rings, and boots of five overlapping trimmed lames ending in a pointed toe cap.

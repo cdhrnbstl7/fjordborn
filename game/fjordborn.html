@@ -464,7 +464,7 @@ layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
 /* developer switches: all off in the public game; only the private developer edition has the menu that turns them on */
 const DEV={on:0,god:0,ghost:0,fly:0,clip:0,creative:0,speed:1,up:0,down:0};
-const GAME_VERSION='1.22.1';
+const GAME_VERSION='1.22.2';
 const EDITION='desktop';/* build_editions.py sets 'phone' or 'desktop' */
 /* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
 if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
@@ -2364,10 +2364,13 @@ function knightHarness(r,b){const M=armourMats(),H=r.H,buckets={},Y=new THREE.Ve
     lat(F,'steel',[d*.458,1.51,.088],[d*.481,1.29,.15],[[.08,0],[.086,.22],[.08,.6],[.068,.92],[.066,1]],[1,1,.86]);
     S(F,'bronze',new THREE.BoxGeometry(.012,.2,.012),d*.538,1.4,.115,[.28,0,d*-.08]);S(F,'bronze',ring(.084,.008),d*.458,1.505,.088,[PI/2+.28,0,0],[1,.86,1]);
     lat(F,'steel',[d*.482,1.3,.152],[d*.49,1.18,.19],[[.098,0],[.094,.15],[.075,.65],[.063,1]],[1,1,.9]);S(F,'bronze',ring(.098,.009),d*.482,1.3,.152,[PI/2+.3,0,0],[1,.9,1]);
-    S(F,'steel',new THREE.BoxGeometry(.1,.035,.075),d*.492,1.165,.2,[.3,0,0]);S(F,'steel',new THREE.BoxGeometry(.104,.032,.072),d*.494,1.14,.21,[.3,0,0]);
-    S(F,'steel',new THREE.BoxGeometry(.108,.03,.06),d*.496,1.112,.222,[.5,0,0]);S(F,'bronze',new THREE.BoxGeometry(.11,.008,.012),d*.496,1.1,.245,[.5,0,0]);
-    for(let f=0;f<4;f++){const fx=d*(.462+f*.021);for(let s=0;s<3;s++){const a=.9+s*.75;S(F,s===0?'steel':'dark',new THREE.BoxGeometry(.019,.028,.026),fx,1.09-Math.sin(a-.6)*.03-s*.012,.25-s*.022+Math.cos(a)*.012,[a,0,0])}}
-    S(F,'steel',new THREE.BoxGeometry(.024,.05,.026),d*.45,1.14,.24,[.6,0,d*.5]);S(F,'strap',new THREE.BoxGeometry(.1,.07,.07),d*.49,1.12,.2,[.3,0,0])}
+    /* the fist closed round an upright grip: back-of-hand lames on the outside, four fingers stacked down the grip wrapping in front, the thumb locked over the top */
+    const gx=d*.49,gy=1.12,gz=.22;
+    for(let k=0;k<3;k++)S(F,'steel',new THREE.BoxGeometry(.022,.05,.075),gx+d*(.05-k*.004),gy+.05-k*.042,gz-.012,[0,0,d*.06]);
+    S(F,'bronze',new THREE.BoxGeometry(.008,.13,.012),gx+d*.062,gy+.005,gz+.026);
+    for(let f=0;f<4;f++){const fy=gy+.045-f*.028;
+      S(F,'steel',new THREE.BoxGeometry(.028,.024,.026),gx+d*.033,fy,gz+.03,[0,d*.5,0]);S(F,'dark',new THREE.BoxGeometry(.03,.023,.024),gx+d*.004,fy,gz+.043);S(F,'dark',new THREE.BoxGeometry(.024,.022,.024),gx-d*.026,fy,gz+.028,[0,d*-.6,0])}
+    S(F,'steel',new THREE.BoxGeometry(.03,.026,.06),gx-d*.01,gy+.075,gz+.012,[0,0,d*.25]);S(F,'dark',new THREE.BoxGeometry(.04,.04,.07),gx+d*.012,gy+.02,gz-.02);S(F,'strap',new THREE.BoxGeometry(.06,.05,.05),gx+d*.02,gy+.1,gz-.01)}
   /* legs: lamed cuisses, domed poleyns with heart-shaped wings, calf-swelling greaves with a ridge, sabatons of overlapping lames */
   for(const d of[1,-1]){const t=d>0?'L':'R',L='leg'+t,Sh='shin'+t,kn=[d*.165,.7,.08],an=[d*.15,.12,-.01];
     for(let k=0;k<2;k++){S(L,'steel',shell(.15,.162,.12,-PI*.42+d*.1,PI*.84,12),d*.15,1.3-k*.11,.025,[-.12,0,d*.06]);S(L,'bronze',ring(.162,.008,PI*.84),d*.15,1.24-k*.11,.025,[PI/2-.12,0,PI*.42+PI])}
@@ -2498,10 +2501,10 @@ const PROPS={
   /* barrow knight: a notched greatsword, a longsword in the off hand, a red light in the visor slit, a tattered skirt and a rotted mantle streaming behind */
   barrowknight(r,b){const n=nmats(),M=armourMats();knightHarness(r,b);{const sm=smokePoints(14,[0,.05,0],[.06,.05,.06],'#1a0a06',{sp:.35,rise:.5,wob:.12,size:.14,a:.35,grow:1});b.neck.add(sm)}
     const blade=(L,w,t,fl)=>{const g=new THREE.LatheGeometry([[0,0],[1,.015],[1,.72],[.82,.86],[0,1]].map(p=>new THREE.Vector2(p[0],p[1]*L)),4);g.rotateY(PI/4);g.scale(w*.71,1,t*.71);return g};
-    const sword=(par,L,w,gw,grip)=>{cadd(par,cC(.022,.024,grip,8),M.strap,0,grip/2-.02,0);cadd(par,cS(.04,10,8),M.bronze,0,-.04,0);cadd(par,new THREE.BoxGeometry(gw,.04,.05),M.bronze,0,grip,0);for(const sd of[-1,1])cadd(par,cS(.03,8,6),M.bronze,sd*gw/2,grip,0);
+    const d0=v=>v;const sword=(par0,L,w,gw,grip)=>{const par=new THREE.Group();par.position.y=-grip*.5+.02;par0.add(par);cadd(par,cC(.022,.024,grip,8),M.strap,0,grip/2-.02,0);cadd(par,cS(.04,10,8),M.bronze,0,-.04,0);cadd(par,new THREE.BoxGeometry(gw,.04,.05),M.bronze,0,grip,0);for(const sd of[-1,1])cadd(par,cS(.03,8,6),M.bronze,sd*gw/2,grip,0);
       cadd(par,new THREE.BoxGeometry(w*.9,.08,.04),M.dark,0,grip+.06,0);cadd(par,blade(L,w,.035),M.steel,0,grip+.04,0);cadd(par,new THREE.BoxGeometry(.012,L*.6,.04),M.dark,0,grip+.04+L*.32,0)};
-    const FR=r.H.foreR,g=pivot(b.foreR,-.49-FR[0],1.12-FR[1],.22-FR[2]);g.rotation.x=2.0;sword(g,1.45,.13,.42,.4);
-    const FL=r.H.foreL,l=pivot(b.foreL,.49-FL[0],1.12-FL[1],.22-FL[2]);l.rotation.x=2.3;sword(l,.95,.07,.26,.22);
+    const FR=r.H.foreR,g=pivot(b.foreR,-.49-FR[0],1.12-FR[1],.22-FR[2]);g.rotation.set(2.86,0,d0(-.04));sword(g,.86,.115,.36,.34);
+    const FL=r.H.foreL,l=pivot(b.foreL,.49-FL[0],1.12-FL[1],.22-FL[2]);l.rotation.set(2.86,0,d0(.04));sword(l,.72,.07,.26,.22);
     addRags(r,'root',ragRing([],7,[0,1.36,.17],[.12,.03,.05],.7,1.0,.1,.16,-.5,.5,.05),'#121013');
     addRags(r,'spine',ragRing([],16,[0,2.04,-.14],[.34,.04,.12],1.4,1.95,.15,.24,PI*.42,PI*1.58,.12),'#0e0c0f')},
   /* ghoul: violet eyes deep in the sockets, lank black hair, a rag at the waist */
