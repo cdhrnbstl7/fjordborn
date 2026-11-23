@@ -1,3 +1,11 @@
+## 1.20.0 — Centuries in the dark
+- Dust has settled over every floor, ledge and stone that faces up. White mineral streaks and lichen creep down the walls, and the stone is pitted and eroded.
+- Parts of chamber vaults have caved in, leaving a ragged hole with daylight falling through onto a mound of fallen blocks and earth.
+- Earth and roots have burst through walls in places. Blocks have been pushed out of the walls, with others fallen at their feet.
+- Some hall pillars have snapped, their drums lying across the floor, and the arches they held are gone.
+- Coffin lids have been shoved aside, with bones spilled beside them. Iron chains, cages and sconces are rusted.
+- Small mineral stalactites hang from the old ceilings and vault ribs.
+
 ## 1.19.0 — Tomb interiors: light, stone and atmosphere
 - Real torchlight: every torch, brazier, candle and lantern lights the stone around it, and walls and pillars cast shadows, so light pools on the floors and corridors fall into darkness between torches. Wet stone catches highlights from the flames, and soot blackens the stone above each torch.
 - Arches over corridors, doorways and hall arcades are now built from individual wedge stones with a keystone. The bricks of the vaulted corridors follow the curve of the vault.
