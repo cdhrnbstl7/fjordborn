@@ -1,3 +1,8 @@
+## 1.22.4 — Forged steel
+- The Barrow Knight's swords are reforged as real longswords. The blade tapers to a true point, with a central fuller groove, beveled edges polished brighter than the flats, fine scratches and a little rust near the guard.
+- The crossguard has curved quillons that sweep toward the blade and end in round knobs, set on a diamond centre block with a ricasso collar. The grip is wrapped in spiral leather between bronze ferrules, and a wheel pommel with raised bosses caps the hilt.
+- Each sword sits in a fuller closed gauntlet: a plated fist with wrapped fingers, a knuckle plate and a thumb.
+
 ## 1.22.3 — Carried at rest, smoother on phones
 - The Barrow Knight now carries its swords lowered like a knight at rest, angled forward and down with the edge to the ground and the flat of the blade showing. Each grip runs crosswise through a closed plated gauntlet, with the fingers wrapped around it, the thumb locked over them, and the back of the hand turned outward. The full-length greatsword is back.
 - Phones: looking around by dragging is now smoother. On a slow frame, touch input arrives in bursts. The camera now eases through each burst over a few frames instead of jumping, so it no longer feels like it hangs and then lurches.
