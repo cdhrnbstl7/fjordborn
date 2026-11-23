@@ -1,3 +1,13 @@
+## 1.19.0 — Tomb interiors: light, stone and atmosphere
+- Real torchlight: every torch, brazier, candle and lantern lights the stone around it, and walls and pillars cast shadows, so light pools on the floors and corridors fall into darkness between torches. Wet stone catches highlights from the flames, and soot blackens the stone above each torch.
+- Arches over corridors, doorways and hall arcades are now built from individual wedge stones with a keystone. The bricks of the vaulted corridors follow the curve of the vault.
+- Finer stonework: thinner, crumbling mortar; grainy stone faces; cracked and chipped blocks; broken and sunken flagstones; dirt gathered along the walls.
+- Roots hang from cracks in the vaults. Smoke curls up from every torch. Water drips in the drowned cave and in Grim-Eye.
+- Heaps of bones with hollow-eyed skulls, iron gibbet cages hanging from the vaults, debris along the walls, and stone rib beams across chamber ceilings.
+- Shafts of daylight are now soft, dusty beams.
+- Cave columns are true stalactite-and-stalagmite pillars, and the glowing pool lights its cavern.
+- Every corridor and chamber has torches at regular intervals.
+
 ## 1.18.3 — Rooted standing stones
 - The four standing stones before each tomb now stand rooted in the ground instead of hovering on a flat-cut base.
 
