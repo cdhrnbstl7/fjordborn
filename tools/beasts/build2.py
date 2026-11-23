@@ -66,6 +66,33 @@ def build(sp):
     tgt=sp.get('tris',7000);nt0=sum(len(p.vertices)-2 for p in me.polygons)
     if nt0>tgt:dm=ob.modifiers.new('D','DECIMATE');dm.ratio=tgt/nt0;bpy.ops.object.modifier_apply(modifier='D')
     for p in ob.data.polygons:p.use_smooth=True
+    AOV=None
+    if sp.get('ao'):
+        from mathutils.bvhtree import BVHTree
+        me0=ob.data;bvh=BVHTree.FromObject(ob,bpy.context.evaluated_depsgraph_get());ga=math.pi*(3-math.sqrt(5));DIRS=[]
+        for k in range(64):
+            yy=1-2*(k+.5)/64;rr=math.sqrt(1-yy*yy);DIRS.append(mathutils.Vector((math.cos(ga*k)*rr,math.sin(ga*k)*rr,yy)))
+        md=sp.get('aodist',.22);AOV=[]
+        for v in me0.vertices:
+            nrm=v.normal;o=v.co+nrm*.003;occ=0;tot=0
+            for d in DIRS:
+                w=d.dot(nrm)
+                if w<=.05:continue
+                tot+=w;h=bvh.ray_cast(o,d,md)
+                if h[0] is not None:occ+=w*(1-(h[3]/md)**.5*.6)
+            AOV.append(1-occ/max(tot,1e-6))
+        NB=[[] for _ in me0.vertices]
+        for e in me0.edges:a,b=e.vertices;NB[a].append(b);NB[b].append(a)
+        CAV=[]
+        for i,v in enumerate(me0.vertices):
+            if not NB[i]:CAV.append(0);continue
+            acc=0
+            for j in NB[i]:dv=me0.vertices[j].co-v.co;l=dv.length;acc+=(dv.dot(v.normal)/l) if l>0 else 0
+            CAV.append(acc/len(NB[i]))
+        for _ in range(2):
+            AOV=[(AOV[i]*2+sum(AOV[j] for j in NB[i]))/(2+len(NB[i])) for i in range(len(AOV))]
+            CAV=[(CAV[i]+sum(CAV[j] for j in NB[i]))/(1+len(NB[i])) for i in range(len(CAV))]
+        st=sp.get('ao',1.0);AOV=[max(.12,min(1.08,(1-(1-a)*1.25*st)*(1-max(0,c)*1.6*st)+max(0,-c)*.5*st)) for a,c in zip(AOV,CAV)]
     # rig
     arm=bpy.data.armatures.new('Rig');rig=link(bpy.data.objects.new('Rig',arm));bpy.context.view_layer.objects.active=rig;bpy.ops.object.mode_set(mode='EDIT');eb={}
     for b in sp['bones']:
@@ -78,7 +105,9 @@ def build(sp):
     P=[];NR=[];C=[];SI=[];SW=[];nofit=0
     for v in me.vertices:
         g=bk(v.co);nn=bk(v.normal);P+=g;NR+=nn
-        c=sp['color'](g,nn);C+=[max(0,min(255,int(x*255))) for x in c]
+        c=sp['color'](g,nn)
+        if AOV:c=[x*AOV[v.index] for x in c]
+        C+=[max(0,min(255,int(x*255))) for x in c]
         ws=sorted([(gr.weight,bn.index(gi[gr.group])) for gr in v.groups if gi.get(gr.group) in bn and gr.weight>.01],reverse=True)[:4]
         if not ws:
             nofit+=1;ds=[]

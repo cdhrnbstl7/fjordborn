@@ -569,7 +569,7 @@ def draugr_color(g,n):
     if ax>.22 and 1.26<y<1.42 and z>-.01 and z<.06:c=mix((.32,.24,.15),(.22,.16,.1),fbm(x*15,y*15,z*15))   # sinew
     if (1.45<y<1.56 and ax>.15 and ax<.34) and fbm(x*40,y*40,z*40)>.7:c=iron                            # studs
     return c
-_p,_b=draugr();SPECS['draugr']={'name':'draugr','parts':_p,'bones':_b,'color':draugr_color,'iface':BIPED_IF,'view':2.2,'voxel':.0065,'tris':16000}
+_p,_b=draugr();SPECS['draugr']={'name':'draugr','parts':_p,'bones':_b,'color':draugr_color,'iface':dict(BIPED_IF,mat='bone'),'view':2.2,'voxel':.0065,'tris':16000,'ao':1.1,'aodist':.18}
 
 # ---- Barrow Knight: a towering armoured dead lord — great-helm with a dark slit, layered pauldrons, ridged breastplate, faulds, plated legs ----
 def barrowknight():
@@ -606,33 +606,52 @@ _p,_b=barrowknight();SPECS['barrowknight']={'name':'barrowknight','parts':_p,'bo
 # ---- Ghoul: a hunched corpse-eater — grey-blue starved body, sunken face with a gaping mouth, long arms and claws, bone necklace ----
 def ghoul():
     P=[]
-    P+=[ell((0,.95,-.04),(.14,.085,.1)),ell((0,1.08,0),(.12,.11,.09)),ell((0,1.3,.07),(.17,.19,.125),(-28,0,0)),ell((0,1.4,.1),(.2,.08,.12),(-28,0,0))]
-    for k in range(4):
-        y=1.36-k*.06;P+=sym(lambda d:horn([(d*.04,y+.02,.15),(d*.11,y,.12),(d*.145,y-.03,.05)],[.011,.011,.009]))   # ribs straining under the skin
-    P+=[mcap((0,1.44,.15),(0,1.5,.29),.045)]
-    P+=[ell((0,1.56,.33),(.095,.1,.12)),ell((0,1.575,.42),(.075,.022,.03)),ell((0,1.515,.44),(.068,.035,.055)),ell((0,1.545,.465),(.012,.02,.015))]   # skull, brow, upper jaw, nose
-    P+=sym(lambda d:ell((d*.058,1.528,.425),(.026,.018,.03)))+sym(lambda d:horn([(d*.085,1.57,.32),(d*.12,1.59,.29),(d*.14,1.61,.27)],[.018,.012,.004]))   # cheekbones, small torn ears
-    P+=[ell((0,1.43,.41),(.062,.026,.06),(28,0,0))]                                                       # the jaw, wide open
-    for k in range(6):P.append(spike((-.042+k*.017,1.493,.47),(-.042+k*.017,1.47,.475),.007))
-    for k in range(5):P.append(spike((-.034+k*.017,1.445,.455),(-.034+k*.017,1.468,.46),.006))
-    for k in range(9):a=k/8*math.pi*1.2-math.pi*.1;P.append(ell((math.cos(a)*.11,1.43-math.sin(a)*.0,.2+math.sin(a)*.09),(.014,.03,.014)))   # bone necklace
+    # starved, hunched trunk: a deep ribcage over a hollow belly, sharp hips, a ridge of vertebrae down the bent back
+    P+=[ell((0,.96,-.045),(.135,.075,.095)),ell((0,1.07,-.01),(.095,.09,.07)),ell((0,1.3,.05),(.138,.165,.105),(-30,0,0)),ell((0,1.4,.09),(.155,.06,.095),(-30,0,0))]
+    P+=[neg((0,1.12,.085),(.075,.05,.035))]                                                                   # the belly sucked in under the ribs
+    for k in range(5):
+        y=1.39-k*.05;w=.145-k*.004;P+=sym(lambda d:horn([(d*.03,y+.01,.165-k*.012),(d*w*.7,y,.15-k*.012),(d*w,y-.03,.07-k*.006),(d*w*.9,y-.06,-.01),(d*w*.5,y-.07,-.05)],[.011,.012,.012,.011,.009]))
+    P+=[ell((0,1.3,.165),(.022,.1,.012),(-30,0,0))]                                                       # sternum
+    for k in range(9):a2=k/8;P.append(ell((0,1.0+a2*.47,-.06+a2*a2*.16-(.03 if a2>.3 else 0)),(.022,.017,.022)))   # vertebrae
+    P+=sym(lambda d:ell((d*.1,1.36,-.0),(.065,.085,.016),(25,d*25,0)))                                     # shoulder blades
+    P+=sym(lambda d:horn([(d*.025,1.47,.2),(d*.11,1.48,.17),(d*.19,1.45,.1)],[.013,.012,.012]))            # collarbones
+    P+=[mcap((0,1.43,.16),(0,1.5,.3),.037),ell((0,1.47,.25),(.03,.05,.02),(30,0,0))]                     # stringy neck, throat
+    # long gaunt skull: high cranium, heavy brow, sunken sockets, cheekbones like blades, the jaw hanging wide
+    P+=[ell((0,1.575,.33),(.088,.095,.115),(-10,0,0)),ell((0,1.578,.425),(.072,.02,.028)),ell((0,1.518,.445),(.062,.032,.05)),ell((0,1.547,.468),(.01,.018,.013))]
+    P+=sym(lambda d:neg((d*.036,1.553,.452),(.022,.016,.02)))
+    P+=sym(lambda d:ell((d*.062,1.528,.425),(.022,.014,.034)))+sym(lambda d:ell((d*.075,1.5,.39),(.012,.03,.03)))
+    P+=sym(lambda d:horn([(d*.08,1.58,.31),(d*.115,1.6,.28),(d*.13,1.635,.26)],[.016,.01,.003]))         # small torn ears
+    P+=[ell((0,1.42,.41),(.056,.022,.062),(34,0,0)),ell((0,1.47,.39),(.05,.04,.05)),mcap((0,1.47,.37),(0,1.43,.41),.03)]+sym(lambda d:mcap((d*.052,1.5,.4),(d*.05,1.43,.39),.009))   # jaw and the cords of the cheeks
+    for k in range(7):P.append(spike((-.042+k*.014,1.494,.47-abs(k-3)*.004),(-.042+k*.014,1.465,.474-abs(k-3)*.004),.006))
+    for k in range(6):P.append(spike((-.035+k*.014,1.437,.452-abs(k-2.5)*.004),(-.035+k*.014,1.466,.458),.005))
     for d in (1,-1):
-        P+=[mcap((d*.2,1.42,.1),(d*.3,1.08,.18),.04),ell((d*.3,1.08,.18),(.042,.04,.04)),mcap((d*.3,1.07,.19),(d*.34,.74,.29),.032),ell((d*.345,.7,.31),(.05,.035,.06))]
-        P+=claws(d,(.345,.69,.33),n=4,L=.1,r=.012,spread=.028,down=.55)
-        P+=[mcap((d*.11,.93,-.05),(d*.14,.52,.1),.05),ell((d*.14,.52,.1),(.042,.042,.042)),mcap((d*.14,.5,.09),(d*.13,.11,-.03),.035),ell((d*.13,.05,.04),(.05,.035,.12))]
-        P+=[horn([(d*(.11+t*.02),.04,.12),(d*(.11+t*.022),.02,.2),(d*(.11+t*.024),.0,.23)],[.012,.01,.004]) for t in range(3)]
-    P+=[ell((0,.84,.09),(.065,.13,.01),(8,0,0)),ell((0,.85,-.12),(.075,.12,.01),(-8,0,0)),ell((0,.95,0),(.15,.03,.11))]                 # loincloth on a cord
+        # long thin arms with knotted elbows and big hooked hands
+        P+=[mcap((d*.19,1.42,.1),(d*.29,1.09,.18),.034),ell((d*.205,1.33,.12),(.045,.07,.045)),ell((d*.295,1.08,.17),(.036,.034,.034)),ell((d*.29,1.08,.15),(.022,.022,.03))]
+        P+=[mcap((d*.295,1.07,.19),(d*.335,.75,.29),.027),mcap((d*.31,1.0,.21),(d*.33,.8,.27),.022),ell((d*.34,.71,.31),(.048,.03,.06))]
+        P+=claws(d,(.345,.69,.33),n=4,L=.13,r=.011,spread=.03,down=.6)
+        P+=[horn([(d*.32,.71,.3),(d*.29,.68,.34),(d*.285,.65,.37)],[.011,.009,.003])]                    # thumb
+        # bony legs: thin thighs, swollen knees, sinewy shins, long-toed feet
+        P+=[mcap((d*.11,.94,-.04),(d*.14,.53,.1),.042),ell((d*.14,.52,.11),(.04,.045,.04)),mcap((d*.14,.5,.09),(d*.13,.11,-.03),.03),mcap((d*.135,.45,.06),(d*.128,.2,-.0),.028)]
+        P+=[ell((d*.13,.05,.03),(.045,.03,.1))]+[horn([(d*(.1+t*.02),.04,.1),(d*(.1+t*.022),.02,.19),(d*(.1+t*.024),.0,.24)],[.011,.009,.003]) for t in range(4)]
+    P+=[ell((0,.9,-.03),(.1,.06,.085))]   # loincloth on a cord
     J={'hip':(0,.95,-.05),'waist':(0,1.15,0),'chest':(0,1.42,.12),'neckt':(0,1.5,.27),'face':(0,1.52,.45),'sh':(.2,1.42,.1),'el':(.3,1.08,.18),'wr':(.34,.72,.3),'hp':(.11,.93,-.05),'kn':(.14,.52,.1),'an':(.13,.08,-.03)}
     return P,biped_bones(J)
 def ghoul_color(g,n):
     x,y,z=g;ax=abs(x)
-    c=mix((.27,.31,.34),(.17,.2,.23),sm(.45,.8,fbm(x*9,y*9,z*9)))
-    c=mix(c,(.36,.3,.38),sm(.6,.85,fbm(x*5+2,y*5,z*5))*.45)                                               # bruised mottling
-    if y<.85 and ax>.25:c=mix(c,(.36,.2,.42),.55)                                                          # purple-stained hands
-    if ax>.3 and y<.78:c=mix(c,(.08,.06,.08),sm(.72,.68,y))                                                # dark claws
-    if 1.44<y<1.5 and ax<.06 and z>.43:c=(.25,.05,.06)                                                     # the throat
-    if 1.535<y<1.585 and .016<ax<.06 and z>.4:c=(.03,.02,.04)                                              # sunken sockets
-    if .74<y<1.0 and ax<.12 and abs(z)>.08:c=mix((.28,.21,.15),(.18,.13,.09),fbm(x*10,y*10,z*10))          # loincloth
-    if 1.4<y<1.46 and .03<ax<.13 and .16<z<.3:c=(.72,.66,.52)                                              # necklace bones
+    c=mix((.27,.28,.28),(.15,.16,.17),sm(.4,.8,fbm(x*11,y*11,z*11)))                                      # cold grey-blue dead skin
+    c=mix(c,(.21,.25,.16),sm(.5,.85,fbm(x*4+2,y*4,z*4+1))*.6)                                             # green rot spreading in patches
+    c=mix(c,(.3,.34,.36),sm(.3,.9,n[1])*.2)                                                                 # dust settled on the tops
+    bru=0
+    for jx,jy,jz,rr in ((.295,1.08,.17,.07),(.14,.52,.11,.07),(.34,.7,.31,.09),(.205,1.36,.12,.07),(.13,.06,.05,.08)):
+        bru=max(bru,1-min(1,math.sqrt((ax-jx)**2+(y-jy)**2+(z-jz)**2)/rr))
+    c=mix(c,(.27,.15,.28),sm(0,1,bru)*.5)                                                                    # purple bruising pooled at the joints
+    if ax>.29 and y<.72 and z>.33:c=mix(c,(.06,.05,.05),sm(.7,.62,y))                                     # black, cracked claws
+    if y<.03 and z>.18:c=mix(c,(.06,.05,.05),.8)
+    if 1.44<y<1.5 and ax<.055 and z>.41:c=(.32,.06,.28)                                                   # the mouth, livid purple inside
+    if 1.535<y<1.575 and .014<ax<.06 and z>.425:c=(.03,.02,.04)                                           # sunken sockets
+    if 1.5<y<1.6 and .02<ax<.08 and z>.38:c=mix(c,(.25,.12,.26),.4)                                       # bruised around the eyes
+    rib=1.1<y<1.4 and z>.03 and ax>.05
+    if rib:c=mix(c,(.3,.32,.32),sm(.0,.8,n[1]+n[2]*.3)*.25)
+    if .84<y<.98 and ax<.12:c=mix((.22,.16,.11),(.12,.09,.06),fbm(x*14,y*14,z*14))                        # a filthy wrap
     return c
-_p,_b=ghoul();SPECS['ghoul']={'name':'ghoul','parts':_p,'bones':_b,'color':ghoul_color,'iface':BIPED_IF,'view':2.0,'voxel':.0065,'tris':12000}
+_p,_b=ghoul();SPECS['ghoul']={'name':'ghoul','parts':_p,'bones':_b,'color':ghoul_color,'iface':dict(BIPED_IF,mat='skin'),'view':2.0,'voxel':.0055,'tris':14000,'ao':1.0,'aodist':.2}

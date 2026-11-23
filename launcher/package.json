@@ -1,7 +1,7 @@
 {
   "name": "fjordborn",
   "productName": "Fjordborn",
-  "version": "1.21.0",
+  "version": "1.22.0",
   "description": "Fjordborn - a Viking survival saga",
   "author": "Fjordborn",
   "main": "app/main.js",
