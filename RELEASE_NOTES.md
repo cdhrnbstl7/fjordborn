@@ -1,3 +1,8 @@
+## 1.23.2 — The Cinder Hound
+- The Cinder Hound, a night hunter of the Sunmeads, is completely resculpted. It is a huge gaunt hound with a deep chest, a narrow waist and long legs, a heavy broad skull, horns sweeping back along its head, and a jagged ruff at the neck.
+- Its charred black hide is split by molten cracks that glow and slowly pulse, burning brightest across the chest, at the knees and hocks, and beneath the scorched, jagged fur along its spine.
+- Embers and dark smoke rise off its back, its maw smoulders, and its eyes burn orange. At night you mostly see it by its own fire.
+
 ## 1.23.1 — The Redmane Ravager
 - The Redmane Ravager, a night hunter of the Sunmeads, is completely resculpted. It is a hulking, hunched ape-wolf that walks on its knuckles, with a towering hump of shoulder over a narrow waist and long, heavily muscled forelimbs ending in iron-grey hooked claws.
 - A heavy mane of rust-red fur clumps, darkening to black at the tips, sweeps back off its neck and shoulders. Its deep oxblood hide fades to dusky pale fur down the forearms and hocks, with shaggy tufts at the elbows.

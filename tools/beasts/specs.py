@@ -729,3 +729,53 @@ def ravager_color(g,n):
     if z<-1.55:c=mix((.09,.02,.02),(.6,.15,.08),sm(-1.6,-1.9,z))                                       # tail tuft
     return c
 _p,_b=ravager();SPECS['ravager']={'name':'ravager','parts':_p,'bones':_b,'color':ravager_color,'shape':fur_shape(.02,lambda g,n:g[1]>1.3 or abs(g[0])>.3),'view':3.0,'voxel':.011,'tris':16000,'ao':.6,'aodist':.25}
+
+# ---------------- CINDER HOUND: a huge gaunt hound of charred hide split by molten cracks, embers smouldering along its back ----------------
+CINDER_RED=lambda c,k:(min(1,c[0]+k*.2),c[1]*(1-k*.3),c[2]*(1-k*.4))   # ember zones are painted slightly red: the game's cinder material lights the cracks there
+def hound():
+    import math
+    P=[]
+    P+=[ell((0,.84,.28),(.17,.26,.27),(-8,0,0)),ell((0,.97,.3),(.18,.15,.22),(-14,0,0)),ell((0,.8,-.06),(.11,.14,.24),(6,0,0)),ell((0,.83,-.36),(.14,.16,.18))]
+    P+=sym(lambda d:ell((d*.12,.86,.3),(.08,.17,.13),(0,0,d*8)))+sym(lambda d:ell((d*.12,.79,-.38),(.075,.17,.12),(14,0,0)))
+    # neck, a long skull, a burning maw
+    P+=[mcap((0,.96,.42),(0,1.02,.6),.115),ell((0,1.06,.66),(.14,.12,.14),(-6,0,0)),mcap((0,1.03,.75),(0,1.0,.9),.068),ell((0,1.0,.92),(.036,.028,.026))]
+    P+=sym(lambda d:ell((d*.06,1.115,.72),(.035,.018,.045),(0,0,d*-14)))+sym(lambda d:ell((d*.075,1.02,.66),(.045,.05,.06)))
+    P+=[ell((0,.94,.79),(.05,.024,.1),(-16,0,0)),ell((0,.96,.7),(.065,.03,.06))]
+    for k in range(4):
+        x=-.03+k*.02;P.append(spike((x,.99,.89-abs(k-1.5)*.012),(x,.955,.9-abs(k-1.5)*.012),.006));P.append(spike((x*.9,.955,.86-abs(k-1.5)*.012),(x*.9,.99,.87),.005))
+    P+=sym(lambda d:spike((d*.036,1.0,.87),(d*.038,.93,.885),.009))+sym(lambda d:spike((d*.032,.95,.84),(d*.035,1.01,.855),.008))
+    P+=sym(lambda d:horn([(d*.06,1.12,.68),(d*.11,1.17,.6),(d*.15,1.18,.49),(d*.16,1.13,.39),(d*.14,1.06,.34)],[.03,.026,.019,.012,.003]))     # horns sweeping back and curling down
+    P+=sym(lambda d:horn([(d*.08,1.12,.6),(d*.12,1.2,.55),(d*.14,1.26,.5)],[.022,.013,.003]))                                                 # ears laid back
+    for k in range(10):
+        a=math.radians(-100+k*22);sx=math.sin(a);cy=math.cos(a)
+        b=(sx*.11,1.0+cy*.1,.5);P.append(horn([b,(b[0]+sx*.08,b[1]+cy*.03-.05,b[2]-.1),(b[0]+sx*.1,b[1]+cy*.02-.12,b[2]-.18)],[.04,.022,.004]))   # jagged ruff
+    # scorched, jagged fur along the neck and spine
+    for k in range(12):
+        t=k/11;b=(0,1.06-t*.14+.06*math.sin(t*3.1),.5-t*.86);L_=(.18-.1*t)*(1.15 if k%2 else .9)
+        for sd in (-1,0,1):
+            if sd and k>8:continue
+            P.append(horn([(b[0]+sd*.06,b[1]-.02,b[2]),(b[0]+sd*.09,b[1]+L_*.55,b[2]-L_*.4),(b[0]+sd*.1,b[1]+L_*.8,b[2]-L_*.9)],[.04 if not sd else .03,.022,.004]))
+    for d in (1,-1):
+        P+=[mcap((d*.11,.84,.3),(d*.12,.47,.33),.068),ell((d*.12,.68,.31),(.075,.14,.085)),mcap((d*.12,.47,.33),(d*.11,.08,.36),.05),ell((d*.11,.04,.4),(.055,.035,.07))]
+        P+=[horn([(d*(.09+k*.014),.04,.44),(d*(.09+k*.016),.025,.48),(d*(.09+k*.018),.0,.5)],[.011,.008,.002]) for k in range(4)]
+        P+=[mcap((d*.12,.86,-.38),(d*.13,.5,-.24),.07),ell((d*.13,.66,-.32),(.07,.14,.1)),mcap((d*.13,.5,-.24),(d*.12,.27,-.44),.045),mcap((d*.12,.27,-.44),(d*.11,.05,-.37),.038),ell((d*.11,.035,-.33),(.05,.03,.07))]
+        P+=[horn([(d*(.09+k*.014),.035,-.29),(d*(.09+k*.016),.02,-.25),(d*(.09+k*.018),.0,-.23)],[.01,.007,.002]) for k in range(4)]
+    P+=[cap([(0,.88,-.5),(0,.8,-.66),(0,.66,-.78),(0,.5,-.86)],[.05,.065,.06,.03])]
+    J={'root':(0,.83,-.36),'back':(0,.82,-.05),'chest':(0,.86,.26),'neck':(0,.97,.44),'head':(0,1.06,.66),'nose':(0,.995,.95),'tail':(0,.88,-.5),'tailtip':(0,.5,-.86),
+       'earL':(.08,1.12,.6),'eartipL':(.14,1.26,.5),'earR':(-.08,1.12,.6),'eartipR':(-.14,1.26,.5)}
+    for d,t in ((1,'L'),(-1,'R')):J.update({'fl'+t:(d*.11,.84,.3),'fe'+t:(d*.12,.47,.33),'fh'+t:(d*.11,.04,.38),'hl'+t:(d*.12,.86,-.38),'hs'+t:(d*.12,.27,-.44),'hp'+t:(d*.11,.035,-.33)})
+    return P,quad_bones(J)
+def hound_color(g,n):
+    x,y,z=g;ax=abs(x)
+    c=mix((.1,.09,.085),(.035,.03,.03),sm(.3,.8,fbm(x*8,y*8,z*8)))                     # charred hide
+    c=mix(c,(.26,.24,.22),sm(.35,.95,n[1])*sm(.5,.8,fbm(x*14+3,y*14,z*14))*.6)          # ash settled on the tops
+    emb=0
+    emb=max(emb,sm(.05,-.5,n[1])*sm(.95,.75,y)*sm(-.2,.1,z))                             # chest and belly glow
+    emb=max(emb,sm(.12,.0,abs(y-.47))*(1 if z>.2 or z<-.15 else 0)*sm(.0,.1,ax))         # knees and hocks
+    emb=max(emb,sm(.98,1.1,y)*sm(.45,.3,abs(z+.05))*.9)                                 # along the spine under the scorched fur
+    if z>.8 and .955<y<.99 and ax<.05:emb=1;c=(.12,.03,.01)                             # the burning mouth
+    if 1.05<y<1.1 and .03<ax<.07 and z>.74:c=(.02,.01,.01)
+    if (z>.42 and y<.03) or (z<-.2 and y<.02 and ax>.08):c=(.02,.02,.02)                # black claws
+    if ax>.05 and y>1.12 and z<.66:c=mix((.14,.12,.1),(.05,.045,.04),sm(1.13,1.27,y))   # horns
+    return CINDER_RED(c,emb)
+_p,_b=hound();SPECS['hound']={'name':'hound','parts':_p,'bones':_b,'color':hound_color,'iface':{'mat':'cinder'},'shape':fur_shape(.012),'view':2.0,'voxel':.007,'tris':14000,'ao':.6,'aodist':.18}
