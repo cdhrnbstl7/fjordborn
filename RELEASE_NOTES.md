@@ -1,3 +1,10 @@
+## 1.23.3 — The Hollow Strawman
+- The Hollow Strawman, the scarecrow that walks the Sunmeads at night, is completely resculpted.
+- Its body is a lanky, hunched frame of bound sticks under a crossbar of shoulders. It wears a grubby oversized shirt with torn sleeves, a rope belt, and baggy patched trousers ripped off at the knee.
+- Its forearms and shins are bundles of twigs ending in long, splayed, gnarled twig claws and root-like clawed feet.
+- Its head is a lumpy burlap sack cinched with rope, its floppy tip falling over the back. It has mismatched eye holes with ember light burning behind them and a wide crooked grin stitched half shut.
+- Straw bursts out at the collar, belt, sleeves, knees and sack tip, and its torn hems sway as it stalks.
+
 ## 1.23.2 — The Cinder Hound
 - The Cinder Hound, a night hunter of the Sunmeads, is completely resculpted. It is a huge gaunt hound with a deep chest, a narrow waist and long legs, a heavy broad skull, horns sweeping back along its head, and a jagged ruff at the neck.
 - Its charred black hide is split by molten cracks that glow and slowly pulse, burning brightest across the chest, at the knees and hocks, and beneath the scorched, jagged fur along its spine.

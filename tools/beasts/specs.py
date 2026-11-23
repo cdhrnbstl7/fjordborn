@@ -779,3 +779,56 @@ def hound_color(g,n):
     if ax>.05 and y>1.12 and z<.66:c=mix((.14,.12,.1),(.05,.045,.04),sm(1.13,1.27,y))   # horns
     return CINDER_RED(c,emb)
 _p,_b=hound();SPECS['hound']={'name':'hound','parts':_p,'bones':_b,'color':hound_color,'iface':{'mat':'cinder'},'shape':fur_shape(.012),'view':2.0,'voxel':.007,'tris':14000,'ao':.6,'aodist':.18}
+
+# ---------------- HOLLOW STRAWMAN: a scarecrow that walks the Sunmeads at night: sack head, rags, a frame of bound twigs ----------------
+def strawman():
+    import math
+    P=[]
+    P+=[mcap((0,.95,-.03),(0,1.5,.12),.035)]                                                            # the stick spine
+    # the oversized shirt hanging off a stick frame, the shoulders of it slumped
+    P+=[ell((0,1.32,.06),(.155,.2,.105),(-15,0,0)),ell((0,1.12,.03),(.185,.1,.125)),ell((0,1.43,.075),(.27,.045,.095),(-12,0,0)),mcap((-.33,1.46,.075),(.33,1.46,.075),.028)]
+    P+=[neg((0,1.22,.17),(.12,.06,.03))]                                                                # the shirt sags in over an empty belly
+    for d in (1,-1):
+        P+=[mcap((d*.26,1.44,.075),(d*.35,1.1,.15),.068),ell((d*.355,1.08,.155),(.095,.06,.095),(0,0,d*20))]  # loose sleeves, flared cuffs
+        # forearms: a bundle of bound twigs; hands: long gnarled twig claws
+        for o in ((.012,0,0),(-.01,.0,.01),(0,.0,-.012)):
+            P.append(mcap((d*.34+o[0],1.13,.14+o[2]),(d*.4+o[0]*.6,.86,.22+o[2]*.6),.017))
+        P+=[ell((d*.4,.85,.22),(.035,.03,.035))]
+        for k in range(4):
+            sx=d*(.37+k*.018);sp=(k-1.5)*.03;P.append(horn([(sx,.84,.23),(sx+d*.02+d*sp,.76,.27+k*.01),(sx+d*.02+d*sp*1.6,.66,.29+k*.012),(sx+d*sp*2,.58,.27+k*.012),(sx-d*.01+d*sp*2,.54,.23+k*.01)],[.012,.01,.008,.005,.002]))
+        P.append(horn([(d*.38,.85,.21),(d*.35,.8,.26),(d*.33,.75,.27)],[.01,.007,.002]))
+        # baggy trousers torn off at the knee, twig shins, root-like clawed feet
+        P+=[mcap((d*.11,.94,-.03),(d*.15,.52,.05),.08),ell((d*.15,.5,.05),(.09,.05,.09))]
+        for o in ((.012,0,0),(-.01,0,.01),(0,0,-.012)):
+            P.append(mcap((d*.15+o[0],.5,.05+o[2]),(d*.14+o[0]*.6,.08,-.01+o[2]*.6),.019))
+        P+=[ell((d*.14,.07,0),(.04,.03,.04))]
+        for k in range(3):a=(k-1)*.35;P.append(horn([(d*.14,.06,.02),(d*.14+math.sin(a)*.06,.03,.09),(d*.14+math.sin(a)*.1,.0,.15)],[.014,.01,.002]))
+        P.append(horn([(d*.14,.06,-.02),(d*.14,.03,-.08),(d*.14,.0,-.11)],[.012,.008,.002]))
+    P+=[ell((0,.93,-.02),(.18,.12,.13))]                                                                 # the seat of the trousers
+    for k in range(12):a=k/12*6.283;P.append(ell((math.sin(a)*.19,1.0,math.cos(a)*.14+.02),(.03,.02,.03)))   # rope belt
+    for k in range(8):a=k/8*6.283;P.append(ell((math.sin(a)*.07,1.55,math.cos(a)*.065+.17),(.022,.015,.022)))  # rope at the neck
+    # the sack head: lumpy, the tip flopping over the back
+    P+=[mcap((0,1.5,.13),(0,1.57,.22),.042),ell((0,1.66,.28),(.105,.12,.1),(-8,0,0)),ell((0,1.6,.31),(.1,.055,.085)),ell((.05,1.71,.26),(.065,.06,.06)),ell((-.04,1.62,.33),(.05,.04,.04))]
+    P+=[horn([(0,1.75,.24),(.03,1.84,.17),(.07,1.85,.07),(.1,1.77,.01),(.1,1.7,-.01)],[.07,.055,.035,.018,.008])]
+    J={'hip':(0,.95,-.03),'waist':(0,1.15,0),'chest':(0,1.42,.08),'neckt':(0,1.55,.16),'face':(0,1.64,.36),'sh':(.22,1.46,.07),'el':(.34,1.15,.14),'wr':(.4,.86,.22),'hp':(.11,.93,-.03),'kn':(.15,.5,.05),'an':(.14,.08,-.01)}
+    return P,biped_bones(J)
+def strawman_color(g,n):
+    x,y,z=g;ax=abs(x)
+    wood=mix((.24,.17,.1),(.12,.085,.055),sm(.3,.8,fbm(x*30,y*6,z*30)))
+    c=mix((.36,.33,.26),(.22,.2,.16),sm(.3,.8,fbm(x*9,y*9,z*9)))                                        # grubby burlap shirt
+    if .4<x<.6 and 1.2<y<1.34 and z>.1:c=(.3,.18,.12)                                                   # a red-brown patch
+    if y<1.0:c=mix((.28,.27,.25),(.16,.15,.14),sm(.3,.8,fbm(x*10,y*10,z*10)))                           # trousers
+    if -.12<x<-.02 and .7<y<.82 and z>0:c=(.34,.3,.2)                                                    # a patch on the knee
+    if .975<y<1.025 and ax>.1:c=(.48,.4,.26)                                                             # rope belt
+    if (ax>.33 and y<1.11) or y<.47:c=wood                                                               # twig forearms, hands, shins and feet
+    if 1.53<y<1.57:c=(.48,.4,.26)                                                                        # rope at the neck
+    if y>1.56:
+        c=mix((.56,.5,.38),(.38,.33,.24),sm(.3,.8,fbm(x*14,y*14,z*14)))                                  # sack
+        if abs(x)<.006 and z<.3:c=(.3,.25,.18)                                                           # seam
+        if (x>0 and 1.665<y<1.725 and .015<x<.075 and z>.32) or (x<0 and 1.672<y<1.708 and .022<-x<.062 and z>.32):c=(.03,.02,.02)   # mismatched eye holes
+        gy=1.598+.03*(x/.085)**2
+        if abs(y-gy)<.011 and ax<.085 and z>.3:
+            c=(.04,.02,.02)                                                                              # a wide crooked grin
+            if abs(((x+.09)/.016)%1-.5)<.14:c=(.66,.6,.46)                                               # stitched across
+    return c
+_p,_b=strawman();SPECS['strawman']={'name':'strawman','parts':_p,'bones':_b,'color':strawman_color,'iface':BIPED_IF,'shape':fur_shape(.006),'view':2.1,'voxel':.0065,'tris':12000,'ao':.9,'aodist':.18}
