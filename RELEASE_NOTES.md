@@ -1,3 +1,11 @@
+## 1.23.0 — Holy steel
+- Barrow Knights are empty armour driven by a corrupted soul, and wraiths are what is left of the drowned. Ordinary weapons pass harmlessly through both: blows ring off the knight's plates or slide through the wraith, and you are told what it will take. Only holy weapons can end them.
+- New material: Hallowed Silver. Smelt 3 Silver, 1 Sun Amber and 1 Charcoal at the Smelter. Silver comes from the tombs and the trader; Sun Amber comes from Sunmeads boars.
+- New weapon: the Hallowed Blade, the first holy weapon. Forge it from 4 Hallowed Silver, 2 Ember Ingots and 1 Hide. Its silver-white blade carries a line of sun runes that glow gold, set under a gold cross-guard with pointed ends, a sun disc set with amber, an ivory grip bound in gold wire, and an amber-set wheel pommel. It deals 40 damage and can kill Barrow Knights. Heavy blow, Radiance: a burst of light ahead of you that staggers the dead and hits them harder.
+- New material: Dawnsteel, the hard one. Smelt 2 Rime Iron, 2 Hallowed Silver, 3 Ghostlight, 1 Sea Garnet and 2 Charcoal. That takes iron from the Hoarfells, light from the Colossus's ghosts and a rare garnet from its strongrooms.
+- New weapon: the Dawnbrand. Forge it from 4 Dawnsteel, 2 Hallowed Silver, 2 Frostglass and 1 Hide. It has a pale gold blade with burning runes and softly glowing edges, a rising-sun guard with fanned rays and crescent wings, a blue leather grip in gold wire, and a sea garnet held in a gold claw for its pommel. It deals 60 damage and is the only blade that can unmake a wraith; it also cuts down Barrow Knights. Heavy blow, Daybreak: a ring of sunlight all around you that stuns and burns the dead.
+- Both blades have their own icons and appear forged in your hand.
+
 ## 1.22.4 — Forged steel
 - The Barrow Knight's swords are reforged as real longswords. The blade tapers to a true point, with a central fuller groove, beveled edges polished brighter than the flats, fine scratches and a little rust near the guard.
 - The crossguard has curved quillons that sweep toward the blade and end in round knobs, set on a diamond centre block with a ricasso collar. The grip is wrapped in spiral leather between bronze ferrules, and a wheel pommel with raised bosses caps the hilt.

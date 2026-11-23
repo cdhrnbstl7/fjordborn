@@ -464,7 +464,7 @@ layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
 /* developer switches: all off in the public game; only the private developer edition has the menu that turns them on */
 const DEV={on:0,god:0,ghost:0,fly:0,clip:0,creative:0,speed:1,up:0,down:0};
-const GAME_VERSION='1.22.4';
+const GAME_VERSION='1.23.0';
 const EDITION='desktop';/* build_editions.py sets 'phone' or 'desktop' */
 /* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
 if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
@@ -1395,6 +1395,8 @@ const ITEMS={
   coal:{n:'Charcoal',d:'Light, black and hot-burning. Smelters need it to melt ore.'},
   gold:{n:'Drowned Gold',d:'Heavy coins and broken chain from the Colossus\'s strongrooms. Hallvard pays well for it.'},
   gem:{n:'Sea Garnet',d:'A deep red stone, cut long ago for a captain\'s ring. Rare and precious.'},
+  hsilver:{n:'Hallowed Silver',d:'Silver smelted with Sun Amber until it holds the light. The heart of every holy blade.'},
+  dawnsteel:{n:'Dawnsteel',d:'Rime iron and hallowed silver, quenched in Ghostlight around a Sea Garnet. Pale gold, and faintly warm.'},
   silver:{n:'Silver',d:'Hack-silver and old coins. Hallvard the trader in Hvalvik deals in it.'},
   berries:{n:'Cloudberries',d:'Eat: +12 health, +15 stamina for a while.',food:{hp:12,st:15,t:240}},
   shroom:{n:'Amber Cap',d:'Eat: +18 health, +10 stamina for a while.',food:{hp:18,st:10,t:300}},
@@ -1407,6 +1409,8 @@ const ITEMS={
   pick:{n:'Tusk Pick',d:'Breaks boulders and ember ore.',tool:{dmg:8,chop:0,mine:13,cd:.7,stam:10}},
   club:{n:'Oak Club',d:'Simple, heavy, convincing.',tool:{dmg:15,chop:0,mine:0,cd:.6,stam:9}},
   sword:{n:'Ember Sword',d:'Forged bright. Made for wights and worse.',tool:{dmg:36,chop:0,mine:0,cd:.48,stam:10}},
+  hsword:{n:'Hallowed Blade',d:"A silver-white blade inlaid with sun runes that glow when it is drawn. Holy: the only steel that can end a Barrow Knight. Heavy blow: Radiance, a burst of light that staggers the dead.",tool:{dmg:40,chop:0,mine:0,cd:.47,stam:10},holy:1},
+  dsword:{n:'Dawnbrand',d:"Dawnsteel, pale gold and never quite dark. Its runes burn like first light. Holy: the only blade that can unmake a wraith, and death to every Barrow Knight. Heavy blow: Daybreak, a ring of sunlight all around you.",tool:{dmg:60,chop:0,mine:0,cd:.45,stam:10},holy:2},
   rsword:{n:'Rime Sword',d:"Cold-forged from Hrimgrim's iron. The finest blade on the isle.",tool:{dmg:54,chop:0,mine:0,cd:.46,stam:10}},
   imace:{n:'Iron Mace',d:'Wreck iron on an oak haft. Heavy blow: Ground Slam, stunning and hurling back everything around you.',tool:{dmg:40,chop:0,mine:0,cd:.62,stam:11}},
   ispear:{n:'Iron Spear',d:'Long reach. Heavy blow: Lunge, driving forward through every foe in your path.',tool:{dmg:34,chop:0,mine:0,cd:.5,stam:9}},
@@ -1434,18 +1438,18 @@ const SK={},SKL={};const skNeed=l=>6+l*1.6+l*l*.05;
 function skCalc(k){let x=SK[k]||0,l=1;while(l<100&&x>=skNeed(l)){x-=skNeed(l);l++}SKL[k]={l,p:l>=100?1:x/skNeed(l)};return SKL[k]}
 const skLvl=k=>(SKL[k]||skCalc(k)).l,skF=k=>(skLvl(k)-1)/99;
 function gainSk(k,x){const b=skLvl(k);SK[k]=(SK[k]||0)+x;const a=skCalc(k).l;if(a>b){toast(SKILLS[k][0]+' rose to level '+a+'!');sfx('craft');if(panelOpen&&tab==='gear')renderPanel()}}
-const WCLS={sword:'swords',rsword:'swords',axe:'axes',emaxe:'axes',club:'clubs',pick:'clubs',torch:'clubs',hoe:'clubs'},wk=()=>WCLS[P.equip]||'unarmed';
+const WCLS={sword:'swords',rsword:'swords',hsword:'swords',dsword:'swords',axe:'axes',emaxe:'axes',club:'clubs',pick:'clubs',torch:'clubs',hoe:'clubs'},wk=()=>WCLS[P.equip]||'unarmed';
 const pct=v=>Math.round(v*100)+'%';
 const SKFX={run:f=>'Run drain −'+pct(.5*f)+', speed +'+pct(.15*f),jump:f=>'Height +'+pct(.2*f)+', cost −'+pct(.4*f),swim:f=>'Speed +'+pct(.5*f)+', drain −'+pct(.5*f),
   wood:f=>'Chopping +'+pct(f),mine:f=>'Mining +'+pct(f),swords:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),axes:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),
   clubs:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),unarmed:f=>'Damage +'+pct(.6*f)+', stamina −'+pct(.35*f),block:f=>'Block cost −'+pct(.5*f)+', parry window +'+Math.round(f*100)+' ms',
   sail:f=>'Sailing speed +'+pct(.25*f),cook:f=>'Extra roast '+pct(.5*f)+' of the time'};
-const TOOLBAR=['axe','hammer','baxe','emaxe','iaxe','pick','bpick','hoe','club','imace','ispear','sword','rsword','torch'];
+const TOOLBAR=['axe','hammer','baxe','emaxe','iaxe','pick','bpick','hoe','club','imace','ispear','sword','rsword','hsword','dsword','torch'];
 const RECIPES=[
   {id:'axe',cost:{wood:4,stone:3}},{id:'hammer',cost:{wood:3,stone:2}},{id:'hoe',cost:{wood:4,stone:4}},{id:'club',cost:{wood:6}},{id:'torch',cost:{wood:1,resin:1}},
   {id:'cooked',cost:{meat:1},st:'fire'},
   {id:'pick',cost:{wood:8,flint:4,tusk:1},st:'bench'},{id:'tunic',cost:{hide:5},st:'bench'},{id:'shirt',cost:{hide:1},st:'bench'},{id:'trousers',cost:{hide:2},st:'bench'},{id:'boots',cost:{hide:2},st:'bench'},{id:'vest',cost:{hide:2},st:'bench'},{id:'belt',cost:{hide:1},st:'bench'},{id:'gloves',cost:{hide:1},st:'bench'},{id:'coat',cost:{hide:6,resin:1},st:'bench'},{id:'waystone',cost:{shard:3,corewood:3,sunamber:2},st:'bench'},
-  {id:'faering',cost:{wood:16,resin:2,hide:1},st:'dock'},{id:'karve',cost:{wood:30,corewood:6,hide:4,resin:4},st:'dock'},{id:'drakkar',cost:{wood:60,corewood:14,hide:8,resin:8,ingot:4},st:'dock'},{id:'coal',cost:{wood:3},st:'kiln',n:2},{id:'ingot',cost:{ore:1,coal:1},st:'smelter'},{id:'bronze',cost:{copperore:2,tinore:1,coal:1},st:'smelter'},{id:'rimeiron',cost:{rimeore:3,coal:2},st:'smelter'},{id:'bpick',cost:{bronze:4,wood:3,hide:1},st:'forge'},{id:'baxe',cost:{bronze:3,wood:4},st:'forge'},{id:'emaxe',cost:{wood:4,ingot:3},st:'forge'},{id:'sword',cost:{wood:2,ingot:5,hide:1},st:'forge'},{id:'helm',cost:{ingot:4,hide:1},st:'forge'},{id:'imace',cost:{iron:6,wood:2},st:'forge'},{id:'ispear',cost:{iron:4,wood:4},st:'forge'},{id:'iaxe',cost:{iron:8,wood:3,hide:1},st:'forge'},{id:'rsword',cost:{wood:2,rimeiron:5,ingot:2},st:'forge'}
+  {id:'faering',cost:{wood:16,resin:2,hide:1},st:'dock'},{id:'karve',cost:{wood:30,corewood:6,hide:4,resin:4},st:'dock'},{id:'drakkar',cost:{wood:60,corewood:14,hide:8,resin:8,ingot:4},st:'dock'},{id:'coal',cost:{wood:3},st:'kiln',n:2},{id:'ingot',cost:{ore:1,coal:1},st:'smelter'},{id:'bronze',cost:{copperore:2,tinore:1,coal:1},st:'smelter'},{id:'rimeiron',cost:{rimeore:3,coal:2},st:'smelter'},{id:'hsilver',cost:{silver:3,sunamber:1,coal:1},st:'smelter'},{id:'dawnsteel',cost:{rimeiron:2,hsilver:2,ecto:3,gem:1,coal:2},st:'smelter'},{id:'bpick',cost:{bronze:4,wood:3,hide:1},st:'forge'},{id:'baxe',cost:{bronze:3,wood:4},st:'forge'},{id:'emaxe',cost:{wood:4,ingot:3},st:'forge'},{id:'sword',cost:{wood:2,ingot:5,hide:1},st:'forge'},{id:'helm',cost:{ingot:4,hide:1},st:'forge'},{id:'imace',cost:{iron:6,wood:2},st:'forge'},{id:'ispear',cost:{iron:4,wood:4},st:'forge'},{id:'iaxe',cost:{iron:8,wood:3,hide:1},st:'forge'},{id:'rsword',cost:{wood:2,rimeiron:5,ingot:2},st:'forge'},{id:'hsword',cost:{hsilver:4,ingot:2,hide:1},st:'forge'},{id:'dsword',cost:{dawnsteel:4,hsilver:2,frostglass:2,hide:1},st:'forge'}
 ];
 const STN={fire:['Campfire',5],bench:['Workbench',10],forge:['Forge',10],dock:['Shipwright Dock',14],kiln:['Charcoal Kiln',6],smelter:['Smelter',6]};
 /* ships: scale of the hull, top speed, how hard she turns */
@@ -1515,6 +1519,10 @@ const DRAW={
   silver:x=>{ci(x,24,40,13,'#c9ccd2');ci(x,24,40,8,'#e6e8ec',0);ci(x,42,34,13,'#b8bcc4');ci(x,42,34,8,'#dfe2e7',0);ci(x,32,22,13,'#d4d7dc');ci(x,32,22,8,'#f0f1f4',0)},
   fang:x=>{pg(x,[18,10,30,8,40,22,44,40,38,56,32,40,24,24],'#eef3f6');ln(x,[24,14,34,26,36,44],'#b9c8d2',2.5);pg(x,[14,6,34,4,32,12,18,14],'#7c8892')},
   frostheart:x=>{pg(x,[32,56,10,34,12,18,24,10,32,20,40,10,52,18,54,34],'#6fc4ec');pg(x,[24,16,32,26,40,16,36,36,28,36],'#d4f2ff',0);ln(x,[22,40,32,48,42,40],'#2c6e96',2.5)},
+  hsilver:x=>{pg(x,[14,26,42,18,54,28,26,38],'#eef0f2');pg(x,[26,38,54,28,54,42,26,52],'#b8bcc4');pg(x,[14,26,26,38,26,52,14,40],'#8e939c');ci(x,34,27,6,'#f0a43a',2)},
+  dawnsteel:x=>{pg(x,[14,26,42,18,54,28,26,38],'#f6e6b0');pg(x,[26,38,54,28,54,42,26,52],'#d8b860');pg(x,[14,26,26,38,26,52,14,40],'#a88a3a');pg(x,[34,20,39,27,34,34,29,27],'#c01a2a',2)},
+  hsword:x=>{pg(x,[54,4,58,10,30,40,24,34],'#e8eaee');ln(x,[54,6,28,36],'#ffd27a',2);ln(x,[16,32,36,52],OUT,9);ln(x,[16,32,36,52],'#d4a84a',5);ln(x,[22,44,10,56],OUT,9);ln(x,[22,44,10,56],'#e8dcc4',4);ci(x,9,57,4,'#f0a43a',2)},
+  dsword:x=>{ci(x,26,40,12,'#ffe6a0',0);pg(x,[56,2,60,8,30,40,24,34],'#f6e6b0');ln(x,[56,4,28,36],'#fff4d0',2);ln(x,[14,30,38,54],OUT,9);ln(x,[14,30,38,54],'#e0b24c',5);ln(x,[22,44,10,56],OUT,9);ln(x,[22,44,10,56],'#22304a',4);pg(x,[9,52,13,57,9,62,5,57],'#c01a2a',2)},
   rimeiron:x=>{pg(x,[14,26,42,18,54,28,26,38],'#d6eef8');pg(x,[26,38,54,28,54,42,26,52],'#8ab8d0');pg(x,[14,26,26,38,26,52,14,40],'#5e8aa6')},
   rsword:x=>{pg(x,[54,4,58,12,30,42,22,34],'#bfe6f6');ln(x,[52,10,28,36],'#f2fbff',2);haft(x,[14,30,34,50],'#5e7484');ln(x,[20,44,10,54],OUT,9);ln(x,[20,44,10,54],'#2c3a44',4);ci(x,9,55,4,'#7fd4ff',2)},
   door:x=>{pg(x,[12,6,52,6,52,58,12,58],'#5f4528');pg(x,[17,11,47,11,47,58,17,58],'#8a6a42');ln(x,[27,11,27,58],OUT,2);ln(x,[37,11,37,58],OUT,2);ln(x,[17,22,47,22],'#3a2a1c',4);ln(x,[17,46,47,46],'#3a2a1c',4);ci(x,42,34,3,'#a8abb0',2)},
@@ -1713,6 +1721,8 @@ const ITEMGEO={
     lumpy(cap,.04,8,2);return imerge([ip(cap,12),ip(stem,13)])},
   ore:()=>imerge([ip(lumpy(new THREE.IcosahedronGeometry(.22,2),.3,5,11,new THREE.Vector3(1.1,.8,1)),24,0,0,0,0,0,0,1,1,1,true)]).translate(0,.15,0),
   ingot:()=>{const g=new THREE.CylinderGeometry(.13,.17,.09,4,1);g.rotateY(PI/4);g.scale(1.6,1,.75);return imerge([ip(g,16,0,.05,0,0,.3,0)])},
+  hsilver:()=>{const g=new THREE.CylinderGeometry(.13,.17,.09,4,1);g.rotateY(PI/4);g.scale(1.6,1,.75);return imerge([ip(g,18,0,.05,0,0,.3,0),ip(lumpy(sph(.035,10,8),.2,9,2,new THREE.Vector3(1,.5,1)),6,0,.1,0,0,0,0,1,1,1),ip(new THREE.TorusGeometry(.045,.008,6,18),6,0,.098,0,PI/2,0,0)])},
+  dawnsteel:()=>{const g=new THREE.CylinderGeometry(.13,.17,.09,4,1);g.rotateY(PI/4);g.scale(1.6,1,.75);const g2=new THREE.CylinderGeometry(.1,.13,.05,4,1);g2.rotateY(PI/4);g2.scale(1.6,1,.75);return imerge([ip(g,6,0,.05,0,0,.3,0),ip(g2,18,0,.12,0,0,.3,0),ip(new THREE.OctahedronGeometry(.035,0),10,0,.16,0,0,.3,0,1,1.2,1,true)])},
   rimeiron:()=>{const g=new THREE.CylinderGeometry(.13,.17,.09,4,1);g.rotateY(PI/4);g.scale(1.6,1,.75);return imerge([ip(g,17,0,.05,0,0,.3,0),ip(lumpy(new THREE.IcosahedronGeometry(.04,0),.3,9,2),22,.1,.11,.02,0,0,0,1,1,1,true),ip(lumpy(new THREE.IcosahedronGeometry(.03,0),.3,9,4),22,-.14,.1,-.03,0,0,0,1,1,1,true)])},
   core:()=>{const L=[ip(lumpy(sph(.17,20,14),.12,6,3),21)];for(let k=0;k<4;k++){const c=new THREE.TorusGeometry(.18,.025,6,20,PI*1.3);L.push(ip(lumpy(c,.15,12,k),2,0,0,0,k*.8,k*1.3,0))}return imerge(L).translate(0,.2,0)},
   heart:()=>imerge([ip(lumpy(sph(.2,20,14),.12,4,5),23,-.1,.1,0),ip(lumpy(sph(.2,20,14),.12,4,9),23,.1,.1,0),ip(lumpy(new THREE.ConeGeometry(.27,.36,16,4),.1,4,2),23,0,-.14,0,PI),ip(cyl(.05,.07,.14,10),23,.06,.32,0,0,0,-.3)]).translate(0,.32,0),
@@ -1759,6 +1769,10 @@ function renderIcons(){try{const S=192,rt=new THREE.WebGLRenderTarget(S,S);rt.te
     let cov=0;for(let y=0;y<S;y++){const sr=(S-1-y)*S*4,dr=y*S*4;for(let x=0;x<S*4;x++)im.data[dr+x]=buf[sr+x];}for(let i=3;i<buf.length;i+=4)if(buf[i]>0)cov++;
     if(cov<200)continue;bx.putImageData(im,0,0);const c=document.createElement('canvas');c.width=c.height=96;const cx=c.getContext('2d');cx.imageSmoothingQuality='high';
     cx.shadowColor='rgba(0,0,0,.55)';cx.shadowBlur=6;cx.shadowOffsetY=3;cx.drawImage(big,2,2,92,92);ICON[id]=c.toDataURL();made++}
+  mesh.visible=false;for(const id in HOLYW){try{const o=HOLYW[id].make();o.updateMatrixWorld(true);const bb=new THREE.Box3().setFromObject(o),bs=bb.getBoundingSphere(new THREE.Sphere());o.position.copy(bs.center).negate();piv.add(o);piv.rotation.set(.2,.5,-.78);
+    cam.position.set(0,0,bs.radius/Math.sin(13*PI/180)*1.02);cam.lookAt(0,0,0);renderer.setRenderTarget(rt);renderer.clear();renderer.render(sc,cam);renderer.readRenderTargetPixels(rt,0,0,S,S,buf);piv.remove(o);
+    for(let y=0;y<S;y++){const sr=(S-1-y)*S*4,dr=y*S*4;for(let x=0;x<S*4;x++)im.data[dr+x]=buf[sr+x]}bx.putImageData(im,0,0);const c=document.createElement('canvas');c.width=c.height=96;const cx=c.getContext('2d');cx.imageSmoothingQuality='high';
+    cx.shadowColor='rgba(0,0,0,.55)';cx.shadowBlur=6;cx.shadowOffsetY=3;cx.drawImage(big,2,2,92,92);ICON[id]=c.toDataURL();made++}catch(e){}}mesh.visible=true;
   renderer.setRenderTarget(null);renderer.toneMapping=tm;renderer.setClearColor(cc,ca);ITEM_U.uGlow.value=gl0;ITEMMAT.metalness=mt;rt.dispose();return made}catch(e){try{renderer.setRenderTarget(null)}catch(_){}return -1}}
 const ICONS_MADE=renderIcons();
 for(const m of TRUNKM){m.material=ITEMMAT}
@@ -1782,6 +1796,8 @@ const DROPG={
   fang:()=>merge([part(Co(.07,.42,5),'#eef3f6',0,.1,0,0,0,1.4)]),
   frostheart:()=>merge([part(Ico(.36),'#6fc4ec',0,.45,0),part(Ico(.18),'#d4f2ff',0,.5,0,.5,.5)]),
   rimeiron:()=>merge([part(B(.42,.12,.2),'#bfe0f0',0,.08,0,0,.3)]),
+  hsilver:()=>merge([part(B(.42,.12,.2),'#e8eaee',0,.08,0,0,.3),part(B(.06,.04,.06),'#f0a43a',0,.16,0)]),
+  dawnsteel:()=>merge([part(B(.42,.12,.2),'#f0dca0',0,.08,0,0,.3),part(B(.06,.06,.06),'#c01a2a',0,.17,0)]),
   heart:()=>merge([part(Ico(.38),'#b8303a',0,.5,0),part(Ico(.2),'#ff9050',0,.5,0,.5,.5)])
 };
 const drops=[];
@@ -1933,11 +1949,11 @@ const CREAT={
   wight:{name:'Mosswight',hp:46,spd:3.9,dmg:13,aggro:17,reach:1.9,cd:1.6,wind:.5,r:.6,barY:2.6,drops:[['resin',2,1],['core',1,1],['wood',1,.5]]},
   wolf:{name:'Rimewolf',hp:60,spd:7.4,dmg:17,aggro:24,reach:1.9,cd:1.3,wind:.35,r:.7,barY:1.8,drops:[['hide',2,1],['meat',1,1],['fang',1,1]]},
   giant:{name:'Grimrok',hp:440,spd:2.9,dmg:36,aggro:90,reach:5,cd:2.6,wind:1.25,r:2,scale:2.4,barY:8.6,boss:1,drops:[['heart',1,1],['ingot',6,1],['core',2,1]]},
-  barrowknight:{name:'Barrow Knight',hp:240,spd:3.3,dmg:30,aggro:18,reach:2.7,cd:2.3,wind:.75,r:.85,barY:3.0,drops:[['silver',8,1],['ingot',2,.8],['shard',2,.7],['core',1,.5]]},
+  barrowknight:{name:'Barrow Knight',holy:1,hp:240,spd:3.3,dmg:30,aggro:18,reach:2.7,cd:2.3,wind:.75,r:.85,barY:3.0,drops:[['silver',8,1],['ingot',2,.8],['shard',2,.7],['core',1,.5]]},
   ghoul:{name:'Ghoul',hp:52,spd:5.8,dmg:11,aggro:20,reach:1.6,cd:.85,wind:.22,r:.5,barY:2.0,drops:[['fang',1,.5],['silver',1,.5],['shard',1,.25]]},
   draugr:{name:'Draugr',hp:70,spd:4.2,dmg:16,aggro:16,reach:1.9,cd:1.5,wind:.45,r:.6,barY:2.5,drops:[['silver',2,.75],['shard',1,.6],['ingot',1,.25],['core',1,.12]]},
   ghost:{name:'Drowned Ghost',hp:34,spd:5.6,dmg:10,aggro:22,reach:1.7,cd:1.2,wind:.35,r:.5,barY:2.4,drops:[['ecto',1,.7],['silver',1,.4]]},
-  wraith:{name:'Hull Wraith',hp:95,spd:4.7,dmg:21,aggro:24,reach:2.2,cd:1.5,wind:.5,r:.7,barY:3,drops:[['iron',2,.8],['silver',3,.7],['ecto',1,.5],['shard',1,.25]]},
+  wraith:{name:'Hull Wraith',holy:2,hp:95,spd:4.7,dmg:21,aggro:24,reach:2.2,cd:1.5,wind:.5,r:.7,barY:3,drops:[['iron',2,.8],['silver',3,.7],['ecto',1,.5],['shard',1,.25]]},
   bear:{name:'Brown Bear',hp:170,spd:5.6,dmg:24,aggro:9,reach:2.4,cd:1.8,wind:.6,r:1.1,barY:2.2,drops:[['hide',4,1],['meat',4,1],['fang',2,.8]]},
   greywolf:{name:'Grey Wolf',hp:55,spd:7.6,dmg:14,aggro:22,reach:1.9,cd:1.2,wind:.35,r:.6,barY:1.5,drops:[['hide',2,1],['meat',1,1],['fang',1,.5]]},
   /* Sunmeads by day: fire and gold */
@@ -2349,6 +2365,55 @@ function forgeSword(o){const M=armourMats(),G=new THREE.Group(),L=o.L,w=o.w,gw=o
   cadd(G,new THREE.CylinderGeometry(.012,.016,.022,8),trim,0,-.1,0);cadd(G,cS(.012,8,6),trim,0,-.112,0);
   cadd(G,new THREE.CylinderGeometry(.012,.012,.03,8),trim,0,-.022,0);
   G.traverse(m=>{if(m.isMesh)m.castShadow=true});return G}
+/* ===== holy weapons: the only steel that can end what the tombs keep. Tier 1 (Hallowed Blade) unmakes the Barrow Knights; tier 2 (Dawnbrand) is needed for wraiths. ===== */
+const GOLDM={};function goldMat(c){if(GOLDM[c])return GOLDM[c];return GOLDM[c]=new THREE.MeshStandardMaterial({color:LC(c),metalness:1,roughness:.26,envMap:armourEnv(),envMapIntensity:1.3})}
+function holyBladeMat(tier,sc){sc=sc||1;const k='hb'+tier+'_'+sc;if(GOLDM[k])return GOLDM[k];const m=new THREE.MeshStandardMaterial({color:LC(tier>1?'#e6c98a':'#d9dbde'),vertexColors:true,metalness:.97,roughness:tier>1?.2:.2,envMap:armourEnv(),envMapIntensity:1.35});
+  const glow=new THREE.Color(tier>1?'#ffe9a8':'#ffd27a').convertSRGBToLinear().multiplyScalar(POST_OK?(tier>1?3.2:2.2):1.1);m.userData.u={uGl:{value:glow}};
+  m.onBeforeCompile=sh=>{sh.uniforms.uGl=m.userData.u.uGl;sh.uniforms.uT=SPU.uT;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vHb;').replace('#include <begin_vertex>','#include <begin_vertex>\nvHb=position;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vHb;uniform vec3 uGl;uniform float uT;\n'+SPN+
+      'float rh(float n){return fract(sin(n*91.7+7.3)*43758.5);}float sg(vec2 p,vec2 a,vec2 b){vec2 pa=p-a,ba=b-a;return length(pa-ba*clamp(dot(pa,ba)/dot(ba,ba),0.,1.));}\n'+
+      'float rune(vec2 f,float c){float h=rh(c),h2=rh(c+31.),h3=rh(c+77.);float d=sg(f,vec2(.5,.12),vec2(.5,.88));'+
+      'if(h>.25)d=min(d,sg(f,vec2(.5,.3+h2*.35),vec2(h3>.5?.85:.15,.12+h2*.35)));if(h2>.4)d=min(d,sg(f,vec2(.5,.62+h*.2),vec2(h>.6?.82:.18,.85)));'+
+      'if(h3>.7)d=min(d,sg(f,vec2(.2,.5),vec2(.8,.5)));if(h>.82)d=min(d,abs(length(f-vec2(.5,.5))-.2));return 1.-smoothstep(.05,.11,d);}\n')
+      .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n{float L='+((tier>1?1.0:.86)*sc).toFixed(4)+',hw=.42*('+((tier>1?.034:.026)*sc).toFixed(4)+')*(1.-.26*clamp(vHb.y/L,0.,.84));float u=vHb.y/L;'+
+        'float inF=step(abs(vHb.x),hw)*step(.06,u)*step(u,.64);vec2 rp=vec2(vHb.x/hw*.5+.5,vHb.y/(hw*2.4));float r=rune(vec2(rp.x,fract(rp.y)),floor(rp.y))*inF;'+
+        'float pul=.75+.25*sin(uT*2.2-vHb.y*6.);totalEmissiveRadiance+=uGl*r*pul;'+
+        (tier>1?'float ed=smoothstep(.8,.99,abs(vHb.x)/max(hw/.42,1e-4));totalEmissiveRadiance+=uGl*ed*.35*(.8+.2*sin(uT*3.+vHb.y*9.));':'')+'}')};
+  m.customProgramCacheKey=()=>'holyblade'+k;return GOLDM[k]=m}
+function holySword(tier,sc){const G=new THREE.Group(),I=new THREE.Group();G.add(I);const s=sc||1,L=(tier>1?1.0:.86)*s,w=(tier>1?.068:.052)*s,grip=.2*s;I.position.y=-grip*.5;
+  const gold=goldMat(tier>1?'#e0b24c':'#c9a24e'),wrap=new THREE.MeshStandardMaterial({color:LC(tier>1?'#22304a':'#e8dcc4'),roughness:.7,map:TEX.leather}),
+    blade=new THREE.Mesh(bladeGeo(L,w/2,w*.09,.66),holyBladeMat(tier,s));blade.position.y=grip+.04*s;I.add(blade);
+  /* grip: wrapped leather with a gold wire spiral, gold ferrules */
+  cadd(I,new THREE.CylinderGeometry(.017*s,.019*s,grip,12),wrap,0,grip/2,0);
+  {const pts=[],tn=Math.round(grip/(.03*s));for(let i=0;i<=tn*12;i++){const a=i/12*PI*2;pts.push(new THREE.Vector3(Math.cos(a)*.019*s,(.01+i/(tn*12)*(grip/s-.02))*s,Math.sin(a)*.019*s))}I.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),tn*12,.0022*s,4,false),gold))}
+  for(const y of[0,grip])cadd(I,new THREE.CylinderGeometry(.023*s,.023*s,.014*s,12),gold,0,y,0);
+  if(tier<2){
+    /* Hallowed Blade: a straight cross-guard ending in trefoils, a sun-disc at the crossing, a wheel pommel set with sun amber */
+    cadd(I,new THREE.BoxGeometry(.21*s,.022*s,.026*s),gold,0,grip+.016*s,0);
+    for(const sd of[-1,1]){const x=sd*.105*s;cadd(I,new THREE.ConeGeometry(.02*s,.03*s,4),gold,x+sd*.012*s,grip+.016*s,0,0,0,sd*-PI/2);cadd(I,cS(.009*s,8,6),gold,x,grip+.03*s,0);cadd(I,cS(.009*s,8,6),gold,x,grip+.002*s,0)}
+    cadd(I,new THREE.CylinderGeometry(.034*s,.034*s,.034*s,16),gold,0,grip+.016*s,0,PI/2,0,0);
+    const amb=new THREE.MeshStandardMaterial({color:LC('#e89a2a'),emissive:new THREE.Color('#ff9a28').convertSRGBToLinear(),emissiveIntensity:POST_OK?1.4:.5,roughness:.2,metalness:0});
+    for(const sd of[-1,1])cadd(I,cS(.016*s,10,8),amb,0,grip+.016*s,sd*.016*s,0,0,0,1,1,.5);
+    cadd(I,new THREE.CylinderGeometry(.034*s,.034*s,.022*s,18),gold,0,-.04*s,0,PI/2,0,0);for(const sd of[-1,1])cadd(I,cS(.014*s,10,8),amb,0,-.04*s,sd*.01*s,0,0,0,1,1,.5);
+    cadd(I,cS(.01*s,8,6),gold,0,-.078*s,0);
+  }else{
+    /* Dawnbrand: the guard is a rising sun, rays fanned in the blade's plane, swept wings for quillons; a sea garnet held in a gold claw for the pommel */
+    cadd(I,cS(.04*s,16,12),gold,0,grip+.02*s,0,0,0,0,1,1,.55);
+    for(let k=0;k<11;k++){const a=-PI*.5+k/10*PI,r0=.04*s,len=(k%2?.05:.085)*s;const c=new THREE.Mesh(new THREE.ConeGeometry(.009*s,len,5),gold);c.position.set(Math.sin(a)*(r0+len/2),grip+.02*s-Math.cos(a)*(r0+len/2)*-1*.0+Math.cos(a)*-(r0+len/2)*-1,0);c.rotation.z=-a+PI;I.add(c)}
+    for(const sd of[-1,1]){const cu=new THREE.CatmullRomCurve3([[0,0],[sd*.08,.004],[sd*.13,.025],[sd*.15,.06]].map(p=>new THREE.Vector3(p[0]*s,grip+.01*s+p[1]*s,0)));I.add(new THREE.Mesh(new THREE.TubeGeometry(cu,14,.012*s,8,false),gold));cadd(I,new THREE.ConeGeometry(.011*s,.035*s,6),gold,sd*.15*s,grip+.085*s,0,0,0,sd*-.35)}
+    const gar=new THREE.MeshStandardMaterial({color:LC('#9a1020'),emissive:new THREE.Color('#ff2a3a').convertSRGBToLinear(),emissiveIntensity:POST_OK?1.2:.4,roughness:.1,metalness:.1});
+    cadd(I,new THREE.OctahedronGeometry(.022*s,0),gar,0,-.045*s,0,0,0,0,1,1.25,1);for(let k=0;k<4;k++){const a=k*PI/2+PI/4;cadd(I,new THREE.ConeGeometry(.006*s,.05*s,4),gold,Math.cos(a)*.024*s,-.04*s,Math.sin(a)*.024*s,0,0,0)}
+    cadd(I,cS(.024*s,10,8),gold,0,-.012*s,0,0,0,0,1,.6,1);
+    /* a soft light breathes along the blade */
+    const hm=new THREE.MeshBasicMaterial({color:new THREE.Color('#ffe6a0').convertSRGBToLinear(),transparent:true,opacity:.16,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+    }
+  G.traverse(m=>{if(m.isMesh&&!m.userData.fx)m.castShadow=true});return G}
+const HOLYW={hsword:{tier:1,make:()=>holySword(1)},dsword:{tier:2,make:()=>holySword(2)}};
+function holyHeld(){if(!PM||!PM.tool)return;PM.holyG=PM.holyG||{};for(const k in PM.holyG)PM.holyG[k].visible=false;const H=HOLYW[P.equip];if(!H)return;let g=PM.holyG[P.equip];
+  if(!g){g=H.make();g.position.copy(PM.tool.position);g.rotation.copy(PM.tool.rotation);g.scale.setScalar(PM.tool.parent===PM.foreR?1:1);PM.tool.parent.add(g);PM.holyG[P.equip]=g}g.visible=true;PM.tool.visible=false}
+let holyHintT=-99;function holyBlocked(c){const hl=c.spec.holy,w=(ITEMS[P.equip]&&ITEMS[P.equip].holy)||0;burst(c.x,c.y+1.2,c.z,4);c.mad=true;sfx('block');
+  if(T-holyHintT>7){holyHintT=T;toast(hl>1?(w?'The Hallowed Blade cannot touch it. A wraith yields only to Dawnsteel: forge a Dawnbrand.':'Your blow passes straight through. A wraith yields only to Dawnsteel: forge a Dawnbrand.'):'Steel rings off empty armour. Only a holy weapon can end a Barrow Knight: forge a Hallowed Blade.')}}
 /* pieces are collected per bone and material, then merged into one mesh each */
 function knightHarness(r,b){const M=armourMats(),H=r.H,buckets={},Y=new THREE.Vector3(0,1,0),_q=new THREE.Quaternion(),_m=new THREE.Matrix4(),_e=new THREE.Euler();
   const put=(bone,mk,geo,wx,wy,wz,rot,sc)=>{const h=H[bone];if(rot&&rot.isQuaternion)_q.copy(rot);else _q.setFromEuler(_e.set(...(rot||[0,0,0])));_m.compose(new THREE.Vector3(wx-h[0],wy-h[1],wz-h[2]),_q,new THREE.Vector3(...(sc||[1,1,1])));const g=geo.index?geo.toNonIndexed():geo.clone();g.applyMatrix4(_m);((buckets[bone]||(buckets[bone]={}))[mk]||(buckets[bone][mk]=[])).push(g)};
@@ -3593,11 +3658,11 @@ function refreshLook(){if(PM.wear){const A=P.armor,W=PM.wear,vis=(k,v)=>{for(con
     PM.helm.visible=!!A.head;PM.hood.visible=A.body==='coat'&&!A.head&&LOOK.hood===0;PM.hair.visible=!A.head&&!PM.hood.visible;if(PM.hoodS)PM.hoodS.value=PM.hood.visible?1:0;
     PM.gloveU.value=A.hands?1:0;PM.cutU.value=A.feet?HERO_H.bootTop-.03:-1;
     const tg=P.equip&&IG(P.equip);if(tg){PM.tool.geometry=tg;PM.tool.material=ITEMMAT;PM.tool.visible=true}else if(P.equip&&TOOLG[P.equip]){PM.tool.geometry=G('t'+P.equip,TOOLG[P.equip]);PM.tool.material=MAT;PM.tool.visible=true}else PM.tool.visible=false;
-    PM.tool.userData.x.geometry=PM.tool.geometry;return}
+    PM.tool.userData.x.geometry=PM.tool.geometry;holyHeld();return}
   for(const m of PM.tunicMeshes)if(m.userData.base)m.material=P.armor.body?m.userData.hide:m.userData.base;else if(m.isSkinnedMesh)m.material[0]=P.armor.body?PM.skMats.hide:PM.skMats.tunic;else m.material=P.armor.body?(m.userData.dbl?PM.mats.mHide2:PM.mats.mHide):(m.userData.dbl?PM.mats.mTunic2:PM.mats.mTunic);
   PM.helm.visible=P.armor.head;PM.hood.visible=!P.armor.head&&LOOK.hood===0;PM.hair.visible=!P.armor.head&&!PM.hood.visible;if(PM.hoodS)PM.hoodS.value=PM.hood.visible?1:0;
   const tg=P.equip&&IG(P.equip);if(tg){PM.tool.geometry=tg;PM.tool.material=ITEMMAT;PM.tool.visible=true}else if(P.equip&&TOOLG[P.equip]){PM.tool.geometry=G('t'+P.equip,TOOLG[P.equip]);PM.tool.material=MAT;PM.tool.visible=true}else PM.tool.visible=false;
-  PM.tool.userData.x.geometry=PM.tool.geometry}
+  PM.tool.userData.x.geometry=PM.tool.geometry;holyHeld()}
 
 /* ---------- lights pool ---------- */
 /* hit sparks: a small pool of glowing particles */
@@ -3832,7 +3897,7 @@ function nodeLoot(n){const sc=(i,c,x,z)=>{for(let k=0;k<c;k++)spawnDrop(i,1,x+(M
 function hitNode(n,tool){const tree=n.kind==='birch'||n.kind==='pine',pw=tree?tool.chop:tool.mine;
   if(!pw){warn(tree?'You need an axe to fell trees.':'You need a pick to break stone.');sfx('dull');n.shake=.12;anim.add(n);return}
   {const sk=tree?'wood':'mine';n.hp-=pw*(1+skF(sk));gainSk(sk,1)}n.shake=.25;anim.add(n);sfx(tree?'chop':'mine');if(n.hp<=0)killNode(n)}
-function hitCreature(c,dmg){if(c.stun>0)dmg*=2;c.hp-=dmg;burst(c.x,c.y+(c.spec.boss?3:1),c.z,c.stun>0?14:7);c.flash=.14;setFlash(c,true);c.mad=true;const dx=c.x-P.x,dz=c.z-P.z,l=Math.hypot(dx,dz)||1,k=c.spec.boss?0:5;c.kx=dx/l*k;c.kz=dz/l*k;sfx('hit');
+function hitCreature(c,dmg){if(c.spec.holy&&dmg<1e5&&((ITEMS[P.equip]&&ITEMS[P.equip].holy)||0)<c.spec.holy){holyBlocked(c);return}if(c.stun>0)dmg*=2;c.hp-=dmg;burst(c.x,c.y+(c.spec.boss?3:1),c.z,c.stun>0?14:7);c.flash=.14;setFlash(c,true);c.mad=true;const dx=c.x-P.x,dz=c.z-P.z,l=Math.hypot(dx,dz)||1,k=c.spec.boss?0:5;c.kx=dx/l*k;c.kz=dz/l*k;sfx('hit');
   c.bar.visible=true;c.bar.scale.x=1.2/(c.spec.scale||1)*Math.max(0,c.hp/c.mhp);
   if(c.hp<=0){for(const d of c.spec.drops)if(Math.random()<d[2])for(let i=0;i<d[1];i++)spawnDrop(d[0],1,c.x+(Math.random()-.5),c.z+(Math.random()-.5),null,4);
     if(c.type==='giant'){boss=2;bossRef=null;$('boss').hidden=true;ring.visible=false;toast('Grimrok the Barrow Giant is fallen! The beasts of the isle grow fiercer.','big');sfx('horn');save()}
@@ -3856,7 +3921,7 @@ function startAttack(){if(!started||P.dead||panelOpen||paused||P.boat)return;if(
   if(heavy){P.combo=2;P.comboMul=2.1;P.st-=cost*1.8;P.stCd=.9;P.atkT=P.atkDur=tool.cd*1.75;P.hitDone=false;P.heavy=true;aimAssist();sfx('swing');return}P.heavy=false;
   P.combo=combo;P.comboMul=[1,1.15,1.7][combo];P.st-=cost;P.stCd=.6;P.atkT=P.atkDur=tool.cd*(fin?1.25:combo===1?.9:1);P.hitDone=false;aimAssist();sfx('swing')}
 /* heavy blows: each weapon has its own move */
-const ABIL={club:['slam',3],imace:['slam',4.2],axe:['spin',2.8],emaxe:['spin',3],iaxe:['spin',3.6],ispear:['lunge',6],sword:['flame',4.5],rsword:['frost',7.5],torch:['flame',3],pick:['sunder',0]};
+const ABIL={club:['slam',3],imace:['slam',4.2],axe:['spin',2.8],emaxe:['spin',3],iaxe:['spin',3.6],ispear:['lunge',6],sword:['flame',4.5],rsword:['frost',7.5],hsword:['radiant',5],dsword:['dawn',7],torch:['flame',3],pick:['sunder',0]};
 /* ---------- monster special attacks ---------- */
 const PROJ=[];
 const SPECIAL={
@@ -3892,6 +3957,8 @@ function heavyAbility(tool,fx,fz){const a=ABIL[P.equip];if(!a)return false;const
     for(const c of creatures.slice()){const dx=c.x-sx,dz=c.z-sz,t=dx*fx+dz*fz,off=Math.abs(dx*fz-dz*fx);if(t>-.5&&t<d+2&&off<1.2+c.spec.r)hitCreature(c,dmg*1.1)}burst(P.x,P.y+1,P.z,10)}
   else if(kind==='flame'){ringFx(P.x+fx*R_*.5,P.y,P.z+fz*R_*.5,R_*.7,0xff8a30);for(const c of creatures.slice()){const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d<R_+c.spec.r&&(dx*fx+dz*fz)/(d||1)>.1){c.burn=4;hitCreature(c,dmg*.9)}}}
   else if(kind==='frost'){ringFx(P.x+fx*R_*.5,P.y,P.z+fz*R_*.5,R_*.8,0x9fe4ff,.6);for(const c of creatures.slice()){const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d<R_+c.spec.r&&(dx*fx+dz*fz)/(d||1)>.35){c.slow=4;hitCreature(c,dmg*.75)}}}
+  else if(kind==='radiant'){ringFx(P.x+fx*R_*.5,P.y,P.z+fz*R_*.5,R_*.75,0xffe2a0,.5);burst(P.x+fx*1.5,P.y+1.2,P.z+fz*1.5,12);for(const c of creatures.slice()){const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d<R_+c.spec.r&&(dx*fx+dz*fz)/(d||1)>.2){if(!c.spec.boss)c.stun=Math.max(c.stun||0,1.1);hitCreature(c,dmg*(c.spec.holy?1.15:.9))}}}
+  else if(kind==='dawn'){ringFx(P.x,P.y,P.z,R_,0xfff2c8,.6);ringFx(P.x,P.y+.6,P.z,R_*.6,0xffd27a,.4);burst(P.x,P.y+1.4,P.z,18);shakeT=.25;for(const c of creatures.slice()){const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<R_+c.spec.r){if(!c.spec.boss)c.stun=Math.max(c.stun||0,1.6);hitCreature(c,dmg*(c.spec.holy?1.25:.95))}}}
   else return false;
   gainSk(wk(),2);return true}
 function doHit(){const tool=(P.equip&&ITEMS[P.equip].tool)||FIST,fx=Math.sin(P.yaw),fz=Math.cos(P.yaw);let any=false;
@@ -4655,7 +4722,7 @@ function frame(t){requestAnimationFrame(frame);if(PREV){GU.value=t/1000;renderer
   if(dbgEl){if(renderErr)dbgEl.textContent='build 11\n'+renderErr;else dbgTick(dt)}}
 refreshLook();renderHotbar();
 
-window.__fjordborn={forgeSword,lookq:LOOKQ,cy:()=>camYaw,st:()=>[started,paused,askTurn,panelOpen].join(),scene,renderer,updCreature,enemyTick,craftId:id=>craft(RECIPES.find(r=>r.id===id)),KNOWN,addItem:(i,n)=>addItem(i,n),recKnown:id=>recKnown(RECIPES.find(r=>r.id===id)),musicState:()=>JSON.stringify({next:MUS.next,mood:MUS.mood,ac:!!AC,bus:!!BUS.master}),setCamPitch:v=>{camPitch=v},openMap:()=>openMap(),doHit:()=>doHit(),creatures,groundH:(x,z)=>getH(x,z),addStruct:(...a)=>addStruct(...a),WR:()=>WRECK,wreckH:(x,z)=>wreckH(x,z),spawnCreature:(t,x,z)=>spawnCreature(t,x,z),DGS,enterDungeon:d=>enterDungeon(d),tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,setCamYaw:v=>{camYaw=v},GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
+window.__fjordborn={forgeSword,holySword,equip:id=>equip(id),hitC:(c,d)=>hitCreature(c,d),PL:P,lookq:LOOKQ,cy:()=>camYaw,st:()=>[started,paused,askTurn,panelOpen].join(),scene,renderer,updCreature,enemyTick,craftId:id=>craft(RECIPES.find(r=>r.id===id)),KNOWN,addItem:(i,n)=>addItem(i,n),recKnown:id=>recKnown(RECIPES.find(r=>r.id===id)),musicState:()=>JSON.stringify({next:MUS.next,mood:MUS.mood,ac:!!AC,bus:!!BUS.master}),setCamPitch:v=>{camPitch=v},openMap:()=>openMap(),doHit:()=>doHit(),creatures,groundH:(x,z)=>getH(x,z),addStruct:(...a)=>addStruct(...a),WR:()=>WRECK,wreckH:(x,z)=>wreckH(x,z),spawnCreature:(t,x,z)=>spawnCreature(t,x,z),DGS,enterDungeon:d=>enterDungeon(d),tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,setCamYaw:v=>{camYaw=v},GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
 if(/peekfirst/.test(location.hash)){try{peek()}catch(e){console.error('peek '+e)}}
 {const pm=location.hash.match(/preview:(.*)$/);if(pm){try{const a=JSON.parse(decodeURIComponent(pm[1]));FJ_PREVIEW(...a)}catch(e){console.error('preview '+e)}}}
 requestAnimationFrame(frame);
