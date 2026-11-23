@@ -474,7 +474,7 @@ layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
 /* developer switches: all off in the public game; only the private developer edition has the menu that turns them on */
 const DEV={on:0,god:0,ghost:0,fly:0,clip:0,creative:0,speed:1,up:0,down:0};
-const GAME_VERSION='1.22.0';
+const GAME_VERSION='1.22.1';
 const EDITION='phone';/* build_editions.py sets 'phone' or 'desktop' */
 /* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
 if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
@@ -2356,27 +2356,43 @@ function knightHarness(r,b){const M=armourMats(),H=r.H,buckets={},Y=new THREE.Ve
   rivets('spine',0,2.03,-.02,.165,9,-PI*.48,PI*.48);rivets('spine',0,1.555,-.02,.195,9,-PI*.48,PI*.48);
   /* faulds: three overlapping lames around the belly, and a black cloth falling between the tassets */
   for(let k=0;k<3;k++){S('root','steel',shell(.215+k*.02,.235+k*.02,.085,-PI*.62,PI*1.24,18),0,1.47-k*.07,0,0,[1,1,.78]);S('root','bronze',ring(.235+k*.02,.008,PI*1.24),0,1.427-k*.07,0,[PI/2,0,PI*.38+PI],[1,.78,1])}
-  /* pauldrons, arms, gauntlets */
-  for(const d of[1,-1]){const t=d>0?'L':'R',A='arm'+t,F='fore'+t,sh=[d*.38,1.95,0],el=[d*.45,1.56,.06],wr=[d*.485,1.22,.16];
+  /* arms: lamed rerebraces, cupped couters with fan wings, swelling vambraces, belled gauntlets with articulated fingers */
+  const lat=(bone,mk,a,c,prof,sc,seg)=>{const [q,L]=along(a,c);put(bone,mk,new THREE.LatheGeometry(prof.map(p=>new THREE.Vector2(p[0],p[1]*L)),seg||20),a[0],a[1],a[2],q,sc)};
+  const lerp3=(a,c,t)=>[a[0]+(c[0]-a[0])*t,a[1]+(c[1]-a[1])*t,a[2]+(c[2]-a[2])*t];
+  const lames=(bone,a,c,n,r0,r1,sc,trim)=>{for(let k=0;k<n;k++){const t0=k/n,t1=Math.min(1,(k+1.18)/n),A=lerp3(a,c,t0),C=lerp3(a,c,t1),ra=r0+(r1-r0)*t0,rc=r0+(r1-r0)*t1;
+    lat(bone,'steel',A,C,[[ra+.012,0],[ra+.014,.12],[rc+.004,.85],[rc,1]],sc);if(trim){const [q]=along(A,C);put(bone,'bronze',ring(ra+.013,.006),A[0],A[1],A[2],new THREE.Quaternion().multiplyQuaternions(q,new THREE.Quaternion().setFromEuler(new THREE.Euler(PI/2,0,0))),[sc?sc[0]:1,sc?sc[2]:1,1])}}};
+  const wing=(bone,p,d,R,tilt)=>{S(bone,'steel',new THREE.CylinderGeometry(R,R,.012,18),p[0],p[1],p[2],[0,0,PI/2+d*(tilt||0)],[1,1,1.2]);S(bone,'bronze',ring(R,.008),p[0]+d*.007,p[1],p[2],[0,PI/2,0],[1.2,1,1]);
+    S(bone,'steel',new THREE.SphereGeometry(R*.45,10,6,0,PI*2,0,PI*.5),p[0]+d*.006,p[1],p[2],[0,0,d*-PI/2],[1,.5,1]);S(bone,'bronze',new THREE.SphereGeometry(.014,6,4),p[0]+d*.03,p[1],p[2])};
+  for(const d of[1,-1]){const t=d>0?'L':'R',A='arm'+t,F='fore'+t,el=[d*.45,1.56,.06],wr=[d*.485,1.22,.16];
     S(A,'steel',new THREE.SphereGeometry(.16,18,10,0,PI*2,0,PI*.45),d*.37,1.95,0,[0,0,d*-.35],[1,.75,1.08]);S(A,'bronze',ring(.155,.012,PI*2),d*.37,1.905,0,[PI/2,0,d*-.35],[1,1.08,1]);
     for(let k=0;k<3;k++){const y=1.88-k*.06,sx=d*(.42+k*.012);S(A,'steel',shell(.14-k*.01,.15-k*.01,.07,d>0?PI*.05:PI*1.05,PI*.9,14),sx,y,0,[0,0,d*-.28]);S(A,'bronze',ring(.15-k*.01,.007,PI*.9),sx,y-.035,0,[PI/2,0,d>0?-PI*.55:PI*.45])}
     S(A,'steel',new THREE.BoxGeometry(.02,.1,.2),d*.25,2.06,0,[0,0,d*-.2]);S(A,'bronze',new THREE.BoxGeometry(.024,.012,.2),d*.255,2.11,0,[0,0,d*-.2]);
-    tube(A,'steel',[d*.41,1.84,.01],[d*.445,1.62,.05],.072,.066,14);
-    S(F,'steel',new THREE.SphereGeometry(.078,12,8),el[0],el[1],el[2]-.01,0,[1,.85,1]);S(F,'steel',new THREE.SphereGeometry(.07,10,6,0,PI*2,0,PI*.5),el[0]+d*.05,el[1],el[2]-.02,[0,0,d*-PI/2],[1,.4,1.1]);
-    tube(F,'steel',[d*.452,1.5,.08],[d*.48,1.29,.15],.064,.058,14);S(F,'bronze',ring(.065,.008),d*.452,1.5,.08,[PI/2+.3,0,0]);
-    tube(F,'steel',[d*.48,1.29,.15],[d*.488,1.2,.18],.06,.082,14);S(F,'bronze',ring(.082,.009),d*.488,1.2,.18,[PI/2+.3,0,0]);
-    S(F,'dark',new THREE.BoxGeometry(.09,.1,.085),d*.49,1.13,.2,[.3,0,0]);for(let k=0;k<4;k++)S(F,'dark',new THREE.BoxGeometry(.02,.025,.07),d*(.462+k*.019),1.08,.24,[.9,0,0]);
-    S(F,'strap',new THREE.BoxGeometry(.13,.02,.1),d*.48,1.36,.12,[.3,0,0])}
-  /* legs: tassets, cuisses, poleyns with fans, greaves, sabatons of lames */
-  for(const d of[1,-1]){const t=d>0?'L':'R',L='leg'+t,Sh='shin'+t,hp=[d*.14,1.22,0],kn=[d*.165,.7,.08],an=[d*.15,.12,-.01];
-    for(let k=0;k<2;k++){S(L,'steel',shell(.14,.15,.12,-PI*.42+d*.1,PI*.84,12),d*.15,1.3-k*.11,.02,[-.12,0,d*.06]);S(L,'bronze',ring(.15,.007,PI*.84),d*.15,1.24-k*.11,.02,[PI/2-.12,0,PI*.42+PI])}
-    tube(L,'steel',[d*.145,1.12,.02],[d*.162,.78,.07],.095,.082,16);S(L,'bronze',new THREE.BoxGeometry(.012,.32,.012),d*.155,.95,.12,[-.12,0,0]);
-    S(Sh,'steel',new THREE.SphereGeometry(.085,14,8,0,PI*2,0,PI*.55),kn[0],kn[1],kn[2]+.02,[PI/2.2,0,0],[1,1,.8]);S(Sh,'steel',new THREE.SphereGeometry(.06,10,6,0,PI*2,0,PI*.5),kn[0]+d*.07,kn[1],kn[2]-.01,[0,0,d*-PI/2],[1,.35,1.2]);
-    S(Sh,'bronze',ring(.07,.008),kn[0],kn[1],kn[2]+.09,[0,0,0]);
-    const gp=new THREE.LatheGeometry([[.06,0],[.072,.12],[.078,.28],[.068,.44],[.072,.5]].map(p=>new THREE.Vector2(p[0],p[1])),16);S(Sh,'steel',gp,an[0],.17,an[2]+.03,0,[1,1,1.12]);
-    S(Sh,'bronze',ring(.072,.008),an[0],.67,an[2]+.03,[PI/2,0,0],[1,1.12,1]);S(Sh,'bronze',ring(.062,.008),an[0],.17,an[2]+.03,[PI/2,0,0],[1,1.12,1]);
-    for(let k=0;k<4;k++)S(Sh,'steel',new THREE.BoxGeometry(.11-k*.005,.05,.055),an[0],.08-k*.005,an[2]+.06+k*.045,[-.35-k*.06,0,0]);S(Sh,'steel',new THREE.SphereGeometry(.055,10,6,0,PI*2,0,PI*.5),an[0],.05,an[2]+.25,[PI/2,0,0],[1,1,.9]);
-    S(Sh,'dark',new THREE.BoxGeometry(.1,.04,.3),an[0],.02,an[2]+.1)}
+    lames(A,[d*.41,1.83,.012],[d*.446,1.63,.05],3,.088,.082,[1,1,.95],1);
+    S(A,'steel',new THREE.SphereGeometry(.092,16,10),el[0],el[1]+.005,el[2]-.012,0,[1,.95,1]);S(A,'bronze',ring(.088,.007),el[0],el[1]+.06,el[2]-.01,[PI/2,0,0]);
+    wing(F,[el[0]+d*.085,el[1],el[2]-.005],d,.072,.0);
+    S(F,'steel',shell(.083,.09,.05,0,PI*2,18),el[0]+d*.006,el[1]-.075,el[2]+.022,[.28,0,0]);
+    lat(F,'steel',[d*.458,1.51,.088],[d*.481,1.29,.15],[[.08,0],[.086,.22],[.08,.6],[.068,.92],[.066,1]],[1,1,.86]);
+    S(F,'bronze',new THREE.BoxGeometry(.012,.2,.012),d*.538,1.4,.115,[.28,0,d*-.08]);S(F,'bronze',ring(.084,.008),d*.458,1.505,.088,[PI/2+.28,0,0],[1,.86,1]);
+    lat(F,'steel',[d*.482,1.3,.152],[d*.49,1.18,.19],[[.098,0],[.094,.15],[.075,.65],[.063,1]],[1,1,.9]);S(F,'bronze',ring(.098,.009),d*.482,1.3,.152,[PI/2+.3,0,0],[1,.9,1]);
+    S(F,'steel',new THREE.BoxGeometry(.1,.035,.075),d*.492,1.165,.2,[.3,0,0]);S(F,'steel',new THREE.BoxGeometry(.104,.032,.072),d*.494,1.14,.21,[.3,0,0]);
+    S(F,'steel',new THREE.BoxGeometry(.108,.03,.06),d*.496,1.112,.222,[.5,0,0]);S(F,'bronze',new THREE.BoxGeometry(.11,.008,.012),d*.496,1.1,.245,[.5,0,0]);
+    for(let f=0;f<4;f++){const fx=d*(.462+f*.021);for(let s=0;s<3;s++){const a=.9+s*.75;S(F,s===0?'steel':'dark',new THREE.BoxGeometry(.019,.028,.026),fx,1.09-Math.sin(a-.6)*.03-s*.012,.25-s*.022+Math.cos(a)*.012,[a,0,0])}}
+    S(F,'steel',new THREE.BoxGeometry(.024,.05,.026),d*.45,1.14,.24,[.6,0,d*.5]);S(F,'strap',new THREE.BoxGeometry(.1,.07,.07),d*.49,1.12,.2,[.3,0,0])}
+  /* legs: lamed cuisses, domed poleyns with heart-shaped wings, calf-swelling greaves with a ridge, sabatons of overlapping lames */
+  for(const d of[1,-1]){const t=d>0?'L':'R',L='leg'+t,Sh='shin'+t,kn=[d*.165,.7,.08],an=[d*.15,.12,-.01];
+    for(let k=0;k<2;k++){S(L,'steel',shell(.15,.162,.12,-PI*.42+d*.1,PI*.84,12),d*.15,1.3-k*.11,.025,[-.12,0,d*.06]);S(L,'bronze',ring(.162,.008,PI*.84),d*.15,1.24-k*.11,.025,[PI/2-.12,0,PI*.42+PI])}
+    lat(L,'steel',[d*.145,1.18,.015],[d*.163,.79,.075],[[.118,0],[.124,.18],[.112,.55],[.097,.88],[.094,1]],[1,1,.92]);
+    S(L,'bronze',new THREE.BoxGeometry(.014,.36,.014),d*.157,.98,.135,[-.15,0,0]);
+    lames(L,[d*.163,.83,.07],[d*.165,.75,.085],2,.1,.098,[1,1,.9],1);
+    S(Sh,'steel',new THREE.SphereGeometry(.105,16,10,0,PI*2,0,PI*.6),kn[0],kn[1]+.005,kn[2]+.01,[PI/2.1,0,0],[1,1.12,.78]);S(Sh,'steel',new THREE.ConeGeometry(.028,.05,8),kn[0],kn[1]+.005,kn[2]+.1,[PI/2,0,0]);
+    S(Sh,'bronze',ring(.1,.009),kn[0],kn[1]+.005,kn[2]+.045,0,[1,1.12,1]);
+    wing(Sh,[kn[0]+d*.095,kn[1],kn[2]-.01],d,.075,.15);
+    lames(Sh,[d*.163,.64,.078],[d*.16,.58,.07],2,.098,.094,[1,1,.9],0);
+    lat(Sh,'steel',[d*.16,.6,.07],[d*.15,.17,.0],[[.092,0],[.098,.18],[.094,.38],[.076,.7],[.068,.9],[.074,1]],[1,1,1.12]);
+    S(Sh,'bronze',new THREE.BoxGeometry(.012,.4,.012),d*.155,.39,.13,[.16,0,0]);S(Sh,'bronze',ring(.093,.009),d*.16,.6,.07,[PI/2+.16,0,0],[1,1.12,1]);S(Sh,'bronze',ring(.075,.009),d*.15,.17,0,[PI/2+.16,0,0],[1,1.12,1]);
+    for(let k=0;k<2;k++)S(Sh,'steel',shell(.08+k*.006,.085+k*.006,.04,0,PI*2,16),an[0],.15-k*.035,an[2]+.01,0,[1,1,1.15]);
+    for(let k=0;k<5;k++){const z=an[2]+.06+k*.04;S(Sh,'steel',new THREE.CylinderGeometry(.056-k*.002,.06-k*.002,.05,14,1,true,-PI/2,PI),an[0],.07-k*.009,z,[PI/2-.5-k*.08,0,0],[1,1,.7]);S(Sh,'bronze',new THREE.TorusGeometry(.06-k*.002,.005,4,12,PI),an[0],.07-k*.009-.004,z+.022,[-.5-k*.08,0,0],[1,.7,1])}
+    S(Sh,'steel',new THREE.ConeGeometry(.045,.1,10),an[0],.03,an[2]+.29,[PI/2,0,0],[1,1,.55]);S(Sh,'dark',new THREE.BoxGeometry(.11,.03,.34),an[0],.012,an[2]+.12)}
   /* merge each bone's pieces per material */
   for(const bone in buckets)for(const mk in buckets[bone]){const gs=buckets[bone][mk];let n=0;for(const g of gs)n+=g.attributes.position.count;const P=new Float32Array(n*3),N=new Float32Array(n*3);let o=0;
     for(const g of gs){if(!g.attributes.normal)g.computeVertexNormals();P.set(g.attributes.position.array,o*3);N.set(g.attributes.normal.array,o*3);o+=g.attributes.position.count}

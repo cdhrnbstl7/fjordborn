@@ -1,3 +1,7 @@
+## 1.22.1 — The knight's limbs
+- The Barrow Knight's arms and legs are rebuilt as heavy articulated plate to match its chest and shoulders. The arms have three overlapping upper-arm lames, a domed elbow cop with a round fan wing, a vambrace that swells over the forearm with a bronze ridge, and a belled gauntlet cuff over plated hands with jointed fingers.
+- The legs have a swelling, lamed thigh plate with a bronze ridge, a large pointed knee cop with a heart-shaped side wing and lames above and below, a greave that swells at the calf with a medial ridge and bronze rims, ankle rings, and boots of five overlapping trimmed lames ending in a pointed toe cap.
+
 ## 1.22.0 — Hollow steel, bone and rot
 - The Barrow Knight is now a real suit of armour pieced together from separate plates: a horned great-helm with a burning T-shaped visor and breathing holes, gorget rings, a breastplate with a raised plackart and medial ridge, a backplate, three fauld lames, layered pauldrons, vambraces, elbow and knee cops, gauntlets, tassets, cuisses, greaves and segmented sabatons. Every plate edge carries engraved, patinated bronze trim and rivets.
 - Nothing is inside the armour. The gaps between plates show black emptiness lit by a faint corrupted ember glow, and dark wisps leak from the neck. The steel reflects its surroundings, with grime and rust worked in, under a long tattered black cape.
