@@ -1,3 +1,8 @@
+## 1.21.0 — The dead of the tombs
+- Draugr are rebuilt as rotting skeletal warriors: a grinning skull with dark hollow sockets and cold sparks for eyes under a riveted iron cap, an open leather vest over bare ribs, studded pauldrons, sinew on the bones, rag strips at the belt, a round plank shield and a notched sword or bearded axe.
+- New: the Barrow Knight. A towering armoured dead lord in a great-helm with a red light in its visor slit, layered pauldrons and plate, a tattered black skirt and a rotted mantle. It carries a notched greatsword and a longsword. Usually one guards each great hall, and two guard every throne room. Tough and slow, with heavy swings and rich grave goods.
+- New: the Ghoul. A fast, hunched corpse-eater with grey-blue starved skin, glowing violet eyes, a gaping mouth, lank black hair, a bone necklace and long purple-stained claws. Ghouls prowl the tombs among the draugr.
+
 ## 1.20.0 — Centuries in the dark
 - Dust has settled over every floor, ledge and stone that faces up. White mineral streaks and lichen creep down the walls, and the stone is pitted and eroded.
 - Parts of chamber vaults have caved in, leaving a ragged hole with daylight falling through onto a mound of fallen blocks and earth.

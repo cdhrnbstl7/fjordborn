@@ -511,3 +511,128 @@ def ghost_color(g,n):
     if z>.3 and ((abs(abs(x)-.17)<.11 and 1.89<y<2.11) or (abs(x)<.15 and 1.48<y<1.8)) and n[2]<.6:c=(.02,.12,.06)   # hollow eyes and throat
     return c
 SPECS['ghost']={'name':'ghost','parts':ghost()[0],'bones':ghost()[1],'color':ghost_color,'iface':dict(FLOAT_IF,mat='ghost',flutter=['tail0','tail1','tail2','tail3']),'view':2.8,'voxel':.012,'tris':6000}
+
+# ================= TOMB UNDEAD =================
+# ---- Draugr: a rotting skeletal warrior — skull grin under an iron cap, open leather vest over bare ribs, studded pauldrons, sinew on the bones ----
+def draugr():
+    P=[]
+    P+=[ell((0,1.0,-.01),(.15,.08,.1)),ell((0,1.035,0),(.18,.04,.13))]+sym(lambda d:ell((d*.1,.97,-.02),(.07,.06,.06)))     # pelvis, belt, hip bones
+    for k in range(7):P.append(ell((0,1.08+k*.06,-.075),(.026,.019,.026)))                               # spine
+    for k in range(6):
+        y=1.45-k*.064;w=.15+.03*math.sin(k/5*3)
+        P+=sym(lambda d:horn([(d*.02,y,-.075),(d*w*.85,y,-.055),(d*w,y-.035,.03),(d*w*.72,y-.065,.105),(d*.035,y-.075,.125)],[.013,.012,.012,.011,.009]))
+    P+=[ell((0,1.33,.125),(.018,.11,.012))]
+    P+=sym(lambda d:horn([(d*.02,1.5,.1),(d*.12,1.52,.06),(d*.21,1.5,-.0)],[.014,.013,.013]))           # collarbones
+    P+=[ell((0,1.3,-.11),(.19,.21,.045)),ell((0,1.47,-.05),(.19,.05,.08))]                              # vest back and yoke
+    P+=sym(lambda d:ell((d*.19,1.27,.0),(.035,.18,.085),(0,0,d*6)))                                      # narrow vest fronts at the flanks
+    P+=sym(lambda d:ell((d*.23,1.5,-.01),(.085,.05,.09),(0,0,d*-22)))                                    # pauldrons
+    P+=[mcap((.19,1.47,.08),(-.14,1.06,.12),.014)]                                                       # strap
+    P+=[ell((0,1.035,.13),(.03,.026,.014)),ell((0,.88,.1),(.1,.14,.018),(8,0,0)),ell((0,.9,-.1),(.11,.13,.018),(-6,0,0))]   # buckle, loincloth front and back
+    for k in range(3):P.append(ell((0,1.54+k*.03,-.02),(.023,.015,.023)))                                # neck
+    # the skull: round cranium, deep sockets, cheekbones, teeth, and a jaw hanging loose
+    P+=[ell((0,1.725,-.02),(.104,.108,.112)),ell((0,1.705,.1),(.088,.02,.03)),ell((0,1.668,.108),(.011,.026,.016)),ell((0,1.622,.082),(.064,.034,.05))]
+    P+=sym(lambda d:ell((d*.066,1.645,.09),(.03,.022,.036)))+sym(lambda d:ell((d*.088,1.68,.05),(.022,.04,.05)))                 # cheekbones, temples
+    for k in range(6):P.append(spike((-.045+k*.018,1.605,.115),(-.045+k*.018,1.58,.12),.008))
+    P+=[ell((0,1.535,.075),(.068,.024,.06),(-25,0,0))]+sym(lambda d:mcap((d*.06,1.55,.03),(d*.065,1.6,.02),.012))
+    for k in range(5):P.append(spike((-.036+k*.018,1.548,.112),(-.036+k*.018,1.566,.118),.007))
+    P+=[ell((0,1.785,-.01),(.116,.075,.128)),ell((0,1.745,-.01),(.122,.016,.134)),ell((0,1.855,-.01),(.016,.02,.1))]   # iron cap
+    for d in (1,-1):
+        P.append(mcap((d*.22,1.47,0),(d*.27,1.2,.04),.022));P.append(ell((d*.27,1.2,.04),(.028,.026,.026)))
+        P.append(mcap((d*.268,1.2,.035),(d*.3,.97,.14),.016));P.append(mcap((d*.278,1.19,.045),(d*.31,.96,.13),.013))
+        P.append(mcap((d*.24,1.41,.02),(d*.262,1.26,.04),.018))
+        P.append(ell((d*.305,.94,.155),(.032,.022,.038)))
+        P+=claws(d,(.305,.935,.165),n=4,L=.065,r=.008,spread=.022,down=.5)
+        P.append(ell((d*.105,.9,.01),(.07,.09,.07)))                                                     # ragged breeches, short
+        P.append(mcap((d*.105,.84,.02),(d*.12,.58,.05),.025));P.append(ell((d*.12,.565,.06),(.034,.036,.034)))   # bare femur, knee
+        P.append(mcap((d*.12,.55,.055),(d*.11,.12,-.01),.021));P.append(mcap((d*.125,.52,.04),(d*.115,.14,-.01),.016))
+        P.append(mcap((d*.122,.46,.04),(d*.116,.28,.0),.03))                                              # wraps
+        P.append(ell((d*.11,.07,0),(.04,.035,.04)))
+        for t in range(4):P.append(horn([(d*(.09+t*.014),.05,.03),(d*(.09+t*.016),.025,.11),(d*(.09+t*.017),.012,.15)],[.012,.01,.006]))   # bony toes
+    J={'hip':(0,1.0,0),'waist':(0,1.18,0),'chest':(0,1.45,0),'neckt':(0,1.56,.0),'face':(0,1.66,.2),'sh':(.22,1.47,0),'el':(.27,1.2,.04),'wr':(.3,.96,.14),'hp':(.1,.98,0),'kn':(.12,.56,.06),'an':(.11,.09,-.01)}
+    return P,biped_bones(J)
+def draugr_color(g,n):
+    x,y,z=g;ax=abs(x)
+    bone=mix((.7,.63,.48),(.42,.36,.24),sm(.45,.8,fbm(x*14,y*14,z*14))*.7)
+    bone=mix(bone,(.3,.33,.2),sm(.6,.85,fbm(x*6+3,y*6,z*6))*.55)                                        # green rot
+    leather=mix((.3,.2,.12),(.2,.13,.08),fbm(x*10,y*10,z*10))
+    iron=mix((.36,.25,.18),(.22,.2,.19),sm(.4,.7,fbm(x*20,y*20,z*20)))
+    c=bone
+    if 1.65<y<1.698 and .014<ax<.064 and z>.07:c=(.05,.04,.03)
+    elif 1.62<y<1.66 and ax<.012 and z>.09:c=(.06,.05,.04)
+    elif y>1.735 and (y>1.75 or z<.06 or ax>.09):c=iron
+    elif (z<-.075 and 1.08<y<1.52 and ax>.035) or (1.45<y<1.56 and ax>.15 and ax<.34) or (1.44<y<1.52 and z<-.02 and ax<.2):c=leather
+    elif 1.1<y<1.45 and ax>.16 and ax<.24 and z<.09:c=leather       # the vest fronts
+    elif .99<y<1.075 and ax<.2:c=iron if (z>.12 and ax<.04) else leather
+    elif .76<y<.99 and ax<.2:c=mix((.3,.26,.19),(.2,.17,.12),fbm(x*9,y*9,z*9))
+    elif .26<y<.48 and ax>.07:c=mix((.32,.27,.2),(.22,.19,.14),fbm(x*12,y*12,z*12))
+    elif y<.1 and z<.06:c=leather
+    if ax>.22 and 1.26<y<1.42 and z>-.01 and z<.06:c=mix((.32,.24,.15),(.22,.16,.1),fbm(x*15,y*15,z*15))   # sinew
+    if (1.45<y<1.56 and ax>.15 and ax<.34) and fbm(x*40,y*40,z*40)>.7:c=iron                            # studs
+    return c
+_p,_b=draugr();SPECS['draugr']={'name':'draugr','parts':_p,'bones':_b,'color':draugr_color,'iface':BIPED_IF,'view':2.2,'voxel':.0065,'tris':16000}
+
+# ---- Barrow Knight: a towering armoured dead lord — great-helm with a dark slit, layered pauldrons, ridged breastplate, faulds, plated legs ----
+def barrowknight():
+    P=[]
+    # great-helm: a tall flat-faced bucket with a vertical ridge, a dark eye slit and breathing holes
+    P+=[ell((0,2.3,-.01),(.13,.15,.14)),ell((0,2.2,0),(.135,.1,.14)),ell((0,2.25,.1),(.115,.15,.05)),ell((0,2.25,.152),(.016,.14,.016)),ell((0,2.43,-.02),(.11,.03,.12))]
+    P+=[ell((0,2.09,.01),(.15,.06,.135)),ell((0,2.04,.01),(.17,.04,.15))]                                                       # gorget lames
+    P+=[ell((0,1.88,.03),(.3,.2,.2)),ell((0,1.66,.02),(.21,.13,.16)),ell((0,1.86,.2),(.022,.16,.025)),ell((0,1.96,-.06),(.28,.12,.15))]   # breastplate: broad chest, narrow waist
+    for d in (1,-1):
+        P+=[ell((d*.34,2.02,0),(.18,.11,.18),(0,0,d*-22)),ell((d*.41,1.93,0),(.15,.06,.16),(0,0,d*-30)),ell((d*.46,1.85,.01),(.12,.05,.14),(0,0,d*-38)),ell((d*.22,2.12,0),(.02,.07,.13))]   # pauldrons with a raised guard at the neck
+        P+=[mcap((d*.38,1.9,0),(d*.445,1.58,.06),.075),ell((d*.45,1.56,.06),(.08,.075,.08)),ell((d*.5,1.56,.04),(.03,.06,.06)),mcap((d*.45,1.55,.07),(d*.48,1.26,.16),.065)]
+        P+=[ell((d*.485,1.24,.17),(.095,.06,.1)),ell((d*.49,1.15,.19),(.07,.07,.085))]                                         # flared gauntlet cuff and hand
+        P+=[horn([(d*(.47+k*.018),1.12,.23),(d*(.47+k*.02),1.05,.27),(d*(.47+k*.021),.99,.26)],[.03,.026,.02]) for k in range(-1,3)]
+        P+=[ell((d*.16,1.29,.07),(.11,.12,.04),(10,0,0))]                                                                     # tassets over the thighs
+        P+=[mcap((d*.14,1.22,0),(d*.165,.74,.06),.1),ell((d*.165,.7,.09),(.08,.08,.08)),ell((d*.21,.7,.07),(.025,.07,.06))]   # cuisse, poleyn and its fan
+        P+=[mcap((d*.162,.66,.07),(d*.152,.4,.02),.085),mcap((d*.152,.4,.02),(d*.15,.16,-.01),.068),ell((d*.15,.08,.05),(.08,.07,.17))]   # greave swelling at the calf, sabaton
+    P+=[ell((0,1.5,0),(.22,.07,.16)),ell((0,1.42,.01),(.25,.05,.18)),ell((0,1.35,0),(.27,.05,.19))]                           # faulds
+    P+=[ell((0,2.02,-.13),(.33,.08,.14))]
+    J={'hip':(0,1.25,0),'waist':(0,1.5,0),'chest':(0,1.9,0),'neckt':(0,2.12,.02),'face':(0,2.22,.25),'sh':(.38,1.95,0),'el':(.45,1.56,.06),'wr':(.485,1.22,.16),'hp':(.14,1.22,0),'kn':(.165,.7,.08),'an':(.15,.12,-.01)}
+    return P,biped_bones(J)
+def knight_color(g,n):
+    x,y,z=g;ax=abs(x)
+    iron=mix((.17,.17,.18),(.09,.09,.1),sm(.4,.75,fbm(x*9,y*9,z*9)))
+    iron=mix(iron,(.42,.42,.44),sm(.55,.95,n[1]*.5+abs(n[0])*.3)*.35)                                     # worn bright where edges catch the light
+    iron=mix(iron,(.3,.2,.14),sm(.65,.85,fbm(x*14+5,y*14,z*14))*.5)                                       # rust bloom
+    c=iron
+    if 2.255<y<2.285 and z>.12 and .02<ax<.1:c=(.01,.01,.01)                                              # the eye slit
+    if 2.14<y<2.22 and z>.12 and .03<ax<.09 and fbm(x*60,y*60,z*60)>.62:c=(.02,.02,.02)                   # breathing holes
+    if (z<-.04 and 1.92<y<2.12) or (y>1.9 and y<2.1 and z<-.1):c=mix((.07,.065,.07),(.12,.11,.11),fbm(x*8,y*8,z*8))   # mantle
+    if ax>.42 and 1.3<y<1.52 and fbm(x*30,y*30,z*30)>.78:c=(.75,.22,.06)                                   # embers in the cracks of the vambraces
+    return c
+_p,_b=barrowknight();SPECS['barrowknight']={'name':'barrowknight','parts':_p,'bones':_b,'color':knight_color,'iface':dict(BIPED_IF,mat='metal'),'view':2.9,'voxel':.009,'tris':12000}
+
+# ---- Ghoul: a hunched corpse-eater — grey-blue starved body, sunken face with a gaping mouth, long arms and claws, bone necklace ----
+def ghoul():
+    P=[]
+    P+=[ell((0,.95,-.04),(.14,.085,.1)),ell((0,1.08,0),(.12,.11,.09)),ell((0,1.3,.07),(.17,.19,.125),(-28,0,0)),ell((0,1.4,.1),(.2,.08,.12),(-28,0,0))]
+    for k in range(4):
+        y=1.36-k*.06;P+=sym(lambda d:horn([(d*.04,y+.02,.15),(d*.11,y,.12),(d*.145,y-.03,.05)],[.011,.011,.009]))   # ribs straining under the skin
+    P+=[mcap((0,1.44,.15),(0,1.5,.29),.045)]
+    P+=[ell((0,1.56,.33),(.095,.1,.12)),ell((0,1.575,.42),(.075,.022,.03)),ell((0,1.515,.44),(.068,.035,.055)),ell((0,1.545,.465),(.012,.02,.015))]   # skull, brow, upper jaw, nose
+    P+=sym(lambda d:ell((d*.058,1.528,.425),(.026,.018,.03)))+sym(lambda d:horn([(d*.085,1.57,.32),(d*.12,1.59,.29),(d*.14,1.61,.27)],[.018,.012,.004]))   # cheekbones, small torn ears
+    P+=[ell((0,1.43,.41),(.062,.026,.06),(28,0,0))]                                                       # the jaw, wide open
+    for k in range(6):P.append(spike((-.042+k*.017,1.493,.47),(-.042+k*.017,1.47,.475),.007))
+    for k in range(5):P.append(spike((-.034+k*.017,1.445,.455),(-.034+k*.017,1.468,.46),.006))
+    for k in range(9):a=k/8*math.pi*1.2-math.pi*.1;P.append(ell((math.cos(a)*.11,1.43-math.sin(a)*.0,.2+math.sin(a)*.09),(.014,.03,.014)))   # bone necklace
+    for d in (1,-1):
+        P+=[mcap((d*.2,1.42,.1),(d*.3,1.08,.18),.04),ell((d*.3,1.08,.18),(.042,.04,.04)),mcap((d*.3,1.07,.19),(d*.34,.74,.29),.032),ell((d*.345,.7,.31),(.05,.035,.06))]
+        P+=claws(d,(.345,.69,.33),n=4,L=.1,r=.012,spread=.028,down=.55)
+        P+=[mcap((d*.11,.93,-.05),(d*.14,.52,.1),.05),ell((d*.14,.52,.1),(.042,.042,.042)),mcap((d*.14,.5,.09),(d*.13,.11,-.03),.035),ell((d*.13,.05,.04),(.05,.035,.12))]
+        P+=[horn([(d*(.11+t*.02),.04,.12),(d*(.11+t*.022),.02,.2),(d*(.11+t*.024),.0,.23)],[.012,.01,.004]) for t in range(3)]
+    P+=[ell((0,.84,.09),(.065,.13,.01),(8,0,0)),ell((0,.85,-.12),(.075,.12,.01),(-8,0,0)),ell((0,.95,0),(.15,.03,.11))]                 # loincloth on a cord
+    J={'hip':(0,.95,-.05),'waist':(0,1.15,0),'chest':(0,1.42,.12),'neckt':(0,1.5,.27),'face':(0,1.52,.45),'sh':(.2,1.42,.1),'el':(.3,1.08,.18),'wr':(.34,.72,.3),'hp':(.11,.93,-.05),'kn':(.14,.52,.1),'an':(.13,.08,-.03)}
+    return P,biped_bones(J)
+def ghoul_color(g,n):
+    x,y,z=g;ax=abs(x)
+    c=mix((.27,.31,.34),(.17,.2,.23),sm(.45,.8,fbm(x*9,y*9,z*9)))
+    c=mix(c,(.36,.3,.38),sm(.6,.85,fbm(x*5+2,y*5,z*5))*.45)                                               # bruised mottling
+    if y<.85 and ax>.25:c=mix(c,(.36,.2,.42),.55)                                                          # purple-stained hands
+    if ax>.3 and y<.78:c=mix(c,(.08,.06,.08),sm(.72,.68,y))                                                # dark claws
+    if 1.44<y<1.5 and ax<.06 and z>.43:c=(.25,.05,.06)                                                     # the throat
+    if 1.535<y<1.585 and .016<ax<.06 and z>.4:c=(.03,.02,.04)                                              # sunken sockets
+    if .74<y<1.0 and ax<.12 and abs(z)>.08:c=mix((.28,.21,.15),(.18,.13,.09),fbm(x*10,y*10,z*10))          # loincloth
+    if 1.4<y<1.46 and .03<ax<.13 and .16<z<.3:c=(.72,.66,.52)                                              # necklace bones
+    return c
+_p,_b=ghoul();SPECS['ghoul']={'name':'ghoul','parts':_p,'bones':_b,'color':ghoul_color,'iface':BIPED_IF,'view':2.0,'voxel':.0065,'tris':12000}
