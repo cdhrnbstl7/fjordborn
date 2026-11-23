@@ -1,3 +1,8 @@
+## 1.23.1 — The Redmane Ravager
+- The Redmane Ravager, a night hunter of the Sunmeads, is completely resculpted. It is a hulking, hunched ape-wolf that walks on its knuckles, with a towering hump of shoulder over a narrow waist and long, heavily muscled forelimbs ending in iron-grey hooked claws.
+- A heavy mane of rust-red fur clumps, darkening to black at the tips, sweeps back off its neck and shoulders. Its deep oxblood hide fades to dusky pale fur down the forearms and hocks, with shaggy tufts at the elbows.
+- Its long wolfish skull has a weathered bone jaw plate hanging open over fangs, burning red eyes under heavy brows and swept-back ears. Its breath steams, and a long whip of a tail ends in a dark tuft.
+
 ## 1.23.0 — Holy steel
 - Barrow Knights are empty armour driven by a corrupted soul, and wraiths are what is left of the drowned. Ordinary weapons pass harmlessly through both: blows ring off the knight's plates or slide through the wraith, and you are told what it will take. Only holy weapons can end them.
 - New material: Hallowed Silver. Smelt 3 Silver, 1 Sun Amber and 1 Charcoal at the Smelter. Silver comes from the tombs and the trader; Sun Amber comes from Sunmeads boars.

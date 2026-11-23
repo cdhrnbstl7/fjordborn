@@ -655,3 +655,77 @@ def ghoul_color(g,n):
     if .84<y<.98 and ax<.12:c=mix((.22,.16,.11),(.12,.09,.06),fbm(x*14,y*14,z*14))                        # a filthy wrap
     return c
 _p,_b=ghoul();SPECS['ghoul']={'name':'ghoul','parts':_p,'bones':_b,'color':ghoul_color,'iface':dict(BIPED_IF,mat='skin'),'view':2.0,'voxel':.0055,'tris':14000,'ao':1.0,'aodist':.2}
+
+# ---------------- REDMANE RAVAGER: a hunched, knuckle-walking ape-wolf of the Sunmeads nights ----------------
+def ravager():
+    P=[]
+    # a towering hump of shoulder over a tucked waist and narrow hips
+    P+=[ell((0,1.4,.2),(.34,.4,.4),(-12,0,0)),ell((0,1.62,.0),(.29,.22,.34),(-8,0,0)),ell((0,1.17,-.27),(.22,.24,.3),(10,0,0)),ell((0,1.04,-.58),(.23,.23,.24))]
+    P+=sym(lambda d:ell((d*.2,1.3,.33),(.15,.2,.18),(0,0,d*15)))                                          # chest slabs
+    P+=sym(lambda d:ell((d*.3,1.47,.2),(.16,.17,.18)))                                                    # shoulder caps
+    P+=[ell((0,1.55,.36),(.31,.28,.3),(-25,0,0))]                                                         # the base of the mane
+    # long neck thrust low, a heavy wolfish skull, a grey bone jaw hanging open
+    P+=[mcap((0,1.5,.45),(0,1.36,.76),.14),ell((0,1.38,.84),(.17,.15,.19),(-8,0,0)),mcap((0,1.33,.95),(0,1.27,1.15),.085),ell((0,1.28,1.17),(.042,.032,.032))]
+    P+=sym(lambda d:ell((d*.075,1.42,.93),(.045,.022,.05),(0,0,d*-12)))                                  # brow ridges
+    P+=sym(lambda d:ell((d*.1,1.31,.86),(.05,.06,.07)))                                                   # jaw muscles
+    P+=[ell((0,1.18,.99),(.075,.035,.14),(-14,0,0)),ell((0,1.205,.9),(.085,.04,.08))]                    # lower jaw
+    for k in range(5):
+        x=-.044+k*.022
+        P.append(spike((x,1.26,1.09-abs(k-2)*.02),(x,1.2,1.11-abs(k-2)*.02),.008))
+        P.append(spike((x*.9,1.205,1.07-abs(k-2)*.02),(x*.9,1.255,1.085-abs(k-2)*.02),.007))
+    P+=sym(lambda d:spike((d*.05,1.27,1.06),(d*.053,1.17,1.08),.012))                                   # long canines
+    P+=sym(lambda d:spike((d*.045,1.2,1.04),(d*.05,1.29,1.06),.01))
+    P+=sym(lambda d:horn([(d*.1,1.47,.78),(d*.15,1.56,.7),(d*.17,1.62,.62)],[.03,.018,.004]))           # swept ears
+    # the mane: heavy clumps of fur swept back off the neck and shoulders, drooping at the tips like a wet lion's mane
+    import math,random
+    rnd=random.Random(7)
+    for r_ in range(5):
+        t=r_/4;cy=1.52+t*.16;cz=.6-t*.62;rad=.22+math.sin(t*math.pi)*.12
+        for j in range(9):
+            a=math.radians(-112+j*28+(r_%2)*14+rnd.uniform(-6,6));sx=math.sin(a);cyy=math.cos(a)
+            b=(sx*rad,cy+cyy*rad*.85,cz);L_=(.3+.16*math.sin(t*math.pi))*rnd.uniform(.8,1.2)
+            dx,dy,dz=sx*.6,cyy*.45+.15,-.8
+            dl=math.sqrt(dx*dx+dy*dy+dz*dz);dx,dy,dz=dx/dl,dy/dl,dz/dl
+            m=(b[0]+dx*L_*.45,b[1]+dy*L_*.45+.03,b[2]+dz*L_*.45);tp=(b[0]+dx*L_*.95,b[1]+dy*L_*.6-.09,b[2]+dz*L_)
+            P.append(horn([b,m,tp],[.085,.05,.006]))
+    # arms: long, roped with muscle, walking on knuckles; shaggy pale fur at the elbows and down the forearms
+    for d in (1,-1):
+        P+=[mcap((d*.32,1.44,.22),(d*.38,.88,.3),.13),ell((d*.36,1.2,.26),(.15,.21,.15)),ell((d*.34,1.32,.33),(.1,.12,.1)),ell((d*.38,.86,.29),(.1,.09,.1))]
+        P+=[mcap((d*.38,.86,.3),(d*.35,.2,.42),.1),ell((d*.38,.62,.35),(.13,.21,.12)),ell((d*.35,.12,.46),(.11,.075,.13))]
+        for k in range(3):
+            y=.9-k*.13;P.append(horn([(d*.4,y,.22),(d*(.46+k*.01),y-.08,.13),(d*(.47+k*.01),y-.2,.08)],[.06,.035,.005]))
+        P.append(horn([(d*.47,.78,.3),(d*.56,.7,.27),(d*.6,.58,.25)],[.05,.03,.004]))
+        for k in range(4):
+            x=d*(.3+k*.03);P.append(horn([(x,.1,.53),(x,.09,.62),(x,.03,.7),(x,-.01,.72)],[.022,.018,.01,.002]))
+        # hind legs: thick thigh, a long hock, a splayed paw
+        P+=[mcap((d*.21,1.02,-.55),(d*.25,.6,-.42),.13),ell((d*.22,.86,-.52),(.15,.22,.18)),mcap((d*.25,.6,-.42),(d*.24,.3,-.78),.07),mcap((d*.24,.3,-.78),(d*.22,.05,-.62),.06)]
+        P+=[ell((d*.22,.04,-.55),(.08,.04,.12))]+[horn([(d*(.19+k*.02),.04,-.46),(d*(.19+k*.022),.02,-.4),(d*(.19+k*.024),-.01,-.36)],[.016,.012,.002]) for k in range(4)]
+        for k in range(3):P.append(horn([(d*.26,.55-k*.08,-.47),(d*.32,.5-k*.08,-.53),(d*.34,.42-k*.08,-.56)],[.04,.022,.004]))
+    # a long whip of a tail ending in a tuft
+    P+=[cap([(0,1.08,-.78),(0,1.0,-1.0),(0,.85,-1.25),(0,.72,-1.5),(0,.66,-1.72)],[.07,.06,.045,.03,.02])]
+    for k in range(6):a=k/6*6.283;P.append(horn([(0,.67,-1.68),(math.cos(a)*.06,.66+math.sin(a)*.06,-1.82),(math.cos(a)*.09,.64+math.sin(a)*.08,-1.94)],[.035,.02,.003]))
+    J={'root':(0,1.06,-.58),'back':(0,1.22,-.2),'chest':(0,1.45,.25),'neck':(0,1.48,.5),'head':(0,1.38,.82),'nose':(0,1.28,1.16),'tail':(0,1.08,-.78),'tailtip':(0,.66,-1.72),
+       'earL':(.1,1.47,.78),'eartipL':(.17,1.62,.62),'earR':(-.1,1.47,.78),'eartipR':(-.17,1.62,.62)}
+    for d,t in ((1,'L'),(-1,'R')):J.update({'fl'+t:(d*.32,1.44,.22),'fe'+t:(d*.38,.86,.3),'fh'+t:(d*.35,.08,.46),'hl'+t:(d*.21,1.02,-.55),'hs'+t:(d*.24,.32,-.76),'hp'+t:(d*.22,.03,-.56)})
+    return P,quad_bones(J)
+def ravager_color(g,n):
+    import math
+    x,y,z=g;ax=abs(x)
+    c=mix((.27,.07,.055),(.13,.035,.03),sm(.35,.8,fbm(x*6,y*6,z*6)))                                     # deep crimson hide
+    c=mix(c,(.36,.11,.07),sm(.2,.9,n[1])*.3)                                                           # sheen on the tops of the muscle
+    c=mix(c,(.14,.02,.02),sm(.1,-.6,n[1])*.5)                                                          # dark under the belly
+    d_m=math.sqrt(ax*ax+(y-1.58)**2*.8)                                                                 # distance out from the neck line
+    mane=1.38<y and -.2<z<.78 and d_m>.24
+    if mane:c=mix(mix((.42,.12,.06),(.3,.08,.05),fbm(x*12,y*12,z*12)),(.06,.02,.02),sm(.3,.55,d_m))                                          # rust-red mane darkening to black tips
+    fz=sm(.78,.45,y+fbm(x*9,y*9,z*9)*.18)*(1 if (ax>.26 and z>.05) else sm(.6,.35,y) if (z<-.3 and ax>.18) else 0)
+    c=mix(c,mix((.58,.5,.42),(.38,.31,.26),fbm(x*20,y*20,z*20)),fz*.9)                                        # pale shaggy fur on forearms and hocks
+    if z>.5 and y<.12 and ax>.28:c=mix((.22,.22,.24),(.42,.43,.46),sm(.6,.72,z))                       # iron-grey claws
+    if z<-.36 and y<.05 and ax>.16:c=(.2,.2,.22)
+    if z>.9 and 1.13<y<1.215 and ax<.085:c=mix((.22,.21,.2),(.36,.34,.31),sm(.92,1.08,z))
+    if z>.95 and 1.215<=y<1.25 and ax<.07:c=(.12,.02,.02)                  # the bone jaw plate
+    if z>1.04 and (1.19<y<1.215 or 1.245<y<1.27) and ax<.065:c=(.72,.66,.55)                                              # teeth
+    if z>1.13 and y>1.25 and ax<.05:c=(.04,.03,.03)                                                    # nose
+    if 1.37<y<1.43 and .045<ax<.1 and z>.9:c=(.05,.01,.01)                                             # sunken eyes
+    if z<-1.55:c=mix((.09,.02,.02),(.6,.15,.08),sm(-1.6,-1.9,z))                                       # tail tuft
+    return c
+_p,_b=ravager();SPECS['ravager']={'name':'ravager','parts':_p,'bones':_b,'color':ravager_color,'shape':fur_shape(.02,lambda g,n:g[1]>1.3 or abs(g[0])>.3),'view':3.0,'voxel':.011,'tris':16000,'ao':.6,'aodist':.25}
