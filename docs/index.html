@@ -474,7 +474,7 @@ layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
 /* developer switches: all off in the public game; only the private developer edition has the menu that turns them on */
 const DEV={on:0,god:0,ghost:0,fly:0,clip:0,creative:0,speed:1,up:0,down:0};
-const GAME_VERSION='1.23.3';
+const GAME_VERSION='1.23.4';
 const EDITION='phone';/* build_editions.py sets 'phone' or 'desktop' */
 /* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
 if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
@@ -1371,6 +1371,8 @@ const runeMat=new THREE.MeshBasicMaterial({color:0x5fe6d6}),SITEFL=[];
   addCol({x:CAIRN.x,z:CAIRN.z,r:1.4})}
 
 /* ---------- items ---------- */
+/* player damage tuning: every blow the player lands is scaled by this (1.1 = +10%) */
+const PDMG=1.1;
 const FIST={dmg:4,chop:0,mine:0,cd:.45,stam:4};
 const ITEMS={
   wood:{n:'Wood',d:'Birch and pine. The bones of every hall.'},
@@ -3803,7 +3805,7 @@ function renderPanel(){
   if(tab==='gear'){const tool=(P.equip&&ITEMS[P.equip].tool)||FIST,av=armorVal();
     const eq=(slot,label,id)=>'<button type="button" class="eq'+(id?' full':'')+'" data-act="unequip" data-slot="'+slot+'"'+(id?'':' disabled')+'><span class="slot">'+(id?'<img src="'+icon(id)+'" alt="">':'')+'</span><small>'+label+'</small><b>'+(id?ITEMS[id].n:'Empty')+'</b>'+(id?'<em>Tap to remove</em>':'')+'</button>';
     h='<div class="doll">'+eq('hand','In hand',P.equip)+WSLOTS.map(([k,l])=>eq(k,l,P.armor[k]||null)).join('')+'</div>';
-    h+='<dl class="stats"><dt>Health</dt><dd>'+Math.ceil(P.hp)+' / '+maxHp()+'</dd><dt>Stamina</dt><dd>'+Math.floor(P.st)+' / '+maxSt()+'</dd><dt>Armor</dt><dd>'+(av?av+' (blows hurt '+Math.round(av*8)+'% less)':'None')+'</dd><dt>Damage</dt><dd>'+tool.dmg+(P.equip?'':' (bare fists)')+'</dd><dt>Chopping</dt><dd>'+(tool.chop||'Needs an axe')+'</dd><dt>Mining</dt><dd>'+(tool.mine||'Needs a pick')+'</dd></dl>';
+    h+='<dl class="stats"><dt>Health</dt><dd>'+Math.ceil(P.hp)+' / '+maxHp()+'</dd><dt>Stamina</dt><dd>'+Math.floor(P.st)+' / '+maxSt()+'</dd><dt>Armor</dt><dd>'+(av?av+' (blows hurt '+Math.round(av*8)+'% less)':'None')+'</dd><dt>Damage</dt><dd>'+Math.round(tool.dmg*PDMG*10)/10+(P.equip?'':' (bare fists)')+'</dd><dt>Chopping</dt><dd>'+(tool.chop||'Needs an axe')+'</dd><dt>Mining</dt><dd>'+(tool.mine||'Needs a pick')+'</dd></dl>';
     h+='<button type="button" class="btn" data-act="look">Change your look</button>';
     h+='<h5>Food in your belly</h5>'+(P.foods.length?P.foods.map(f=>{const fd=ITEMS[f.id].food,s=Math.max(0,Math.ceil(f.t));return'<div class="irow"><span class="slot"><img src="'+icon(f.id)+'" alt=""></span><div><b>'+ITEMS[f.id].n+'</b><p>+'+fd.hp+' max health · +'+fd.st+' max stamina</p></div><span class="ct">'+Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+' left</span></div>'}).join(''):'<p class="note">Nothing eaten. Up to three kinds of food raise your max health and stamina.</p>');
     h+='<h5>Skills</h5><p class="note">You improve at whatever you do. Run, fight, chop, sail and cook to raise them.</p>'+Object.keys(SKILLS).map(k=>{const v=SKL[k]||skCalc(k),f=(v.l-1)/99;
@@ -3981,7 +3983,7 @@ function afflictTick(dt){if(P.dead){for(const k of['burn','poison','slow','root'
     else if(q.k==='web'){q.m.position.set(lerp(q.x0,q.x1,k),q.y0+Math.sin(k*PI)*1.5*(1-k)+(getH(q.x1,q.z1)+.6-q.y0)*k,lerp(q.z0,q.z1,k));if(k>=1){scene.remove(q.m);PROJ.splice(i,1);ringFx(q.x1,getH(q.x1,q.z1),q.z1,1.8,0xe8f4ff,.6);if(Math.hypot(P.x-q.x1,P.z-q.z1)<1.9){hurtPlayer(q.s.dmg*.6*q.c.tier,false,{x:q.c.x,z:q.c.z,c:q.c});afflict('root',1.6);afflict('slow',4)}}}}}
 const FX=[];function ringFx(x,y,z,r,col,t){const m=new THREE.Mesh(new THREE.RingGeometry(.85,1,40),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.8,depthWrite:false,side:THREE.DoubleSide,fog:false}));m.rotation.x=-PI/2;m.position.set(x,y+.15,z);scene.add(m);FX.push({m,t:0,d:t||.45,r})}
 function fxTick(dt){for(let i=FX.length-1;i>=0;i--){const f=FX[i];f.t+=dt;const k=f.t/f.d;f.m.scale.setScalar(.2+f.r*k);f.m.material.opacity=.8*(1-k);if(k>=1){scene.remove(f.m);f.m.geometry.dispose();FX.splice(i,1)}}}
-function heavyAbility(tool,fx,fz){const a=ABIL[P.equip];if(!a)return false;const [kind,R_]=a,dmg=tool.dmg*P.comboMul*(1+.6*skF(wk())),hits=[];
+function heavyAbility(tool,fx,fz){const a=ABIL[P.equip];if(!a)return false;const [kind,R_]=a,dmg=tool.dmg*PDMG*P.comboMul*(1+.6*skF(wk())),hits=[];
   if(kind==='slam'){shakeT=.35;sfx('slam');ringFx(P.x,P.y,P.z,R_*1.1,0xd8c8a6);for(const c of creatures){const d=Math.hypot(c.x-P.x,c.z-P.z);if(d<R_+c.spec.r){hits.push(c);if(!c.spec.boss){c.stun=Math.max(c.stun||0,1.4)}}}
     for(const c of hits.slice()){hitCreature(c,dmg*.8);if(!c.spec.boss&&creatures.includes(c)){const dx=c.x-P.x,dz=c.z-P.z,l=Math.hypot(dx,dz)||1;c.kx=dx/l*13;c.kz=dz/l*13}}}
   else if(kind==='spin'){ringFx(P.x,P.y+.8,P.z,R_,0xe8e2d4,.3);for(const c of creatures.slice())if(Math.hypot(c.x-P.x,c.z-P.z)<R_+c.spec.r)hitCreature(c,dmg*.85);P.yaw+=PI*2}
@@ -3996,7 +3998,7 @@ function heavyAbility(tool,fx,fz){const a=ABIL[P.equip];if(!a)return false;const
 function doHit(){const tool=(P.equip&&ITEMS[P.equip].tool)||FIST,fx=Math.sin(P.yaw),fz=Math.cos(P.yaw);let any=false;
   if(P.heavy&&ABIL[P.equip]&&ABIL[P.equip][0]!=='sunder'&&heavyAbility(tool,fx,fz))return;
   const sunder=P.heavy&&P.equip==='pick';
-  for(const c of creatures.slice()){const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d<2.7+c.spec.r&&(dx*fx+dz*fz)/(d||1)>.25){if(P.combo===2&&!c.spec.boss)c.stun=Math.max(c.stun||0,.7);hitCreature(c,tool.dmg*P.comboMul*(1+.6*skF(wk()))*(sunder?1.6:1));gainSk(wk(),1.5);any=true}}
+  for(const c of creatures.slice()){const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d<2.7+c.spec.r&&(dx*fx+dz*fz)/(d||1)>.25){if(P.combo===2&&!c.spec.boss)c.stun=Math.max(c.stun||0,.7);hitCreature(c,tool.dmg*PDMG*P.comboMul*(1+.6*skF(wk()))*(sunder?1.6:1));gainSk(wk(),1.5);any=true}}
   if(any)return;let best=1e9,bn=null;
   near(P.x,P.z,c=>{if(c.node&&c.node.alive&&c.node.kind!=='bush'){const dx=c.x-P.x,dz=c.z-P.z,d=Math.hypot(dx,dz);if(d-c.r<2.3&&(dx*fx+dz*fz)/(d||1)>.2&&d<best){best=d;bn=c.node}}});
   if(P.equip==='hoe'){if(!P.dg&&!P.boat)tryLevel(fx,fz)}else if(bn)hitNode(bn,tool);else if((P.equip==='pick'||P.equip==='bpick')&&!P.dg&&!P.boat)tryDig(fx,fz)}
@@ -4066,7 +4068,7 @@ function updCreature(c,dt){const s=c.spec,dx=P.x-c.x,dz=P.z-c.z,dp=Math.hypot(dx
     c.yaw=angLerp(c.yaw,Math.atan2(tx,tz),Math.min(1,dt*8))}
   if(c.kx||c.kz){const kx=c.x+c.kx*dt,kz=c.z+c.kz*dt;if(getH(kx,kz)>.15){c.x=kx;c.z=kz}c.kx*=.82;c.kz*=.82;if(Math.abs(c.kx)+Math.abs(c.kz)<.1)c.kx=c.kz=0}
   if(dp<s.r+.45&&!c.spec.boss){c.x-=dx/dp*dt*3;c.z-=dz/dp*dt*3}
-  if(c.burn>0){c.burn-=dt;c.bt=(c.bt||0)-dt;if(c.bt<=0){c.bt=.5;burst(c.x,c.y+1,c.z,3);hitCreature(c,5);if(!creatures.includes(c))return}}
+  if(c.burn>0){c.burn-=dt;c.bt=(c.bt||0)-dt;if(c.bt<=0){c.bt=.5;burst(c.x,c.y+1,c.z,3);hitCreature(c,5*PDMG);if(!creatures.includes(c))return}}
   c.y=getH(c.x,c.z)+(c.leapY||0);
   const wp=c.wind>0?1-c.wind/s.wind:0,lunge=c.arms.length?0:Math.sin(wp*PI)*.6;
   const quad=c.knees.length===4,runG=quad&&sp>s.spd*.55;c.gw=lerp(c.gw||0,moving?(runG?1:.45):0,Math.min(1,dt*5));

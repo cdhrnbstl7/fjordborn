@@ -1,3 +1,6 @@
+## 1.23.4 — Hit harder
+- Every blow you land deals 10% more damage. That covers bare fists, every weapon and both holy blades, combo finishers, heavy-blow abilities, and the burn left by fire weapons. The damage shown on the gear screen includes the boost.
+
 ## 1.23.3 — The Hollow Strawman
 - The Hollow Strawman, the scarecrow that walks the Sunmeads at night, is completely resculpted.
 - Its body is a lanky, hunched frame of bound sticks under a crossbar of shoulders. It wears a grubby oversized shirt with torn sleeves, a rope belt, and baggy patched trousers ripped off at the knee.
