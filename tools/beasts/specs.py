@@ -832,3 +832,52 @@ def strawman_color(g,n):
             if abs(((x+.09)/.016)%1-.5)<.14:c=(.66,.6,.46)                                               # stitched across
     return c
 _p,_b=strawman();SPECS['strawman']={'name':'strawman','parts':_p,'bones':_b,'color':strawman_color,'iface':BIPED_IF,'shape':fur_shape(.006),'view':2.1,'voxel':.0065,'tris':12000,'ao':.9,'aodist':.18}
+
+# ---------------- CRIMSON REVENANT: a risen warlord of crimson dead flesh, bone-white war paint, fur mantle, bandaged arms ----------------
+def revenant():
+    import math
+    P=[]
+    # a slab of a torso: ribcage, heavy pectorals, a ridged belly, broad lats and a hump of trapezius
+    P+=[ell((0,1.45,.02),(.22,.24,.15)),ell((0,1.42,-.08),(.18,.2,.08)),ell((0,1.66,-.02),(.17,.065,.09)),ell((0,1.24,.06),(.14,.14,.09)),ell((0,1.03,0),(.17,.11,.12))]
+    P+=sym(lambda d:ell((d*.11,1.51,.12),(.115,.085,.06),(10,0,d*8)))+sym(lambda d:ell((d*.17,1.37,-.03),(.08,.17,.1),(0,0,d*10)))
+    for r_ in range(3):P+=sym(lambda d:ell((d*.045,1.32-r_*.075,.135),(.042,.032,.025)))                      # abdominals
+    P+=sym(lambda d:ell((d*.14,1.16,.06),(.05,.1,.07),(0,0,d*-12)))                                        # obliques
+    # a thick neck under a heavy-jawed brute's head
+    P+=[mcap((0,1.62,.02),(0,1.75,.06),.078),ell((0,1.86,.06),(.098,.108,.108)),ell((0,1.76,.11),(.086,.05,.08)),ell((0,1.875,.15),(.09,.026,.032)),ell((0,1.81,.17),(.022,.03,.025))]
+    P+=sym(lambda d:ell((d*.06,1.79,.135),(.03,.025,.03)))+sym(lambda d:ell((d*.098,1.83,.06),(.018,.035,.025)))
+    for d in (1,-1):
+        P+=[ell((d*.3,1.6,0),(.105,.095,.105)),mcap((d*.3,1.6,0),(d*.42,1.28,.05),.078),ell((d*.37,1.45,.06),(.068,.115,.068)),ell((d*.37,1.44,-.04),(.062,.1,.062))]
+        P+=[ell((d*.42,1.28,.05),(.06,.055,.06)),mcap((d*.42,1.28,.05),(d*.46,.98,.12),.062),ell((d*.44,1.18,.08),(.068,.115,.062)),ell((d*.47,.93,.14),(.052,.062,.052))]
+        P+=[mcap((d*.13,.98,0),(d*.16,.55,.05),.1),ell((d*.14,.8,.06),(.1,.17,.09)),ell((d*.16,.55,.05),(.07,.06,.07)),mcap((d*.16,.55,.05),(d*.15,.1,-.01),.066),ell((d*.16,.4,-.0),(.072,.115,.075)),ell((d*.15,.05,.06),(.056,.042,.125))]
+    # a shaggy fur mantle heaped across the shoulders
+    P+=[ell((0,1.67,-.01),(.27,.07,.17))]
+    for k in range(16):
+        if abs(-160+k*20)<55:continue
+        a=math.radians(-160+k*20);sx=math.sin(a);cz=math.cos(a);b=(sx*.24,1.68,cz*.14-.01)
+        P.append(horn([b,(b[0]+sx*.08,b[1]-.04,b[2]+cz*.05),(b[0]+sx*.1,b[1]-.13,b[2]+cz*.07)],[.06,.04,.006]))
+    # a dark war kilt over the hips, flaps hanging front and back
+    P+=[ell((0,.92,0),(.19,.13,.145)),ell((0,.73,.11),(.12,.2,.028),(8,0,0)),ell((0,.73,-.11),(.14,.2,.028),(-8,0,0))]
+    J={'hip':(0,1.0,0),'waist':(0,1.2,0),'chest':(0,1.48,.02),'neckt':(0,1.7,.03),'face':(0,1.82,.12),'sh':(.3,1.6,0),'el':(.42,1.28,.05),'wr':(.46,.98,.12),'hp':(.13,.98,0),'kn':(.16,.55,.05),'an':(.15,.1,-.01)}
+    return P,biped_bones(J)
+def revenant_color(g,n):
+    import math
+    x,y,z=g;ax=abs(x)
+    c=mix((.46,.1,.085),(.26,.05,.045),sm(.3,.8,fbm(x*7,y*7,z*7)))                                  # crimson dead flesh
+    c=mix(c,(.56,.16,.12),sm(.3,.95,n[1])*.25)
+    paint=False
+    if 1.08<y<1.64 or (ax>.27 and 1.0<y<1.62) or (.6<y<.98 and ax>.05):
+        v=math.sin(y*15+math.sin(x*6+z*3.5)*1.3+(2.2 if x<0 else 0)+(1.4 if ax>.27 else 0));paint=v>.74
+    if 1.785<y<1.82 and z>.1:paint=True                                                              # a band of paint across the eyes
+    # war paint is drawn per pixel by the game's 'war' material over the crimson skin
+    if ax>.4 and .9<y<1.2:c=mix((.72,.66,.54),(.46,.41,.33),sm(.2,.9,.5+.5*math.sin(y*70+x*40+z*25)))                 # bandaged forearms
+    if .14<y<.44 and ax>.08:c=mix((.68,.62,.5),(.44,.39,.31),sm(.2,.9,.5+.5*math.sin(y*70+x*40+z*25)))             # bandaged shins
+    if y<.1:c=mix((.5,.45,.36),(.36,.32,.26),fbm(x*20,y*20,z*20))                                    # wrapped feet
+    if .86<y<.99 and ax<.2:c=mix((.11,.085,.07),(.05,.04,.035),fbm(x*12,y*12,z*12))                  # kilt
+    if .55<y<.86 and abs(z)>.085 and ax<.15:c=mix((.1,.08,.065),(.04,.035,.03),fbm(x*12,y*12,z*12))
+    if .985<y<1.06 and ax<.19:c=(.24,.17,.11)                                                        # belt
+    dm=math.sqrt(x*x+(z+.01)**2*1.6)
+    if y>1.6 and y<1.73 and dm>.15:c=mix((.62,.6,.55),(.36,.34,.31),sm(.3,.8,fbm(x*16,y*16,z*16)))  # fur mantle
+    if 1.81<y<1.85 and .025<ax<.075 and z>.12:c=(.03,.01,.01)                                         # deep-set eyes
+    if 1.73<y<1.75 and ax<.04 and z>.17:c=(.12,.02,.02)                                               # mouth
+    return c
+_p,_b=revenant();SPECS['revenant']={'name':'revenant','parts':_p,'bones':_b,'color':revenant_color,'iface':dict(BIPED_IF,mat='war'),'shape':fur_shape(.01,lambda g,n:g[1]>1.6 and abs(g[0])>.12),'view':2.4,'voxel':.0068,'tris':20000,'ao':.9,'aodist':.2}

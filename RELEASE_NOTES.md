@@ -1,3 +1,9 @@
+## 1.23.5 — The Crimson Revenant
+- The Crimson Revenant, the elite warlord that rises over the Sunmeads at night, is completely resculpted. It is a towering, heavily muscled brute of crimson dead flesh, with a slab of a chest, ridged belly, broad back and thick arms.
+- Sweeping bands of bone-white war paint run across its chest, arms and legs, and a band is painted across its eyes. It wears a heavy fur mantle over the shoulders, bandaged forearms and shins, wrapped feet, and a dark war kilt with torn flaps.
+- On its head sits a riveted iron half-helm with a bronze rim, a nasal guard and cheek plates, crowned by two great curving horns of ivory with black tips. Its eyes burn red beneath it.
+- A skull charm hangs on a cord over its heart, and it carries a great double-bladed axe low at its side.
+
 ## 1.23.4 — Hit harder
 - Every blow you land deals 10% more damage. That covers bare fists, every weapon and both holy blades, combo finishers, heavy-blow abilities, and the burn left by fire weapons. The damage shown on the gear screen includes the boost.
 
