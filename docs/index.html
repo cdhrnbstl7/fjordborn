@@ -474,7 +474,7 @@ layout();
 /* graphics quality: High on computers (shadows, dense grass, sharper), Low on phones; changeable in the pause menu */
 /* developer switches: all off in the public game; only the private developer edition has the menu that turns them on */
 const DEV={on:0,god:0,ghost:0,fly:0,clip:0,creative:0,speed:1,up:0,down:0};
-const GAME_VERSION='1.23.5';
+const GAME_VERSION='1.24.0';
 const EDITION='phone';/* build_editions.py sets 'phone' or 'desktop' */
 /* desktop: keyboard and mouse only, so the on-screen action buttons go (touchscreens keep them) */
 if(EDITION==='desktop'&&!isTouch())document.body.classList.add('kbonly');
@@ -687,35 +687,43 @@ function limb(w,h,d,col,x,y,z,mat,extra){const m=new THREE.Mesh(G('l'+w+'|'+h+'|
 
 /* ---------- world heights ---------- */
 /* the isle is 1.5 km across; computers get a 2 m terrain grid, phones a 3 m one; only the tiles near you are drawn */
-const HALF=768,N=[512,768,1024][GFX.terrain],CELL=HALF*2/N,NV=N+1,H=new Float32Array(NV*NV),WLIM=HALF-12,AF=7;
+/* the isle was 1.5 km across; it is now built half again as large (WS) with a ragged coast, and the open sea runs out to three times the old reach */
+const WS=1.5,HALF0=768,HALF=Math.round(HALF0*WS),N=[768,1152,1536][GFX.terrain],CELL=HALF*2/N,NV=N+1,H=new Float32Array(NV*NV),WLIM=HALF0*3-12,LANDK=2.1,AF=7*LANDK;
 /* tombs are built out past the eastern sea, 60 m up, and reached only through their barrow doors */
 let WRECK=null;
-const DZX=1000,DY=60,DT=4,DW=64,DGAP=DW*DT+60,DGS=[];
-function mountMask(x,z){return smooth(.5,.7,vnoise(x*.0045+9,z*.0045+31))*smooth(95,140,Math.hypot(x,z))}
-const ISLETS=[25,70,115,160,205,250,295,340].map(a=>{const r=a*PI/180;return[Math.cos(r)*HALF*.93,Math.sin(r)*HALF*.93,14]});
-function rawH0(x,z){const d=Math.hypot(x,z),fall=1-smooth(HALF*.6,HALF*.87,d),e=fbm(x*.011+40,z*.011+40);
-  let h=e*20-5.5;h+=mountMask(x,z)*(8+e*46);h=h*fall-(1-fall)*7;
+const DZX=2700,DY=60,DT=4,DW=64,DGAP=DW*DT+60,DGS=[];
+function mountMask0(x,z){x/=WS;z/=WS;const wx=(fbm(x*.006+3,z*.006+8)-.5)*90,wz=(fbm(x*.006+13,z*.006+2)-.5)*90;return smooth(.475,.6,fbm((x+wx)*.0045+9,(z+wz)*.0045+31))*smooth(95,140,Math.hypot(x,z))}
+/* the coast is no circle: lobes, bays and a long arm, carved from a few slow waves around the compass and a warp of noise (in pre-scale units) */
+/* both shapes are broad and smooth, so they are worked out once on a coarse grid and read back with bilinear blending */
+function cfield(fn,step){const n=Math.ceil(HALF*2/step)+2,a=new Float32Array(n*n);for(let j=0;j<n;j++)for(let i=0;i<n;i++)a[j*n+i]=fn(i*step-HALF,j*step-HALF);
+  return(x,z)=>{let gx=(x+HALF)/step,gz=(z+HALF)/step;gx=clamp(gx,0,n-1.001);gz=clamp(gz,0,n-1.001);const i=gx|0,j=gz|0,fx=gx-i,fz=gz-j,k=j*n+i;return(a[k]*(1-fx)+a[k+1]*fx)*(1-fz)+(a[k+n]*(1-fx)+a[k+n+1]*fx)*fz}}
+function coastR(u,v){const t=Math.atan2(v,u),gb=(c,w)=>{let d=t-c;d=Math.atan2(Math.sin(d),Math.cos(d));return Math.exp(-(d/w)*(d/w))};
+  return clamp(.8+.2*Math.sin(2*t+1.1)+.12*Math.sin(3*t+2.3)+.08*Math.sin(5*t+.4)+.42*gb(-2.2,.2)+.26*gb(1.9,.16)-.36*gb(.35,.22)-.22*gb(3.0,.14)+(fbm(u*.004+7,v*.004+3)-.5)*.42,.42,1.12)}
+const mountMask=cfield(mountMask0,6),COASTF=cfield((X,Z)=>coastR(X/WS,Z/WS),6);
+const ISLETS=[25,70,115,160,205,250,295,340].map(a=>{const r=a*PI/180,c=Math.cos(r),sn=Math.sin(r),R=Math.min(HALF0*.93*coastR(c,sn)+40,(HALF-50)/WS);return[c*R,sn*R,14]});
+function rawH0(X,Z){const x=X/WS,z=Z/WS,d=Math.hypot(x,z),fall=1-smooth(HALF0*.7,HALF0*.87,d/COASTF(X,Z)),e=fbm(x*.011+40,z*.011+40)+(vnoise(X*.02+5,Z*.02+9)-.5)*.1;
+  let h=e*20-5.5+1.1;h+=mountMask(X,Z)*(8+e*46);h=h*fall-(1-fall)*7;
   for(const[cx,cz,R]of ISLETS){const di=Math.hypot(x-cx,z-cz);if(di<R*1.9){const ih=lerp(-7,2.6+3.4*fbm(x*.08+cx,z*.08+cz),smooth(-.85,.45,1-di/R));if(ih>h)h=ih}}
   return lerp(3.2,h,smooth(8,34,d))}
 /* the town sits on the flattest low ground in the outer ring, and the land around it is levelled */
-const TOWN=(()=>{let best=null;for(let a=0;a<72;a++){const ang=a/72*6.283;for(const r of[236,252,268]){const x=Math.sin(ang)*r,z=Math.cos(ang)*r,h=rawH0(x,z);if(h<4||h>15||mountMask(x,z)>.1)continue;
+const TOWN=(()=>{let best=null;for(let a=0;a<72;a++){const ang=a/72*6.283;for(const r of[236*WS,252*WS,268*WS]){const x=Math.sin(ang)*r,z=Math.cos(ang)*r,h=rawH0(x,z);if(h<4||h>15||mountMask(x,z)>.1)continue;
     let rough=0;for(let k=0;k<8;k++){const b=k/8*6.283;rough+=Math.abs(rawH0(x+Math.sin(b)*24,z+Math.cos(b)*24)-h)+Math.abs(rawH0(x+Math.sin(b)*40,z+Math.cos(b)*40)-h)*.5}if(!best||rough<best.rough)best={x,z,h,rough}}}
   best=best||{x:0,z:262,h:6};best.h=Math.max(4,best.h);best.rot=Math.atan2(-best.x,-best.z);best.name='Hvalvik';return best})();
 function rawH(x,z){const h=rawH0(x,z),d=Math.hypot(x-TOWN.x,z-TOWN.z);return d<52?lerp(TOWN.h,h,smooth(30,52,d)):h}
-const meadowOut=(x,z)=>Math.min(1,smooth(.56,.66,vnoise(x*.012+71,z*.012+19))*smooth(170,195,Math.hypot(x,z))+smooth(56,38,Math.hypot(x-TOWN.x,z-TOWN.z)));
+const meadowOut=(x,z)=>Math.min(1,smooth(.56,.66,vnoise(x/WS*.012+71,z/WS*.012+19))*smooth(170,195,Math.hypot(x,z)/WS)+smooth(56,38,Math.hypot(x-TOWN.x,z-TOWN.z)));
 for(let iz=0;iz<NV;iz++)for(let ix=0;ix<NV;ix++)H[iz*NV+ix]=rawH(ix*CELL-HALF,iz*CELL-HALF);
 function getH(x,z){if(x>DZX){if(!dgWalk(x,z))return -7;const d=dgOf(x);let y=DY;if(d&&d.lift)for(const L of d.lift)if(x>L.x0&&x<L.x1&&z>L.z0&&z<L.z1&&DY+L.h>y)y=DY+L.h;return y}const gx=(x+HALF)/CELL,gz=(z+HALF)/CELL;if(!(gx>=0&&gz>=0&&gx<N&&gz<N)){if(WRECK){const w=wreckH(x,z);if(w!=null)return w}return -7}
   const ix=gx|0,iz=gz|0,fx=gx-ix,fz=gz-iz,i=iz*NV+ix,a=H[i],b=H[i+1],c=H[i+NV],d=H[i+NV+1];
   return fx+fz<=1?a+(b-a)*fx+(c-a)*fz:d+(c-d)*(1-fx)+(b-d)*(1-fz)}
 function biome(x,z){const h=getH(x,z);if(h<1)return 0;if(h>19&&mountMask(x,z)>.3)return 3;
-  return Math.hypot(x,z)+(vnoise(x*.02+3,z*.02+8)-.5)*50<105||meadowOut(x,z)>.5?1:2}
+  return Math.hypot(x,z)/WS+(vnoise(x/WS*.02+3,z/WS*.02+8)-.5)*50<105||meadowOut(x,z)>.5?1:2}
 const BIOME=['The Strand','Sunmeads','Gloamwood','Hoarfells','The Drowned Colossus'];
 const slope=(x,z)=>Math.abs(getH(x+1,z)-getH(x-1,z))+Math.abs(getH(x,z+1)-getH(x,z-1));
 const CULL=[],TCH=[];let TERRAIN_MAT=null;const TERRAIN_U={uWet:{value:0},uSg:{value:1},uSf:{value:1},uSd:{value:1},uSr:{value:1},uSs:{value:1},uPh:{value:0}},PHOTO={};
 /* dirt patches shared by the terrain textures and the grass, so grass never grows on bare earth */
 const dirtAt=(x,z)=>clamp(smooth(.6,.72,fbm(x*.045+11,z*.045+5))*.85+smooth(14,4,Math.hypot(x,z-2))*.9+smooth(10,3,Math.hypot(x-TOWN.x,z-TOWN.z))*.9,0,1);
 /* how much of each ground texture a point gets: grass, forest floor, dirt, rock, sand, snow */
-function splatAt(x,z,h,ny,o){const dd=Math.hypot(x,z)+(vnoise(x*.02+3,z*.02+8)-.5)*50,fw=smooth(97,113,dd)*(1-meadowOut(x,z));
+function splatAt(x,z,h,ny,o){const dd=Math.hypot(x,z)/WS+(vnoise(x/WS*.02+3,z/WS*.02+8)-.5)*50,fw=smooth(97,113,dd)*(1-meadowOut(x,z));
   let g=1-fw,f=fw,d=dirtAt(x,z),s=smooth(1.7,.8,h);g*=1-d;f*=1-d;g*=1-s;f*=1-s;d*=1-s;
   if(h<-.2){const m=smooth(-.2,-1.6,h);d=lerp(d,.55,m);s=lerp(s,.45,m)}
   const mm=mountMask(x,z);let sn=smooth(23,29,h)*smooth(.25,.45,mm)*smooth(.68,.84,ny);
@@ -959,10 +967,10 @@ function updWeather(dt){WX.next-=dt;if(WX.next<=0)pickWeather();
   ensureRainSound();if(rainGain)rainGain.gain.value=paused||!started?0:WX.rain*.09}
 
 /* ---------- spatial grid ---------- */
-const grid=new Map(),gk=(x,z)=>(Math.floor((x+HALF)/8)<<8)|Math.floor((z+HALF)/8);
+const grid=new Map(),gk=(x,z)=>Math.floor((x+HALF)/8)*1024+Math.floor((z+HALF)/8);
 function addCol(c){const k=gk(c.x,c.z);let a=grid.get(k);if(!a)grid.set(k,a=[]);a.push(c);return c}
 function remCol(c){const a=grid.get(gk(c.x,c.z));if(a){const i=a.indexOf(c);if(i>=0)a.splice(i,1)}}
-function near(x,z,fn){const cx=Math.floor((x+HALF)/8),cz=Math.floor((z+HALF)/8);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const a=grid.get(((cx+i)<<8)|(cz+j));if(a)for(let k=0;k<a.length;k++)fn(a[k])}}
+function near(x,z,fn){const cx=Math.floor((x+HALF)/8),cz=Math.floor((z+HALF)/8);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const a=grid.get((cx+i)*1024+(cz+j));if(a)for(let k=0;k<a.length;k++)fn(a[k])}}
 
 /* ---------- altar site ---------- */
 let ALT={x:0,z:150,y:0};
@@ -1003,7 +1011,7 @@ function scatter(count,test,cb){count=Math.round(count*AF);let tries=0,n=0;while
 const lcg=seed=>{let s=seed%2147483646+1;return()=>(s=s*16807%2147483647)/2147483647};
 const SITES=[];
 {const r=lcg(424242),flatAt=(x,z,rad,tol)=>{const h=getH(x,z);for(let k=0;k<8;k++){const a=k*.785;if(Math.abs(getH(x+Math.sin(a)*rad,z+Math.cos(a)*rad)-h)>tol)return false}return true};
-  const clearSpot=(x,z,sep)=>Math.hypot(x,z)>70&&Math.hypot(x-TOWN.x,z-TOWN.z)>90&&Math.hypot(x-ALT.x,z-ALT.z)>60&&Math.hypot(x-CAIRN.x,z-CAIRN.z)>60&&SITES.every(t=>Math.hypot(x-t.x,z-t.z)>sep+t.r);
+  const clearSpot=(x,z,sep)=>Math.hypot(x,z)>70*WS&&Math.hypot(x-TOWN.x,z-TOWN.z)>90&&Math.hypot(x-ALT.x,z-ALT.z)>60&&Math.hypot(x-CAIRN.x,z-CAIRN.z)>60&&SITES.every(t=>Math.hypot(x-t.x,z-t.z)>sep+t.r);
   const find=(kind,name,rad,sep,test)=>{for(let i=0;i<5000;i++){const a=r()*6.283,d=Math.sqrt(r())*HALF*.86,x=Math.sin(a)*d,z=Math.cos(a)*d,h=getH(x,z);
       if(test(x,z,h,d)&&clearSpot(x,z,sep)){const t={kind,name,x,z,y:h,r:rad,rot:r()*6.283,disc:false};SITES.push(t);return t}}return null};
   find('ring','Skyfall Ring',13,120,(x,z,h,d)=>h>6&&h<22&&d>220&&flatAt(x,z,11,1.6));
@@ -1199,8 +1207,8 @@ const deco=(x,z,h,s,t)=>({x,y:h,z,rot:rnd()*6.283,s,tint:t});
 scatter(260,(x,z)=>biome(x,z)===1,(x,z,h)=>{const a=rnd();L.flower.push(deco(x,z,h,.9+rnd()*.6,a<.25?[1,.97,.92]:a<.5?[1,.52,.74]:a<.75?[.6,.66,1]:[1,.86,.28]))});
 scatter(500,(x,z)=>biome(x,z)===2,(x,z,h)=>{const v=.8+rnd()*.4;L.fern.push(deco(x,z,h,.8+rnd()*.8,[v,v,v]))});
 for(const d of L.flower){const t=d.tint;L[t[2]>.9&&t[0]<.7?'flowerB':t[2]<.5?'flowerY':t[1]<.6?'flowerP':'flowerW'].push(d);d.tint=[1,1,1]}L.flower=[];
-{const r=lcg(9090),K=['flowerW','flowerP','flowerB','flowerY'];let n=0;for(let i=0;i<200000&&n<12000;i++){const x=(r()*2-1)*(HALF-12),z=(r()*2-1)*(HALF-12),h=getH(x,z);if(h>1.3&&biome(x,z)===1&&slope(x,z)<1&&clearOf(x,z)){const patch=vnoise(x*.02+5,z*.02+9);if(r()<smooth(.3,.75,patch)*1.3){L[K[Math.floor(vnoise(x*.05+1,z*.05+2)*4.6)%4]].push({x,y:h,z,rot:r()*6.283,s:.85+r()*.5,tint:[1,1,1]});n++}}}}
-{const r=lcg(8080);let n=0;for(let i=0;i<90000&&n<4500;i++){const x=(r()*2-1)*(HALF-12),z=(r()*2-1)*(HALF-12),h=getH(x,z);if(h>1.3&&biome(x,z)===1&&slope(x,z)<1&&clearOf(x,z)){L.dandelion.push({x,y:h,z,rot:r()*6.283,s:.9+r()*.5,tint:[1,1,1]});n++}}}
+{const r=lcg(9090),K=['flowerW','flowerP','flowerB','flowerY'];let n=0;for(let i=0;i<200000*LANDK&&n<12000*LANDK;i++){const x=(r()*2-1)*(HALF-12),z=(r()*2-1)*(HALF-12),h=getH(x,z);if(h>1.3&&biome(x,z)===1&&slope(x,z)<1&&clearOf(x,z)){const patch=vnoise(x*.02+5,z*.02+9);if(r()<smooth(.3,.75,patch)*1.3){L[K[Math.floor(vnoise(x*.05+1,z*.05+2)*4.6)%4]].push({x,y:h,z,rot:r()*6.283,s:.85+r()*.5,tint:[1,1,1]});n++}}}}
+{const r=lcg(8080);let n=0;for(let i=0;i<90000*LANDK&&n<4500*LANDK;i++){const x=(r()*2-1)*(HALF-12),z=(r()*2-1)*(HALF-12),h=getH(x,z);if(h>1.3&&biome(x,z)===1&&slope(x,z)<1&&clearOf(x,z)){L.dandelion.push({x,y:h,z,rot:r()*6.283,s:.9+r()*.5,tint:[1,1,1]});n++}}}
 function setMat(n,tilt,ax,az,zero){D.position.set(n.x,n.y,n.z);QY.setFromAxisAngle(UP,n.rot);
   if(tilt){QT.setFromAxisAngle(AX.set(ax,0,az).normalize(),tilt);D.quaternion.copy(QT).multiply(QY)}else D.quaternion.copy(QY);
   D.scale.setScalar(zero?0:n.s);D.updateMatrix();n.mesh.setMatrixAt(n.idx,D.matrix);n.mesh.instanceMatrix.needsUpdate=true;
@@ -1829,7 +1837,7 @@ function spawnDrop(item,n,x,z,pid,vy){const ig=IG(item),m=ig?new THREE.Mesh(ig,I
   put('wood',110,(x,z)=>{const b=biome(x,z);return b===1||b===2},1);
   put('stone',100,(x,z)=>biome(x,z)>0,1);
   put('shroom',45,(x,z)=>biome(x,z)===2);
-  let tries=0,n=0;while(n<150&&tries<16000){tries++;const x=(rnd()*2-1)*(HALF-12),z=(rnd()*2-1)*(HALF-12),h=getH(x,z);if(h>.25&&h<1.3){spawnDrop('flint',1,x,z,pid++);n++}else if(tries%2===0&&h>1.3){/* keep rng moving */}}
+  let tries=0,n=0;while(n<150*LANDK&&tries<16000*LANDK){tries++;const x=(rnd()*2-1)*(HALF-12),z=(rnd()*2-1)*(HALF-12),h=getH(x,z);if(h>.25&&h<1.3){spawnDrop('flint',1,x,z,pid++);n++}else if(tries%2===0&&h>1.3){/* keep rng moving */}}
   for(let i=0;i<7;i++){const a=i*.9+.3;spawnDrop(i%2?'stone':'wood',1,Math.sin(a)*(5+i),Math.cos(a)*(5+i),pid++)}}
 
 /* ---------- structures ---------- */
@@ -3332,7 +3340,7 @@ const WGEOW={
   for(const k of['scrap','rail','gate'])if(L[k].length)instSet(G(k+'W',()=>WGEOW[k]),L[k],true)}
 /* an ore for every land: tin in the Strand's shingle, copper under the Sunmeads, rime ore high in the Hoarfells (ember stays in the Gloamwood).
    Placed with their own seed after everything else, so the rest of the world and old saves are unchanged */
-{const r=lcg(5151),W={copper:26,tin:16,rime:22};
+{const r=lcg(5151),W={copper:Math.round(26*LANDK),tin:Math.round(16*LANDK),rime:Math.round(22*LANDK)};
   for(const k in W){const list=[];let tries=0;while(list.length<W[k]&&tries<9000){tries++;const x=(r()*2-1)*(HALF-14),z=(r()*2-1)*(HALF-14),h=getH(x,z);
       const ok=k==='tin'?h>.25&&h<1.05&&slope(x,z)<1.4:biome(x,z)===ORES[k].biome&&h>1.1&&slope(x,z)<2&&clearOf(x,z);if(!ok)continue;
       let near2=false;for(const o of list)if(Math.hypot(o.x-x,o.z-z)<18)near2=true;if(near2)continue;
@@ -4279,7 +4287,7 @@ $('bbDone').addEventListener('click',()=>setBuild(null));
 
 /* ---------- save / load ---------- */
 function save(){if(!started||wiping)return false;try{const inv=Object.assign({},P.inv);if(boss===1)inv.core=(inv.core||0)+3;if(boss2===1)inv.fang=(inv.fang||0)+4;
-  localStorage.setItem(KEY,JSON.stringify({v:1,hb:P.bar||[],ho:P.barOff||[],kn:[...KNOWN],tu:P.tut,inv,eq:P.equip,ar:P.armor,fo:P.foods,x:P.dg?P.dg.site.ux:P.x,z:P.dg?P.dg.site.uz:P.z,sp:P.spawn,t:time,day,boss:boss===2?2:0,b2:boss2===2?2:0,sk:SK,w:4,lc:[...new Set([...LOOTOPEN,...LOOT.filter(c=>c.open).map(c=>c.key)])],disc:SITES.map((t,i)=>t.disc?i:-1).filter(i=>i>=0),dig:DIG,wr:wearSave(),ts:townSeen?1:0,dead:deadIds,st:structs.map(s=>[s.type,s.x,s.base,s.z,s.rot,structData(s)]),ch:CHESTS.filter(c=>c.open).map(c=>c.i)}));
+  localStorage.setItem(KEY,JSON.stringify({v:1,hb:P.bar||[],ho:P.barOff||[],kn:[...KNOWN],tu:P.tut,inv,eq:P.equip,ar:P.armor,fo:P.foods,x:P.dg?P.dg.site.ux:P.x,z:P.dg?P.dg.site.uz:P.z,sp:P.spawn,t:time,day,boss:boss===2?2:0,b2:boss2===2?2:0,sk:SK,w:5,lc:[...new Set([...LOOTOPEN,...LOOT.filter(c=>c.open).map(c=>c.key)])],disc:SITES.map((t,i)=>t.disc?i:-1).filter(i=>i>=0),dig:DIG,wr:wearSave(),ts:townSeen?1:0,dead:deadIds,st:structs.map(s=>[s.type,s.x,s.base,s.z,s.rot,structData(s)]),ch:CHESTS.filter(c=>c.open).map(c=>c.i)}));
   lastSaveAt={when:new Date(),day};saveFailed=false;return true}catch(e){saveFailed=true;return false}}
 function updSaveMsg(){const m=$('saveMsg');m.classList.toggle('bad',saveFailed);
   if(saveFailed)m.textContent='This browser blocked saving, which a private window can do. Progress will be lost when you close the page.';
@@ -4389,9 +4397,14 @@ document.addEventListener('fullscreenchange',updFull);document.addEventListener(
 $('fsClose').addEventListener('click',()=>{$('fsHelp').hidden=true});
 $('fsOpen').addEventListener('click',()=>{save();$('fsHelp').hidden=true});
 function readSave(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');return s&&s.v===1?s:null}catch(e){return null}}
-function applySave(s){P.tut=s.tu==null?TUT.length:s.tu;P.bar=Array.isArray(s.hb)?s.hb:[];P.barOff=Array.isArray(s.ho)?s.ho:[];KNOWN.clear();if(Array.isArray(s.kn))s.kn.forEach(k=>KNOWN.add(k));else for(const k in ITEMS)KNOWN.add(k);P.inv=s.inv||{};P.equip=s.eq&&P.inv[s.eq]>0?s.eq:null;P.armor=Object.assign({},s.ar||{});if(P.armor.body===true)P.armor.body='tunic';if(P.armor.head===true)P.armor.head='helm';delete P.armor.cloak;for(const k in P.armor)if(P.armor[k]&&(!ITEMS[P.armor[k]]||!(P.inv[P.armor[k]]>0)))P.armor[k]=false;P.foods=(s.fo||[]).filter(f=>ITEMS[f.id]&&ITEMS[f.id].food);
+/* saves from before the isle was reshaped (world 4 and older): the land under any buildings is different now, so every structure is taken down and its
+   materials, and everything stored in it, go back into the pack; the player wakes at the heart of the isle. Skills, gear, discoveries of bosses are kept */
+function migrateWorld(s){if(s.w===5)return;const rf={};let nb=0;for(const a of s.st||[]){const d=BUILD[a[0]];if(d&&d.cost)for(const k in d.cost)rf[k]=(rf[k]||0)+d.cost[k];nb++;const dat=a[5];if(dat&&dat.inv)for(const k in dat.inv)rf[k]=(rf[k]||0)+(dat.inv[k]|0)}
+  s.inv=s.inv||{};let ni=0;for(const k in rf)if(ITEMS[k]&&rf[k]>0){s.inv[k]=(s.inv[k]||0)+rf[k];ni+=rf[k]}
+  s.st=[];s.dig=[];s.wr=null;s.disc=[];s.x=0;s.z=2;s.sp={x:0,z:2};s.migrated={nb,ni}}
+function applySave(s){migrateWorld(s);P.tut=s.tu==null?TUT.length:s.tu;P.bar=Array.isArray(s.hb)?s.hb:[];P.barOff=Array.isArray(s.ho)?s.ho:[];KNOWN.clear();if(Array.isArray(s.kn))s.kn.forEach(k=>KNOWN.add(k));else for(const k in ITEMS)KNOWN.add(k);P.inv=s.inv||{};P.equip=s.eq&&P.inv[s.eq]>0?s.eq:null;P.armor=Object.assign({},s.ar||{});if(P.armor.body===true)P.armor.body='tunic';if(P.armor.head===true)P.armor.head='helm';delete P.armor.cloak;for(const k in P.armor)if(P.armor[k]&&(!ITEMS[P.armor[k]]||!(P.inv[P.armor[k]]>0)))P.armor[k]=false;P.foods=(s.fo||[]).filter(f=>ITEMS[f.id]&&ITEMS[f.id].food);
   P.x=+s.x||0;P.z=+s.z||2;P.y=Math.max(getH(P.x,P.z),-1.2);P.spawn=s.sp||{x:0,z:2};time=+s.t||.1;day=s.day||1;boss=s.boss||0;boss2=s.b2||0;if(s.sk)for(const k in s.sk)if(SKILLS[k]&&s.sk[k]>0){SK[k]=+s.sk[k];skCalc(k)}
-  townSeen=!!s.ts;if(s.w!==4){s.dead=[];setTimeout(()=>toast(s.w===3?'Ruins, landmarks and old barrows have appeared across the isle. Explore to put them on your map.':'The isle has grown far larger while you were away, with ruins, landmarks and barrows to find.','big'),1500)}
+  townSeen=!!s.ts;if(s.w!==5){s.dead=[];const mg=s.migrated||{};setTimeout(()=>toast('The isle has reshaped itself while you slept: it is half again as large, with a ragged new coast, bays and long arms of land, and far more sea around it.'+(mg.nb?' Your '+mg.nb+' buildings were taken down and their materials, with everything stored in them, are back in your pack.':''),'big'),1500)}
   if(s.disc)for(const i of s.disc)if(SITES[i])SITES[i].disc=true;if(s.lc)for(const k of s.lc){LOOTOPEN.add(k);const c=LOOT.find(c=>c.key===k);if(c&&!c.open)openLoot(c,true)}if(Array.isArray(s.dig)){for(const e of s.dig){if(e.length>2)levelAt(e[0],e[1],e[2],true);else digAt(e[0],e[1],true)}DIG.push(...s.dig)}wearLoad(s.wr);
   for(const id of s.dead||[]){deadIds.push(id);if(id<10000){const n=nodes[id];if(n&&n.alive)killNode(n,true)}else{const i=drops.findIndex(d=>d.pid===id);if(i>=0){scene.remove(drops[i].mesh);drops.splice(i,1)}}}
   for(const a of s.st||[])if(SGEO[a[0]])addStruct(a[0],a[1],a[2],a[3],a[4],a[5]);
@@ -4786,7 +4799,7 @@ function frame(t){requestAnimationFrame(frame);if(PREV){GU.value=t/1000;renderer
   if(dbgEl){if(renderErr)dbgEl.textContent='build 11\n'+renderErr;else dbgTick(dt)}}
 refreshLook();renderHotbar();
 
-window.__fjordborn={setTime:v=>{time=v},forgeSword,holySword,equip:id=>equip(id),hitC:(c,d)=>hitCreature(c,d),PL:P,lookq:LOOKQ,cy:()=>camYaw,st:()=>[started,paused,askTurn,panelOpen].join(),scene,renderer,updCreature,enemyTick,craftId:id=>craft(RECIPES.find(r=>r.id===id)),KNOWN,addItem:(i,n)=>addItem(i,n),recKnown:id=>recKnown(RECIPES.find(r=>r.id===id)),musicState:()=>JSON.stringify({next:MUS.next,mood:MUS.mood,ac:!!AC,bus:!!BUS.master}),setCamPitch:v=>{camPitch=v},openMap:()=>openMap(),doHit:()=>doHit(),creatures,groundH:(x,z)=>getH(x,z),addStruct:(...a)=>addStruct(...a),WR:()=>WRECK,wreckH:(x,z)=>wreckH(x,z),spawnCreature:(t,x,z)=>spawnCreature(t,x,z),DGS,enterDungeon:d=>enterDungeon(d),tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,setCamYaw:v=>{camYaw=v},GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
+window.__fjordborn={biome,setTime:v=>{time=v},forgeSword,holySword,equip:id=>equip(id),hitC:(c,d)=>hitCreature(c,d),PL:P,lookq:LOOKQ,cy:()=>camYaw,st:()=>[started,paused,askTurn,panelOpen].join(),scene,renderer,updCreature,enemyTick,craftId:id=>craft(RECIPES.find(r=>r.id===id)),KNOWN,addItem:(i,n)=>addItem(i,n),recKnown:id=>recKnown(RECIPES.find(r=>r.id===id)),musicState:()=>JSON.stringify({next:MUS.next,mood:MUS.mood,ac:!!AC,bus:!!BUS.master}),setCamPitch:v=>{camPitch=v},openMap:()=>openMap(),doHit:()=>doHit(),creatures,groundH:(x,z)=>getH(x,z),addStruct:(...a)=>addStruct(...a),WR:()=>WRECK,wreckH:(x,z)=>wreckH(x,z),spawnCreature:(t,x,z)=>spawnCreature(t,x,z),DGS,enterDungeon:d=>enterDungeon(d),tut:()=>{tutTick();return P.tut+" "+questText().replace(/<[^>]*>/g,"").slice(0,70)},photo:()=>Object.keys(PHOTO).join(","),useItem:id=>useItem(id),gearPanel:()=>{tab="gear";renderPanel();const a=$("pBody").innerHTML;tab="bag";renderPanel();return a.length+"|"+$("pBody").innerHTML.length},setLook:o=>{Object.assign(LOOK,o);const par=PM.g.parent;buildViking();refreshLook();if(par&&par!==scene)par.add(PM.g);return !!HERO},PM,KEYS:keys,lockOf:()=>LOCK,toggleLock,setQ:(r,j)=>{if(r)rollQ=true;if(j)jumpQ=true},spaceDown:()=>{keys.Space=true;spaceAt=T},spaceUp:()=>{if(T-spaceAt<.3)rollQ=true;keys.Space=false},updPlayer,updCamera,camYawOf:()=>camYaw,setCamYaw:v=>{camYaw=v},GM:grassMesh,PEB,updGrassT:()=>{gpx=1e9;const t=performance.now();updGrass();return performance.now()-t},PL:P,levelAt,tryLevel,getHt:(x,z)=>getH(x,z),CULL,camera,rockArr,FLORA:L,pineCards,birchCards,trunkArr,flowerArr,ITEM_FS,DRUP,GEN_FS,bushCards,berrySpots,lcg,SITES,DGS,LOOT,enterDungeon,leaveDungeon,digAt,dugAt,dgWalk,getDig:()=>DIG,ITEM_FS,IGF,ICONS_MADE:()=>ICONS_MADE,ITEMGEO,IG,TOWN,VILLAGERS,TRADER,openMap,closeMap,isMapOpen:()=>mapOpen,getShop:()=>shopOpen,SK,skLvl,gainSk,lightInfo:()=>({NOENV,SAFE_LIGHT}),CAIRN,BOULD,ring2,toggleDoor,getBoss2:()=>boss2,getBoss:()=>boss,getStore:()=>storeRef,CHESTS,ISLETS,structs,boardBoat,leaveBoat,waveH,keys,setWind:a=>{windYaw=a},hurt:hurtPlayer,key:c=>{keys[c]=true;if(c==='Space'&&P.block)rollQ=true;setTimeout(()=>{keys[c]=false},0)},setPause,isPaused:()=>paused,camYaw:()=>camYaw,hover:()=>hoverOn,P,update,begin,addItem,craft,RECIPES,setBuild,tryPlace,startAttack,doUse,spawnCreature,openPanel,creatures,structs,nodes,drops,useItem,save,hitCreature,killNode,getH,biome,ALT};
 if(/peekfirst/.test(location.hash)){try{peek()}catch(e){console.error('peek '+e)}}
 {const pm=location.hash.match(/preview:(.*)$/);if(pm){try{const a=JSON.parse(decodeURIComponent(pm[1]));FJ_PREVIEW(...a)}catch(e){console.error('preview '+e)}}}
 requestAnimationFrame(frame);

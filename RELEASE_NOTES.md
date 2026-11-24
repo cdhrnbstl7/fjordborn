@@ -1,3 +1,8 @@
+## 1.24.0 — A larger, wilder isle
+- The isle is now half again as large, about 2.3 km across where it used to be 1.5 km, and it is no longer round. Its coast is ragged, with lobes, deep bays, a long arm reaching to the south-west, a headland to the north-west, and a cove cut into the east. The Sunmeads, Gloamwood and Hoarfells all grow with it, the mountain ranges spread further, and there is more of every tree, stone, flower and ore to find.
+- The world around the isle is three times as wide. Open sea now runs out to almost 7 km across, so you can sail much further before the wild sea turns you back. For now it is open water, ready for new lands later.
+- Existing saves: the ground has changed under your old buildings, so they are taken down and their materials, along with everything stored in them, go back into your pack. You wake at the heart of the isle. Your gear, skills and progress are kept, and landmarks must be found again on the new map.
+
 ## 1.23.5 — The Crimson Revenant
 - The Crimson Revenant, the elite warlord that rises over the Sunmeads at night, is completely resculpted. It is a towering, heavily muscled brute of crimson dead flesh, with a slab of a chest, ridged belly, broad back and thick arms.
 - Sweeping bands of bone-white war paint run across its chest, arms and legs, and a band is painted across its eyes. It wears a heavy fur mantle over the shoulders, bandaged forearms and shins, wrapped feet, and a dark war kilt with torn flaps.
